@@ -147,7 +147,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 4. Data Contract Skeleton
 
-  - [ ] 4.1 Create DTO data classes
+  - [x] 4.1 Create DTO data classes
     - Create:
       - `SessionCreateRequestDto.kt`
       - `SessionCreateResponseDto.kt`
@@ -174,7 +174,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
     - Do not invent additional fields or enums
     - _Requirements: 5.1, 9.4_
 
-  - [ ] 4.2 Create Retrofit API interface and mappers
+  - [x] 4.2 Create Retrofit API interface and mappers
     - Create `data/remote/api/ShoppingApiService.kt`
       - define all 8 Backend endpoint method signatures
       - no actual network calls are made during A0
@@ -192,7 +192,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 5. Fake Repositories
 
-  - [ ] 5.1 Implement fake repository classes
+  - [x] 5.1 Implement fake repository classes
     - Create `FakeSessionRepository.kt`
       - `createSession()` returns:
         - non-empty fake `sessionId`
@@ -226,7 +226,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 6. Checkpoint — Verify Core/Data Compilation
 
-  - [ ] 6.1 Verify project compiles after Domain/Data/Fake implementation
+  - [x] 6.1 Verify project compiles after Domain/Data/Fake implementation
     - Run:
       - `./gradlew assembleDebug`
     - Verify:
