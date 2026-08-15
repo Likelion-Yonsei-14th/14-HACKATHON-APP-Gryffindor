@@ -1,5 +1,10 @@
 package com.gryffindor.smartshopping.app
 
+import com.gryffindor.smartshopping.data.repository.FakeChecklistRepository
+import com.gryffindor.smartshopping.data.repository.FakeRecommendationRepository
+import com.gryffindor.smartshopping.data.repository.FakeSessionRepository
+import com.gryffindor.smartshopping.data.repository.FakeShoppingRepository
+import com.gryffindor.smartshopping.data.repository.FakeTravelRepository
 import com.gryffindor.smartshopping.domain.repository.ChecklistRepository
 import com.gryffindor.smartshopping.domain.repository.RecommendationRepository
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
@@ -20,10 +25,9 @@ import com.gryffindor.smartshopping.domain.repository.TravelRepository
 class AppContainer {
 
     // Repositories — swap these lines to switch Fake → Real in later stages.
-    // Fake implementations will be wired in Task 5.1.
-    lateinit var sessionRepository: SessionRepository
-    lateinit var shoppingRepository: ShoppingRepository
-    lateinit var checklistRepository: ChecklistRepository
-    lateinit var recommendationRepository: RecommendationRepository
-    lateinit var travelRepository: TravelRepository
+    val sessionRepository: SessionRepository = FakeSessionRepository()
+    val shoppingRepository: ShoppingRepository = FakeShoppingRepository()
+    val checklistRepository: ChecklistRepository = FakeChecklistRepository()
+    val recommendationRepository: RecommendationRepository = FakeRecommendationRepository()
+    val travelRepository: TravelRepository = FakeTravelRepository()
 }
