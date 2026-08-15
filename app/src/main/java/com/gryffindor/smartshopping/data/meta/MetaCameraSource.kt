@@ -162,6 +162,10 @@ class MetaCameraSource(
      * Wearables.createSession() is non-suspend; returns DatResult.
      */
     private fun createAndStartSession(): DeviceSession {
+        if (!WearablesInitializer.isInitialized) {
+            throw RuntimeException("Wearables SDK not initialized — call WearablesInitializer.initialize() first")
+        }
+
         val deviceSelector = AutoDeviceSelector()
         val result = Wearables.createSession(deviceSelector)
 
