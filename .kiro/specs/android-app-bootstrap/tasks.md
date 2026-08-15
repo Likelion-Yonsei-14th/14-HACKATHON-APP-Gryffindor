@@ -241,7 +241,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 7. ViewModels
 
-  - [ ] 7.1 Create HomeViewModel and ShoppingViewModel
+  - [x] 7.1 Create HomeViewModel and ShoppingViewModel
 
     - Create `feature/home/HomeViewModel.kt`
       - `HomeUiState` contains:
@@ -272,7 +272,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
     - _Requirements: 6.1, 6.4, 7.1, 7.2, 7.3, 7.4, 12.1, 12.4_
 
-  - [ ] 7.2 Create ReviewViewModel and TravelViewModel
+  - [x] 7.2 Create ReviewViewModel and TravelViewModel
 
     - Create `feature/review/ReviewViewModel.kt`
       - state:
@@ -307,7 +307,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
     - _Requirements: 6.1, 7.1, 7.2, 7.3, 12.1, 12.4_
 
-  - [ ] 7.3 Create ChecklistViewModel and RecommendationViewModel
+  - [x] 7.3 Create ChecklistViewModel and RecommendationViewModel
 
     - Create `feature/checklist/ChecklistViewModel.kt`
       - state:
@@ -336,7 +336,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 8. Compose UI Screens
 
-  - [ ] 8.1 Create HomeScreen and ShoppingScreen with ProductCard
+  - [x] 8.1 Create HomeScreen and ShoppingScreen with ProductCard
 
     - Create `feature/home/HomeScreen.kt`
       - display Start Shopping button
@@ -368,7 +368,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
     - _Requirements: 2.3, 4.1, 4.2, 4.3, 4.4, 12.2, 12.3_
 
-  - [ ] 8.2 Create ReviewScreen and TravelScreen
+  - [x] 8.2 Create ReviewScreen and TravelScreen
 
     - Create `feature/review/ReviewScreen.kt`
       - product list
@@ -387,7 +387,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
     - _Requirements: 2.3, 12.2, 12.3_
 
-  - [ ] 8.3 Create ChecklistScreen and RecommendationScreen
+  - [x] 8.3 Create ChecklistScreen and RecommendationScreen
 
     - Create `feature/checklist/ChecklistScreen.kt`
       - checklist item list
@@ -408,7 +408,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 9. Navigation Wiring
 
-  - [ ] 9.1 Create Routes and AppNavGraph
+  - [x] 9.1 Create Routes and AppNavGraph
 
     - Create `app/navigation/Routes.kt`
       - HOME
