@@ -49,7 +49,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 2. Core Architecture Skeleton
 
-  - [ ] 2.1 Create package structure and Application class
+  - [x] 2.1 Create package structure and Application class
     - Create main source-set packages:
       - `app/`
       - `feature/`

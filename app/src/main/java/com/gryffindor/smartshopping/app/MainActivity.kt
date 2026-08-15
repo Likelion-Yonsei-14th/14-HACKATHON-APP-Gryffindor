@@ -10,9 +10,13 @@ import androidx.compose.material3.Text
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val appContainer = (application as SmartShoppingApp).appContainer
+
         setContent {
             MaterialTheme {
                 Surface {
+                    // TODO: Replace with AppNavGraph(appContainer) in Task 9.1
                     Text("Smart Shopping - A0 Bootstrap")
                 }
             }
