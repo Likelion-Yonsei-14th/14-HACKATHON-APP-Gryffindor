@@ -73,7 +73,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
       - hosts `AppNavGraph`
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 2.2 Create core utilities and DI container
+  - [x] 2.2 Create core utilities and DI container
     - Create `core/common/UiState.kt`
       - `Loading`
       - `Success<T>`
@@ -96,7 +96,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 3. Domain Layer
 
-  - [ ] 3.1 Create domain models
+  - [x] 3.1 Create domain models
     - Create `domain/model/Session.kt`
       - `Session`
       - `SessionStatus`
@@ -123,7 +123,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
       - contain no network-library types
     - _Requirements: 5.2, 4.3_
 
-  - [ ] 3.2 Create repository interfaces
+  - [x] 3.2 Create repository interfaces
     - Create `domain/repository/SessionRepository.kt`
       - `createSession(currency)`
       - `completeSession(sessionId)`
