@@ -511,7 +511,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 ---
 
-- [ ] 12. Final A0 Checkpoint
+- [x] 12. Final A0 Checkpoint
 
   - [x] 12.1 Run final build and manual acceptance flow
     - Run all implemented unit tests
