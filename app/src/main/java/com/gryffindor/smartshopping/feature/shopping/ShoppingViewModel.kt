@@ -1,9 +1,11 @@
 package com.gryffindor.smartshopping.feature.shopping
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.core.common.UiState
+import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.model.SessionProduct
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
 import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
@@ -19,8 +21,13 @@ data class ShoppingUiState(
 
 class ShoppingViewModel(
     private val shoppingRepository: ShoppingRepository,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val cameraFrameProvider: CameraFrameProvider
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "ShoppingViewModel"
+    }
 
     private val _uiState = MutableStateFlow<UiState<ShoppingUiState>>(UiState.Loading)
     val uiState: StateFlow<UiState<ShoppingUiState>> = _uiState.asStateFlow()
@@ -44,6 +51,13 @@ class ShoppingViewModel(
 
     fun endShopping(sessionId: String) {
         viewModelScope.launch {
+            // Camera stop is best-effort — failure does NOT block session completion.
+            try {
+                cameraFrameProvider.stopCamera()
+            } catch (e: Exception) {
+                Log.w(TAG, "Camera stop failed (session completion unaffected)", e)
+            }
+
             try {
                 sessionRepository.completeSession(sessionId)
                 val currentState = (_uiState.value as? UiState.Success)?.data
@@ -62,11 +76,12 @@ class ShoppingViewModel(
 
     class Factory(
         private val shoppingRepository: ShoppingRepository,
-        private val sessionRepository: SessionRepository
+        private val sessionRepository: SessionRepository,
+        private val cameraFrameProvider: CameraFrameProvider
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ShoppingViewModel(shoppingRepository, sessionRepository) as T
+            return ShoppingViewModel(shoppingRepository, sessionRepository, cameraFrameProvider) as T
         }
     }
 }

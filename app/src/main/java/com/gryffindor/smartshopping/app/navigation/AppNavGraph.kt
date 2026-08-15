@@ -30,7 +30,10 @@ fun AppNavGraph(
 
         composable(Routes.HOME) {
             val viewModel: HomeViewModel = viewModel(
-                factory = HomeViewModel.Factory(appContainer.sessionRepository)
+                factory = HomeViewModel.Factory(
+                    appContainer.sessionRepository,
+                    appContainer.cameraFrameProvider
+                )
             )
             HomeScreen(
                 viewModel = viewModel,
@@ -48,7 +51,8 @@ fun AppNavGraph(
             val viewModel: ShoppingViewModel = viewModel(
                 factory = ShoppingViewModel.Factory(
                     appContainer.shoppingRepository,
-                    appContainer.sessionRepository
+                    appContainer.sessionRepository,
+                    appContainer.cameraFrameProvider
                 )
             )
             ShoppingScreen(

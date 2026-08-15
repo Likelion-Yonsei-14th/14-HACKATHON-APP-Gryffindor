@@ -1,10 +1,12 @@
 package com.gryffindor.smartshopping.app
 
+import com.gryffindor.smartshopping.data.meta.MetaCameraSource
 import com.gryffindor.smartshopping.data.repository.FakeChecklistRepository
 import com.gryffindor.smartshopping.data.repository.FakeRecommendationRepository
 import com.gryffindor.smartshopping.data.repository.FakeSessionRepository
 import com.gryffindor.smartshopping.data.repository.FakeShoppingRepository
 import com.gryffindor.smartshopping.data.repository.FakeTravelRepository
+import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.repository.ChecklistRepository
 import com.gryffindor.smartshopping.domain.repository.RecommendationRepository
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
@@ -30,4 +32,7 @@ class AppContainer {
     val checklistRepository: ChecklistRepository = FakeChecklistRepository()
     val recommendationRepository: RecommendationRepository = FakeRecommendationRepository()
     val travelRepository: TravelRepository = FakeTravelRepository()
+
+    // A1: Camera input — SDK-independent boundary exposed to ViewModels.
+    val cameraFrameProvider: CameraFrameProvider by lazy { MetaCameraSource() }
 }
