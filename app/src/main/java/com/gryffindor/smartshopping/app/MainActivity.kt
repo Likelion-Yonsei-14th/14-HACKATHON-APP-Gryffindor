@@ -5,7 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.navigation.compose.rememberNavController
+import com.gryffindor.smartshopping.app.navigation.AppNavGraph
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,8 +17,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface {
-                    // TODO: Replace with AppNavGraph(appContainer) in Task 9.1
-                    Text("Smart Shopping - A0 Bootstrap")
+                    val navController = rememberNavController()
+                    AppNavGraph(
+                        navController = navController,
+                        appContainer = appContainer
+                    )
                 }
             }
         }
