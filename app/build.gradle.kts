@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.gryffindor.smartshopping"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gryffindor.smartshopping"
-        minSdk = 29
-        targetSdk = 35
+        minSdk = 31
+        targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0-a0"
+        versionName = "0.2.0-a1"
 
         buildConfigField("String", "BACKEND_BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
     }
@@ -49,7 +49,7 @@ android {
 
 dependencies {
     // Compose BOM
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.05.01")
     implementation(composeBom)
 
     // Compose
@@ -59,17 +59,17 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("androidx.navigation:navigation-compose:2.9.0")
 
     // Lifecycle + ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
     // Activity Compose
-    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.activity:activity-compose:1.13.0")
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 
     // Network (skeleton only, no actual calls in A0)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -78,8 +78,13 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
 
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
     // Core
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.16.0")
+
+    // Meta Wearables DAT — coordinates from validated Stage 0 CameraAccess project
+    implementation("com.meta.wearable:mwdat-core:0.9.0")
+    implementation("com.meta.wearable:mwdat-camera:0.9.0")
+    debugImplementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
 }
