@@ -45,6 +45,10 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -87,4 +91,8 @@ dependencies {
     implementation("com.meta.wearable:mwdat-core:0.9.0")
     implementation("com.meta.wearable:mwdat-camera:0.9.0")
     debugImplementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
+
+    // Unit Testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
 }
