@@ -457,7 +457,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 10. Checkpoint — Full Compilation and Launch Verification
 
-  - [ ] 10.1 Verify application skeleton
+  - [x] 10.1 Verify application skeleton
     - Run:
       - `./gradlew assembleDebug`
     - Install/launch on emulator or Android device
@@ -499,7 +499,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
       - purchased/interested precedence is maintained in ReviewViewModel
     - _Requirements: 8.2, 8.3, 8.4, 8.5, 12.1_
 
-  - [ ] 11.3 Verify architectural boundary constraints
+  - [x] 11.3 Verify architectural boundary constraints
     - Verify no DTO imports exist under `feature/`
     - Verify no Retrofit/OkHttp imports exist under `feature/`
     - Verify no Meta DAT dependency/import exists anywhere
@@ -513,7 +513,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 12. Final A0 Checkpoint
 
-  - [ ] 12.1 Run final build and manual acceptance flow
+  - [x] 12.1 Run final build and manual acceptance flow
     - Run all implemented unit tests
     - Run:
       - `./gradlew assembleDebug`
