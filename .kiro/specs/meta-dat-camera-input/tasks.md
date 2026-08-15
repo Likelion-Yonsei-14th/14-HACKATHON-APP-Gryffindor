@@ -25,9 +25,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ## Tasks
 
-* [ ] 1. DAT Build Configuration
+* [x] 1. DAT Build Configuration
 
-  * [ ] 1.1 Integrate the validated Stage 0 DAT build configuration
+  * [x] 1.1 Integrate the validated Stage 0 DAT build configuration
 
     * Copy the exact DAT Maven repository configuration from the working Stage 0 project
     * Copy the exact dependency coordinates already proven to resolve in Stage 0
@@ -52,9 +52,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 2. SDK-Independent Camera Contracts
+* [x] 2. SDK-Independent Camera Contracts
 
-  * [ ] 2.1 Create CameraFrame
+  * [x] 2.1 Create CameraFrame
 
     * Create the SDK-independent `CameraFrame` type in the location defined by the approved design
     * Fields:
@@ -69,7 +69,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Do not introduce serialization annotations or backend concerns
     * *Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.8, 5.9*
 
-  * [ ] 2.2 Create CameraState
+  * [x] 2.2 Create CameraState
 
     * Create the SDK-independent `CameraState` type
     * Include:
@@ -84,7 +84,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Only classify errors as recoverable/blocking when the actual DAT API provides enough information to do so
     * *Requirements: 7.1, 7.2, 7.3, 7.7*
 
-  * [ ] 2.3 Create CameraFrameProvider
+  * [x] 2.3 Create CameraFrameProvider
 
     * Create the SDK-independent camera boundary defined by the approved design
     * Expose:
@@ -102,9 +102,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 3. MetaCameraSource DAT Adapter
+* [x] 3. MetaCameraSource DAT Adapter
 
-  * [ ] 3.1 Create MetaCameraSource and lifecycle ownership
+  * [x] 3.1 Create MetaCameraSource and lifecycle ownership
 
     * Create `MetaCameraSource` inside `data/meta/`
     * Implement `CameraFrameProvider`
@@ -133,7 +133,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * All Meta SDK types remain private inside `data/meta/`
     * *Requirements: 2.1, 3.1, 4.1-4.6, 6.5, 6.6, 6.7*
 
-  * [ ] 3.2 Implement a single idempotent DAT cleanup path
+  * [x] 3.2 Implement a single idempotent DAT cleanup path
 
     * Implement one ordered cleanup path shared by:
 
@@ -157,7 +157,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * After cleanup, the next start creates a new DeviceSession
     * *Requirements: 2.2, 2.3, 2.4, 3.2, 3.5, 3.6*
 
-  * [ ] 3.3 Implement startCamera() using validated Stage 0 DAT code
+  * [x] 3.3 Implement startCamera() using validated Stage 0 DAT code
 
     * Port the actual working Stage 0 startup code into `MetaCameraSource`
     * Do not reconstruct DAT API calls from memory or pseudocode when the Stage 0 implementation is available
@@ -194,7 +194,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
       * never crash the App
     * *Requirements: 2.1, 2.3, 2.4, 2.5, 3.1, 3.3, 3.4, 3.5, 7.4, 7.5, 7.6*
 
-  * [ ] 3.4 Implement safe VideoFrame → CameraFrame ownership transfer
+  * [x] 3.4 Implement safe VideoFrame → CameraFrame ownership transfer
 
     * Collect the validated Stage 0 VideoFrame source
     * For each `VideoFrame`, read:
@@ -246,7 +246,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Do not infer an unverified format such as NV12
     * *Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 6.1, 6.2, 6.3, 6.4*
 
-  * [ ] 3.5 Implement stopCamera() without cleanup races
+  * [x] 3.5 Implement stopCamera() without cleanup races
 
     * Serialize `stopCamera()` against concurrent start/stop operations
     * Cancel the active streaming job
@@ -268,7 +268,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
       * a future start creates a fresh DeviceSession
     * *Requirements: 2.2, 2.3, 2.4, 3.2, 3.5, 3.6*
 
-  * [ ] 3.6 Verify adapter background execution and bounded delivery
+  * [x] 3.6 Verify adapter background execution and bounded delivery
 
     * Confirm potentially blocking DAT startup/teardown does not execute directly on Android Main
     * Confirm frame handling does not execute on Android Main
