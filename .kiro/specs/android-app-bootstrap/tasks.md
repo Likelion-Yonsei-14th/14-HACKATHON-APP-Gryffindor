@@ -12,7 +12,7 @@ No actual API calls, camera integration, Meta DAT integration, object detection,
 
 - [ ] 1. Android Project Bootstrap
 
-  - [ ] 1.1 Create Android project with Gradle Kotlin DSL build configuration
+  - [x] 1.1 Create Android project with Gradle Kotlin DSL build configuration
     - Set:
       - `applicationId = "com.gryffindor.smartshopping"`
       - matching `namespace`
