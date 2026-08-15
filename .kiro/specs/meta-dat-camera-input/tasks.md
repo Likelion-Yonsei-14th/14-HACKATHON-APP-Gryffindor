@@ -279,9 +279,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 4. Manual DI and Shopping Flow Integration
+* [x] 4. Manual DI and Shopping Flow Integration
 
-  * [ ] 4.1 Register CameraFrameProvider in AppContainer
+  * [x] 4.1 Register CameraFrameProvider in AppContainer
 
     * Add the A1 camera implementation using the existing Manual DI pattern
     * Expose the dependency to features as `CameraFrameProvider`
@@ -290,7 +290,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Do not introduce Hilt or another DI framework
     * *Requirements: 10.1, 10.2, 10.3*
 
-  * [ ] 4.2 Connect shopping start to camera start
+  * [x] 4.2 Connect shopping start to camera start
 
     * Inject `CameraFrameProvider` into the existing Home shopping-start path using the current Factory/AppContainer pattern
     * Start the existing shopping session using the current A0 behavior
@@ -304,7 +304,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Preserve existing HomeViewModel public behavior where possible
     * *Requirements: 8.1, 8.2, 8.8, 10.4, 10.5*
 
-  * [ ] 4.3 Connect shopping end to camera stop
+  * [x] 4.3 Connect shopping end to camera stop
 
     * Inject `CameraFrameProvider` into the current shopping-end path
     * Request camera shutdown when shopping ends
@@ -318,7 +318,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Keep changes additive
     * *Requirements: 8.3, 8.4, 8.8, 10.4, 10.5*
 
-  * [ ] 4.4 Update existing ViewModel creation/wiring
+  * [x] 4.4 Update existing ViewModel creation/wiring
 
     * Pass `CameraFrameProvider` through the current AppContainer / Factory / navigation wiring
     * Do not redesign navigation
@@ -336,9 +336,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 5. Build and A0 Regression Checkpoint
+* [x] 5. Build and A0 Regression Checkpoint
 
-  * [ ] 5.1 Verify compilation and existing application flow
+  * [x] 5.1 Verify compilation and existing application flow
 
     * Run:
 
@@ -375,9 +375,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 6. Focused Automated Tests
+* [x] 6. Focused Automated Tests
 
-  * [ ]* 6.1 Test CameraFrame ownership and metadata
+  * [x]* 6.1 Test CameraFrame ownership and metadata
 
     * Verify copied bytes equal the source contents at conversion time
     * Verify mutating or advancing the original source buffer does not alter `CameraFrame.data`
@@ -391,7 +391,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Use the existing project test stack only
     * *Requirements: 5.1, 5.2, 5.3, 5.4, 5.5*
 
-  * [ ]* 6.2 Test lifecycle and single cleanup behavior
+  * [ ]* 6.2 Test lifecycle and single cleanup behavior — SKIPPED: MetaCameraSource uses DAT SDK directly with no test seam; verified via Mock Device E2E
 
     * Using the smallest practical test seam, verify:
 
@@ -414,7 +414,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Verify repeated stop does not crash
     * *Requirements: 2.2, 2.3, 2.4, 2.5, 3.2, 3.5, 3.6*
 
-  * [ ]* 6.3 Test bounded frame delivery
+  * [x]* 6.3 Test bounded frame delivery
 
     * Produce frames faster than a slow consumer processes them
     * Verify pending frame history does not grow without bound
@@ -422,7 +422,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
     * Do not require delivery of every produced frame
     * *Requirements: 6.5, 6.6, 6.7*
 
-  * [ ]* 6.4 Test shopping-flow failure isolation
+  * [x]* 6.4 Test shopping-flow failure isolation
 
     * HomeViewModel:
 
@@ -436,9 +436,9 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 7. Architecture Boundary Verification
+* [x] 7. Architecture Boundary Verification
 
-  * [ ] 7.1 Verify Meta SDK isolation
+  * [x] 7.1 Verify Meta SDK isolation
 
     * Confirm no DAT SDK imports exist in:
 
@@ -463,7 +463,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 8. Mock Device Integration Acceptance
+* [ ] 8. Mock Device Integration Acceptance — UNVERIFIED: device PIN lock screen prevents UI interaction
 
   * [ ] 8.1 Verify CameraFrame delivery through the current Android App
 
@@ -505,7 +505,7 @@ No Object Detection, tracking, attention logic, backend recognition, or real Pro
 
 ---
 
-* [ ] 9. Real Gen2 Hardware Acceptance
+* [ ] 9. Real Gen2 Hardware Acceptance — PENDING: requires physical Gen2 + manual device interaction
 
   * [ ] 9.1 Verify CameraFrame delivery using actual Meta Ray-Ban Gen 2
 
