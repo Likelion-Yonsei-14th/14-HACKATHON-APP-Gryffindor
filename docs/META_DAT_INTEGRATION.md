@@ -6,6 +6,12 @@
 
 기존 Stage 0 검증 프로젝트에서 확인한 Meta Device Access Toolkit / CameraAccess 코드를 새 앱에 이식하고, 그 위에 Object Detection과 Backend Integration을 추가한다.
 
+기존 검증 결과 및 미검증 실기기 항목은
+`docs/meta/STAGE_0_VALIDATION.md`를 source of truth로 사용한다.
+
+개발 환경 재현은
+`docs/meta/STAGE_0_SETUP.md`를 참고한다.
+
 ---
 
 ## 2. 기존 검증 자산에서 가져올 것

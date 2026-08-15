@@ -17,6 +17,17 @@ Meta Ray-Ban Gen 2 기반 관광객 쇼핑 지원 Android 앱.
 7. `docs/DEVELOPMENT_PLAN.md`
 8. `docs/TEST_PLAN.md`
 
+## Meta DAT Work
+
+Meta DAT / Camera 관련 코드를 작업하기 전에는 추가로 다음 문서를 읽는다.
+
+1. `docs/meta/STAGE_0_VALIDATION.md`
+2. `docs/meta/STAGE_0_SETUP.md`
+
+Stage 0 문서는 기존 검증 기록이며,
+새 앱 Architecture보다 우선하지 않는다.
+기존 Stage 0 코드는 검증된 동작을 재사용하되 새 앱의 adapter 경계를 따른다.
+
 ## Rules
 
 - Android 앱은 Kotlin + Jetpack Compose를 사용한다.
