@@ -52,7 +52,8 @@ fun AppNavGraph(
                 factory = ShoppingViewModel.Factory(
                     appContainer.shoppingRepository,
                     appContainer.sessionRepository,
-                    appContainer.cameraFrameProvider
+                    appContainer.cameraFrameProvider,
+                    appContainer.detectionResultProvider
                 )
             )
             ShoppingScreen(
