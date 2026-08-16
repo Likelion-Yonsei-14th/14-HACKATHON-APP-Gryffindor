@@ -24,7 +24,7 @@ Gen2 CameraFrame format discovery (Task 1)
 
 * [ ] 1. Real Gen2 CameraFrame Format/Codec Verification
 
-  * [ ] 1.1 Implement FormatVerifier diagnostic tool
+  * [x] 1.1 Implement FormatVerifier diagnostic tool (code complete — awaiting real Gen2 verification)
 
     * Create `data/detection/FormatVerifier.kt`
 
@@ -89,9 +89,9 @@ Gen2 CameraFrame format discovery (Task 1)
 
 ---
 
-* [ ] 2. Object Detection Dependency + Model + Domain Boundary
+* [x] 2. Object Detection Dependency + Model + Domain Boundary
 
-  * [ ] 2.1 Add TFLite dependencies and model asset
+  * [x] 2.1 Add TFLite dependencies and model asset
 
     * Add the required TensorFlow Lite dependencies to `app/build.gradle.kts`.
 
@@ -118,7 +118,7 @@ Gen2 CameraFrame format discovery (Task 1)
 
     * *Requirements: 4.1, 4.3, 4.8, 10.10*
 
-  * [ ] 2.2 Create domain detection models and interface
+  * [x] 2.2 Create domain detection models and interface
 
     * Create `DetectionResult` with:
 
@@ -154,7 +154,7 @@ Gen2 CameraFrame format discovery (Task 1)
 
     * *Requirements: 5.1–5.6, 6.1–6.7, 7.4–7.5*
 
-  * [ ] 2.3 Create TFLiteDetectorAdapter
+  * [x] 2.3 Create TFLiteDetectorAdapter
 
     * Create `data/detection/TFLiteDetectorAdapter.kt`.
 
@@ -184,7 +184,7 @@ Gen2 CameraFrame format discovery (Task 1)
 
     * *Requirements: 4.1–4.5, 4.8–4.9, 5.1–5.5*
 
-  * [ ] 2.4 Add detection configuration
+  * [x] 2.4 Add detection configuration
 
     * Extend the existing configuration source with detection parameters:
 
@@ -218,7 +218,7 @@ Gen2 CameraFrame format discovery (Task 1)
 
 * [ ] 3. Controlled Input Detection Test
 
-  * [ ] 3.1 Verify TFLiteDetectorAdapter with controlled image input
+  * [ ] 3.1 Verify TFLiteDetectorAdapter with controlled image input (test code ready — awaiting device run)
 
     * Create an instrumented test or lightweight developer test.
 
@@ -251,7 +251,7 @@ Gen2 CameraFrame format discovery (Task 1)
 
     * *Requirements: 4.1, 4.2, 4.4, 4.10, 11.1, 11.2*
 
-  * [ ] 3.2 Verify ML SDK isolation
+  * [x] 3.2 Verify ML SDK isolation
 
     * Run an architecture grep:
 
