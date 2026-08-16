@@ -7,6 +7,7 @@ import android.graphics.Rect
 import android.graphics.YuvImage
 import android.util.Log
 import com.gryffindor.smartshopping.core.config.AppConfig
+import com.gryffindor.smartshopping.data.image.PackedI420Converter
 import com.gryffindor.smartshopping.domain.model.CameraFrame
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
@@ -52,7 +53,7 @@ internal open class CropGenerator(
     /**
      * Crop the attended object region from the original CameraFrame.
      *
-     * @param frame Original Gen2 CameraFrame (e.g. 504×896 NV21/YUV420).
+     * @param frame Original Gen2 CameraFrame (e.g. 504×896 packed I420/YUV420).
      * @param left Normalized left bbox [0.0, 1.0].
      * @param top Normalized top bbox [0.0, 1.0].
      * @param right Normalized right bbox [0.0, 1.0].
@@ -183,15 +184,16 @@ internal open class CropGenerator(
             return BitmapFactory.decodeByteArray(frame.data, 0, frame.data.size)
         }
 
-        // Uncompressed YUV420 — use NV21 path (validated on Gen2)
-        val expectedSize = (frame.width * frame.height * 3) / 2
-        if (frame.data.size < expectedSize) {
-            Log.w(TAG, "Frame data too small: ${frame.data.size} < expected $expectedSize")
+        // Meta DAT emits packed I420 (Y + U + V); YuvImage requires NV21 (Y + VU).
+        val nv21Data = PackedI420Converter.toNv21(frame.data, frame.width, frame.height)
+        if (nv21Data == null) {
+            val expectedSize = PackedI420Converter.expectedSize(frame.width, frame.height)
+            Log.w(TAG, "Invalid packed I420 frame: actual=${frame.data.size}, expected=$expectedSize")
             return null
         }
 
-        // NV21 → YuvImage → JPEG → Bitmap (full resolution)
-        val yuvImage = YuvImage(frame.data, ImageFormat.NV21, frame.width, frame.height, null)
+        // I420 → NV21 → YuvImage → JPEG → Bitmap (full resolution)
+        val yuvImage = YuvImage(nv21Data, ImageFormat.NV21, frame.width, frame.height, null)
 
         jpegOutputStream.reset()
         val success = yuvImage.compressToJpeg(
