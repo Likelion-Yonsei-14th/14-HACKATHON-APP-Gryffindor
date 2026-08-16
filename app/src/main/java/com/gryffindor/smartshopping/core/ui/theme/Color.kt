@@ -13,6 +13,7 @@ object LooketColors {
     val TextPrimary = Color(0xFF1B1A22)
     val TextBrand = BrandPrimary
     val TextDisabled = Color(0xFFD7D6E0)
+    val TextInverse = Color(0xFFFFFFFF)
 
     val BorderDefault = Color(0xFFD7D6E1)
     val BorderDisabled = Color(0xFFEEEDF1)

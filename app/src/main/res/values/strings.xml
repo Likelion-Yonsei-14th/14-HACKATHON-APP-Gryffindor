@@ -19,4 +19,7 @@
     <string name="mypage_travel_departure_time">출발 시간</string>
     <string name="mypage_travel_arrival_time">도착 시간</string>
     <string name="mypage_travel_airport_arrival_estimate">공항 도착 예정시간</string>
+
+    <string name="mypage_receipt_select_store">매장 선택하기</string>
+    <string name="common_confirm">확인</string>
 </resources>

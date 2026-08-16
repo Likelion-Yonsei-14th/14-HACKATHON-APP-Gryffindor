@@ -16,6 +16,7 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 private object MyPageRoutes {
     const val HOME = "mypage/home"
     const val TRAVEL = "mypage/travel"
+    const val RECEIPT = "mypage/receipt"
 }
 
 /**
@@ -42,7 +43,7 @@ fun MyPageNavHost(
                 onLanguageSelected = { selectedLanguage = it },
                 onCurrencySelected = { selectedCurrency = it },
                 onTravelClick = { navController.navigate(MyPageRoutes.TRAVEL) },
-                onReceiptClick = {},
+                onReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT) },
                 onLogoutClick = {},
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
@@ -57,6 +58,19 @@ fun MyPageNavHost(
                 departureTime = "2026.08.21 10:00",
                 arrivalTime = "2026.08.25 19:00",
                 airportArrivalEstimate = "2026.08.25 15:00",
+                onBackClick = { navController.popBackStack() },
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        }
+
+        composable(MyPageRoutes.RECEIPT) {
+            var selectedStoreId by remember { mutableStateOf<String?>(null) }
+
+            MyPageReceiptScreen(
+                selectedStoreId = selectedStoreId,
+                onStoreSelected = { selectedStoreId = it },
+                onConfirmClick = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
