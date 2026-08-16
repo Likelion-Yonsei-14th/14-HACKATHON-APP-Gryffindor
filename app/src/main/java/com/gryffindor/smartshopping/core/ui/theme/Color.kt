@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 object LooketColors {
     val BrandPrimary = Color(0xFF616AF3)
     val BrandPrimarySubtle = Color(0xFFE0E8FF)
+    val BrandGradientEnd = Color(0xFF3B36CC)
 
     val Surface = Color(0xFFFFFFFF)
 
@@ -13,6 +14,7 @@ object LooketColors {
     val TextBrand = BrandPrimary
     val TextDisabled = Color(0xFFD7D6E0)
 
+    val BorderDefault = Color(0xFFD7D6E1)
     val BorderDisabled = Color(0xFFEEEDF1)
 
     val KakaoYellow = Color(0xFFFBE300)

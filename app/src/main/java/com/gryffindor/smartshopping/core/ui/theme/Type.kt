@@ -30,6 +30,12 @@ object LooketTextStyles {
         fontSize = 16.sp,
         lineHeight = 21.sp,
     )
+    val bodyTwo = TextStyle(
+        fontFamily = Pretendard,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 18.sp,
+    )
     val bodyThree = TextStyle(
         fontFamily = Pretendard,
         fontWeight = FontWeight.Normal,

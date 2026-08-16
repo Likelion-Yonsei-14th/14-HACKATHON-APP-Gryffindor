@@ -5,4 +5,11 @@
     <string name="nav_home">HOME</string>
     <string name="nav_shop">SHOP</string>
     <string name="nav_mypage">MY PAGE</string>
+
+    <string name="mypage_title">MY PAGE</string>
+    <string name="mypage_language_label">LANGUAGE</string>
+    <string name="mypage_currency_label">CURRENCY</string>
+    <string name="mypage_travel">TRAVEL</string>
+    <string name="mypage_receipt">RECEIPT</string>
+    <string name="mypage_logout">LOGOUT</string>
 </resources>
