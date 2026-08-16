@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -119,8 +118,6 @@ class ShoppingViewModelRecognitionConcurrencyTest {
         assertEquals(1, state.data.products.size)
         assertEquals("product-1", state.data.products.single().product.productId)
 
-        advanceTimeBy(COOLDOWN_MS)
-        runCurrent()
         fixture.viewModel.endShopping(SESSION_ID)
         runCurrent()
     }
@@ -141,7 +138,7 @@ class ShoppingViewModelRecognitionConcurrencyTest {
     }
 
     @Test
-    fun `failed request returns its slot after the existing cooldown`() = runTest {
+    fun `failed request returns its slot immediately for an independent candidate`() = runTest {
         val fixture = createFixture()
         fixture.candidates.emit(candidate("A"))
         fixture.candidates.emit(candidate("B"))
@@ -149,13 +146,31 @@ class ShoppingViewModelRecognitionConcurrencyTest {
 
         fixture.shoppingRepository.fail("A")
         runCurrent()
-        advanceTimeBy(COOLDOWN_MS)
-        runCurrent()
 
         fixture.candidates.emit(candidate("C"))
         runCurrent()
 
         assertTrue(fixture.shoppingRepository.hasStarted("C"))
+        assertEquals(2, fixture.shoppingRepository.activeRequests)
+        assertEquals(2, fixture.shoppingRepository.maxActiveRequests)
+
+        fixture.viewModel.endShopping(SESSION_ID)
+        runCurrent()
+    }
+
+    @Test
+    fun `completed request frees its slot without a global cooldown`() = runTest {
+        val fixture = createFixture()
+        fixture.candidates.emit(candidate("A"))
+        fixture.candidates.emit(candidate("B"))
+        runCurrent()
+
+        fixture.shoppingRepository.complete("A", RecognitionResult.Unknown)
+        runCurrent()
+        fixture.candidates.emit(candidate("C"))
+        runCurrent()
+
+        assertEquals(listOf("A", "B", "C"), fixture.shoppingRepository.startedTrackingIds)
         assertEquals(2, fixture.shoppingRepository.activeRequests)
         assertEquals(2, fixture.shoppingRepository.maxActiveRequests)
 
@@ -321,6 +336,5 @@ class ShoppingViewModelRecognitionConcurrencyTest {
 
     private companion object {
         const val SESSION_ID = "session-1"
-        const val COOLDOWN_MS = 800L
     }
 }

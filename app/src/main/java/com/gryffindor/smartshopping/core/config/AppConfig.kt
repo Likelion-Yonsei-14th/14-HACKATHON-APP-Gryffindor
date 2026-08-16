@@ -62,7 +62,13 @@ object AppConfig {
     const val ATTENTION_MIN_OCCUPANCY_RATIO: Float = 0.12f
 
     /** Minimum continuous dwell time (ms) for attention trigger. */
-    const val ATTENTION_MIN_DWELL_MS: Long = 800L
+    const val ATTENTION_MIN_DWELL_MS: Long = 600L
+
+    /** Strong occupancy evidence eligible for the guarded fast attention path. */
+    const val ATTENTION_FAST_OCCUPANCY_RATIO: Float = 0.22f
+
+    /** Continuous strong-occupancy stability required before fast-path trigger. */
+    const val ATTENTION_FAST_OCCUPANCY_STABILITY_MS: Long = 200L
 
     // ===== Attention Pipeline — Tracking =====
 

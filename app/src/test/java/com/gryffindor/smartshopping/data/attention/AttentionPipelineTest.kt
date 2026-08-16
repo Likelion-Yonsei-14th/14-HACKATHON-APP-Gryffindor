@@ -42,6 +42,10 @@ class AttentionPipelineTest {
             centerRoiBottom = 0.90f,
             minOccupancyRatio = 0.12f,
             minDwellMs = 800L,
+            // This suite verifies the pre-existing 800ms orchestration contract.
+            // Fast-path behavior has dedicated coverage in AttentionFastUxTest.
+            fastOccupancyRatio = 1.0f,
+            fastOccupancyStabilityMs = 200L,
             maxDwellGapMs = 2000L
         )
         sourceFrameCache = SourceFrameCache(maxSize = 15)

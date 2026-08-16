@@ -17,7 +17,6 @@ import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,9 +40,6 @@ class ShoppingViewModel(
     companion object {
         private const val TAG = "ShoppingVM"
         private const val TIMING_TAG = "AttentionTiming"
-
-        /** Cooldown period after a recognition response before accepting the next candidate. */
-        private const val RECOGNITION_COOLDOWN_MS = 800L
 
         /** Slow fallback must not block one independent fast-path request. */
         private const val RECOGNITION_MAX_CONCURRENT_REQUESTS = 2
@@ -69,14 +65,11 @@ class ShoppingViewModel(
     /** Two non-blocking permits: a third candidate is dropped instead of queued. */
     private val recognitionSlots = Semaphore(RECOGNITION_MAX_CONCURRENT_REQUESTS)
 
-    /** Every request/cooldown Job registered for the active session. */
+    /** Every recognition Job registered for the active session. */
     private val recognitionJobs = mutableSetOf<Job>()
 
     /** Suppresses concurrent requests for the same safely identifiable tracked object. */
     private val activeRecognitionTrackingIds = mutableSetOf<String>()
-
-    /** A counter prevents overlapping cooldowns from clearing the global guard early. */
-    private var activeRecognitionCooldowns: Int = 0
 
     init {
         // Observe detection pipeline — ensures the lazy DetectionPipeline is accessed
@@ -152,8 +145,8 @@ class ShoppingViewModel(
 
     /**
      * Non-blocking dispatcher: accepts up to two recognition requests and drops a candidate
-     * immediately when both slots are occupied, the same tracked object is already active,
-     * or the unchanged cooldown is active.
+     * immediately when both slots are occupied or the same tracked object is already active.
+     * Independent tracks can reuse a slot immediately after a response.
      * The collector itself never suspends on network I/O — backpressure is resolved by dropping.
      */
     private fun dispatchRecognition(candidate: AttentionCandidate) {
@@ -170,18 +163,6 @@ class ShoppingViewModel(
                     append(" | wallMs=$dispatchWallMs")
                 })
                 Log.d(TAG, "Candidate ignored: session=$dispatchSessionId, active=$sessionActive")
-                return
-            }
-
-            if (activeRecognitionCooldowns > 0) {
-                Log.i(TIMING_TAG, buildString {
-                    append("[Dispatch] DROP trackingId=${candidate.trackingId}")
-                    append(" | reason=cooldown")
-                    append(" | dwellMs=${candidate.dwellMs}")
-                    append(" | occupancy=${"%.4f".format(candidate.occupancyRatio)}")
-                    append(" | wallMs=$dispatchWallMs")
-                })
-                Log.d(TAG, "[A4] candidate dropped: cooldown")
                 return
             }
 
@@ -226,21 +207,10 @@ class ShoppingViewModel(
                 try {
                     handleAttentionCandidate(candidate, dispatchSessionId, dispatchWallMs)
                 } finally {
-                    val cooldownStarted = releaseRecognitionResources(
+                    releaseRecognitionResources(
                         trackingId = trackingId,
-                        dispatchSessionId = dispatchSessionId,
-                        slotReleased = slotReleased,
-                        startCooldown = true
+                        slotReleased = slotReleased
                     )
-                    if (cooldownStarted) {
-                        try {
-                            delay(RECOGNITION_COOLDOWN_MS)
-                        } finally {
-                            synchronized(recognitionStateLock) {
-                                activeRecognitionCooldowns--
-                            }
-                        }
-                    }
                 }
             }
 
@@ -248,9 +218,7 @@ class ShoppingViewModel(
             job.invokeOnCompletion {
                 releaseRecognitionResources(
                     trackingId = trackingId,
-                    dispatchSessionId = dispatchSessionId,
-                    slotReleased = slotReleased,
-                    startCooldown = false
+                    slotReleased = slotReleased
                 )
                 synchronized(recognitionStateLock) {
                     recognitionJobs.remove(job)
@@ -263,27 +231,17 @@ class ShoppingViewModel(
     }
 
     /**
-     * Releases a permit and tracking reservation exactly once. When request code ran, it also
-     * starts the existing global cooldown while holding the same lock used by dispatch.
+     * Releases a permit and tracking reservation exactly once.
      */
     private fun releaseRecognitionResources(
         trackingId: String?,
-        dispatchSessionId: String,
-        slotReleased: AtomicBoolean,
-        startCooldown: Boolean
-    ): Boolean {
-        if (!slotReleased.compareAndSet(false, true)) return false
+        slotReleased: AtomicBoolean
+    ) {
+        if (!slotReleased.compareAndSet(false, true)) return
 
-        return synchronized(recognitionStateLock) {
+        synchronized(recognitionStateLock) {
             recognitionSlots.release()
             trackingId?.let(activeRecognitionTrackingIds::remove)
-
-            val shouldStartCooldown =
-                startCooldown && sessionActive && currentSessionId == dispatchSessionId
-            if (shouldStartCooldown) {
-                activeRecognitionCooldowns++
-            }
-            shouldStartCooldown
         }
     }
 
