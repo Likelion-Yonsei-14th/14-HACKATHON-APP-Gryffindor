@@ -59,6 +59,7 @@ internal class AttentionPipeline(
 
     companion object {
         private const val TAG = "AttentionPipeline"
+        private const val TIMING_TAG = "AttentionTiming"
     }
 
     // --- Output channel (bounded, not closed on stop for restart compatibility) ---
@@ -76,6 +77,10 @@ internal class AttentionPipeline(
 
     /** Tracking IDs that have already emitted a candidate in the current continuous event. */
     private val suppressedTrackingIds = mutableSetOf<String>()
+
+    /** Counts detection frames processed — used for rate-limited entry log. */
+    @Volatile
+    private var detectionFrameCount = 0L
 
     init {
         // Observe camera state to auto-start/stop
@@ -155,6 +160,7 @@ internal class AttentionPipeline(
         attentionEvaluator.reset()
         sourceFrameCache.clear()
         suppressedTrackingIds.clear()
+        detectionFrameCount = 0L
         // Drain any stale candidate from previous session
         @Suppress("ControlFlowWithEmptyBody")
         while (_candidateChannel.tryReceive().isSuccess) {}
@@ -166,6 +172,14 @@ internal class AttentionPipeline(
         detections: List<com.gryffindor.smartshopping.domain.model.DetectionResult>,
         frameTimestampUs: Long
     ) {
+        detectionFrameCount++
+        // Rate-limited entry log: first frame, then every 30th frame
+        if (detectionFrameCount == 1L || detectionFrameCount % 30 == 0L) {
+            Log.i(TIMING_TAG, "[Pipeline] RECV frame#=$detectionFrameCount " +
+                "detections=${detections.size} frameTs=$frameTimestampUs " +
+                "tracks=${objectTracker.trackCount()}")
+        }
+
         // 1. Track objects
         val trackedObjects = objectTracker.update(detections, frameTimestampUs)
 
@@ -177,6 +191,20 @@ internal class AttentionPipeline(
         val trackingId = evaluation.trackingId ?: return
         val trackedObject = evaluation.trackedObject ?: return
 
+        // --- Timing log: attention trigger fired ---
+        val firstSeenUs = objectTracker.getFirstSeenTimestampUs(trackingId)
+        val trackAgeSinceFirstSeenMs = if (firstSeenUs != null) (frameTimestampUs - firstSeenUs) / 1000L else -1L
+
+        Log.i(TIMING_TAG, buildString {
+            append("[Pipeline] TRIGGER trackingId=$trackingId")
+            append(" | firstSeenUs=$firstSeenUs")
+            append(" | currentFrameUs=$frameTimestampUs")
+            append(" | trackAgeMs=$trackAgeSinceFirstSeenMs")
+            append(" | dwellMs=${evaluation.dwellMs}")
+            append(" | occupancy=${"%.4f".format(evaluation.occupancyRatio)}")
+            append(" | center=(${("%.3f".format(trackedObject.centerX))}, ${("%.3f".format(trackedObject.centerY))})")
+        })
+
         Log.d(TAG, buildString {
             append("Attention trigger: trackingId=$trackingId ")
             append("occupancy=${"%.3f".format(evaluation.occupancyRatio)} ")
@@ -185,6 +213,7 @@ internal class AttentionPipeline(
 
         // 3. Check duplicate suppression
         if (trackingId in suppressedTrackingIds) {
+            Log.i(TIMING_TAG, "[Pipeline] DROP trackingId=$trackingId reason=already_suppressed")
             Log.d(TAG, "Suppressed duplicate for trackingId=$trackingId")
             return
         }
@@ -192,6 +221,7 @@ internal class AttentionPipeline(
         // 4. Lookup exact source frame by timestamp
         val sourceFrame = sourceFrameCache.get(frameTimestampUs)
         if (sourceFrame == null) {
+            Log.i(TIMING_TAG, "[Pipeline] DROP trackingId=$trackingId reason=source_frame_miss frameTs=$frameTimestampUs")
             Log.w(TAG, "Source frame miss: ts=$frameTimestampUs — no candidate, no suppression")
             return
         }
@@ -206,6 +236,7 @@ internal class AttentionPipeline(
             bottom = trackedObject.bottom
         )
         if (cropResult == null) {
+            Log.i(TIMING_TAG, "[Pipeline] DROP trackingId=$trackingId reason=crop_failed")
             Log.w(TAG, "Crop failed for trackingId=$trackingId — no suppression")
             return
         }
@@ -213,6 +244,7 @@ internal class AttentionPipeline(
         // 6. JPEG encode (recycles bitmap)
         val jpegBytes = jpegEncoder.encode(cropResult.bitmap)
         if (jpegBytes == null) {
+            Log.i(TIMING_TAG, "[Pipeline] DROP trackingId=$trackingId reason=jpeg_encode_failed")
             Log.w(TAG, "JPEG encoding failed for trackingId=$trackingId — no suppression")
             return
         }
@@ -237,6 +269,15 @@ internal class AttentionPipeline(
         // 9. Commit suppression ONLY after successful channel insertion
         if (sendResult.isSuccess) {
             suppressedTrackingIds.add(trackingId)
+            Log.i(TIMING_TAG, buildString {
+                append("[Pipeline] CANDIDATE_CREATED trackingId=$trackingId")
+                append(" | capturedAt=$capturedAt")
+                append(" | dwellMs=${evaluation.dwellMs}")
+                append(" | occupancy=${"%.4f".format(evaluation.occupancyRatio)}")
+                append(" | crop=${cropResult.width}x${cropResult.height}")
+                append(" | jpegBytes=${jpegBytes.size}")
+                append(" | trackAgeMs=$trackAgeSinceFirstSeenMs")
+            })
             Log.i(TAG, buildString {
                 append("Candidate emitted: trackingId=$trackingId ")
                 append("crop=${cropResult.width}x${cropResult.height} ")
@@ -244,6 +285,7 @@ internal class AttentionPipeline(
                 append("capturedAt=$capturedAt")
             })
         } else {
+            Log.i(TIMING_TAG, "[Pipeline] DROP trackingId=$trackingId reason=channel_full")
             Log.w(TAG, "Candidate channel send failed — no suppression for trackingId=$trackingId")
         }
     }
