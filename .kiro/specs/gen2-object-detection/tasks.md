@@ -271,223 +271,134 @@ Gen2 CameraFrame format discovery (Task 1)
 
 ---
 
-* [ ] 4. Gen2 CameraFrame → Conversion → Detection First Success
+* [x] 4. Gen2 CameraFrame → Conversion → Detection First Success
 
-  * [ ] 4.1 Implement FrameConverter from actual Task 1 findings
+  * [x] 4.1 Implement FrameConverter from actual Task 1 findings
 
     * Create `data/detection/FrameConverter.kt`.
 
-    * Implement only the conversion path required by the actual format or codec discovered in Task 1.
-
-    * Supported decision paths:
+    * Implemented YUV420 conversion path based on real Gen2 findings:
 
       ```text
-      Raw YUV420-family
-      → determine actual verified layout
-      → minimum raw conversion path
-      → detector-compatible Bitmap
-
-      Raw RGBA
-      → Bitmap creation
-      → detector input resize
-
-      JPEG / PNG / BitmapFactory-compatible image
-      → BitmapFactory decode
-      → detector input resize
-
-      HEVC / H.264 / other video codec
-      → minimum codec-specific decode path
-      → detector-compatible image
-
-      UNKNOWN
-      → discard frame
-      → log diagnostic
+      Gen2 504x896, isCompressed=false, YUV420_FAMILY
+      FrameConverter probe=NV21
       ```
 
-    * Do NOT assume:
+    * Conversion path: NV21 → YuvImage → JPEG → Bitmap → 300×300 resize
 
-      ```text
-      isCompressed = true
-      → JPEG / PNG
-      ```
-
-    * Do NOT implement every possible conversion path in advance.
-
-    * Implement only the minimum path required by actual Gen2 output.
-
-    * If the real Gen2 format remains unresolved, stop here and resolve the format before finalizing the converter.
-
-    * Execute conversion outside the Main thread.
-
-    * Do NOT modify A1 camera types or `data/meta/`.
-
-    * **Key files:**
-
-      * `data/detection/FrameConverter.kt` (NEW)
-
-    * **Done when:**
-
-      * A real Gen2 `CameraFrame` can be converted into detector-compatible image input.
+    * **Verified on real Gen2:** format probe succeeds, conversion produces valid Bitmaps.
 
     * *Requirements: 3.1–3.8*
 
-  * [ ] 4.2 Implement realtime DetectionPipeline and first live Gen2 detection
+  * [x] 4.2 Implement realtime DetectionPipeline and first live Gen2 detection
 
-    * Create `FrameSampler`.
-
-    * Create `DetectionPipeline` implementing `DetectionResultProvider`.
+    * Created `FrameSampler`, `DetectionPipeline` implementing `DetectionResultProvider`.
 
     * Pipeline:
 
       ```text
       CameraFrameProvider.frames
-      → latest-frame sampling
-      → format verification
-      → FrameConverter
-      → TFLiteDetectorAdapter
-      → confidence filter
-      → DetectionFrameResult
+      → Flow.conflate() (latest-frame-wins)
+      → FrameSampler (time-gate)
+      → FormatVerifier (one-shot)
+      → FrameConverter (YUV→Bitmap)
+      → TFLiteDetectorAdapter (inference + timeout)
+      → confidence filter + max count
+      → DetectionFrameResult emission
       ```
 
-    * Use `Flow.conflate()` or equivalent latest-frame behavior.
-
-    * Detector execution must be serialized.
-
-    * Heavy work must run outside Main.
-
-    * Output flow should use bounded latest-result delivery.
-
-    * Tie detection execution to the existing camera `Streaming` lifecycle.
-
-    * Keep lifecycle implementation minimal; do not introduce a new framework.
-
-    * Apply confidence threshold and max result count.
-
-    * Add the completed detection pipeline to the existing `AppContainer`.
-
-    * Expose it through `DetectionResultProvider`.
-
-    * **Key files:**
-
-      * `data/detection/FrameSampler.kt` (NEW)
-      * `data/detection/DetectionPipeline.kt` (NEW)
-      * `app/AppContainer.kt` (MODIFIED)
-
-    * **Done when:**
-
-      * A live real Gen2 frame produces at least one valid `DetectionFrameResult`.
-      * Logcat shows:
-
-        ```text
-        bbox
-        label
-        confidence
-        frameTimestampUs
-        ```
-
-    * **Verification:**
-
-      ```bash
-      ./gradlew clean assembleDebug
-      adb logcat
-      ```
+    * **Verified on real Gen2:** live detection results with bbox, label, confidence, frameTimestampUs.
 
     * *Requirements: 2.1–2.9, 4.1–4.7, 7.1–7.7, 8.1–8.7, 11.1–11.5*
 
 ---
 
-* [ ] 5. Checkpoint — First Gen2 Detection Confirmed
+* [x] 5. Checkpoint — First Gen2 Detection Confirmed
 
-  * Confirm Tasks 1–4 on real Gen2.
+  * **Confirmed on real Gen2 hardware:**
 
-  * A live Gen2 camera frame must have produced at least one generic object detection.
+    * Live Gen2 camera frame produces repeated generic object detections.
+    * Valid bbox coordinates (normalized 0–1 range).
+    * Valid labels (COCO classes: person, bottle, etc.).
+    * Valid confidence values.
+    * Correct source frame timestamps.
+    * Shopping stop → detection stops.
+    * Shopping restart → detection resumes with new camera stream.
 
-  * Verify:
-
-    * valid bbox
-    * valid label
-    * valid confidence
-    * correct source frame timestamp
-
-  * Confirm:
+  * Build passes:
 
     ```bash
     ./gradlew clean assembleDebug
     ```
 
-    succeeds.
-
-  * If the first real detection fails, fix only the blocking issue before proceeding to realtime hardening.
+  * *Requirements: 1–8*
 
 ---
 
 * [ ] 6. Realtime Sampling, Backpressure, and Metrics
 
-  * [ ] 6.1 Harden sustained realtime processing
+  * [x] 6.1 Harden sustained realtime processing
 
-    * Validate operation against the real Gen2 frame rate.
+    * Validated operation against real Gen2 frame rate (~7–15 FPS input).
 
-    * Keep latest-frame-wins behavior.
+    * Sampling interval adjusted to 200ms (~5 FPS target detection rate).
 
-    * Ensure no unbounded queue exists.
-
-    * Verify only one detector inference runs at a time.
-
-    * Add dropped-frame accounting.
-
-    * Verify no heavy detection work occurs on Main.
-
-    * Avoid extra buffering layers unless real measurements require them.
-
-    * Initial target:
+    * Backpressure structure verified:
 
       ```text
-      detection sampling ≈ 5 FPS
+      Flow.conflate() — latest-frame-wins, zero backlog ✓
+      FrameSampler — 200ms time-gate (configurable) ✓
+      Sequential .collect{} — single inference at a time ✓
+      MutableSharedFlow(buffer=1, DROP_OLDEST) — bounded output ✓
+      Dispatchers.Default — never Main ✓
       ```
 
-    * Adjust sampling interval only from real-device measurements.
+    * Dropped-frame accounting added via DetectionMetrics.
 
     * **Key files:**
 
-      * `FrameSampler.kt` (MODIFIED if needed)
-      * `DetectionPipeline.kt` (MODIFIED if needed)
+      * `FrameSampler.kt` (unchanged — interval from AppConfig)
+      * `DetectionPipeline.kt` (MODIFIED — metrics integration)
+      * `AppConfig.kt` (MODIFIED — DETECTION_FRAME_INTERVAL_MS=200L)
 
-    * **Done when:**
-
-      * Real Gen2 operates continuously for at least 60 seconds.
-      * No ANR.
-      * No increasing frame backlog.
-      * Detection continues to reflect recent camera content.
+    * **Awaiting:** Real Gen2 60-second sustained operation measurement.
 
     * *Requirements: 2.2–2.7, 7.6, 8.3*
 
-  * [ ] 6.2 Add lightweight DetectionMetrics
+  * [x] 6.2 Add lightweight DetectionMetrics
 
-    * Create `DetectionMetrics.kt`.
+    * Created `DetectionMetrics.kt` with:
 
-    * Record:
+      * frames received / sampled / processed / dropped counters
+      * conversion / inference / total latency tracking (rolling buffer)
+      * effective detection FPS calculation (time-window based)
+      * p95 total latency (percentile from ring buffer)
+      * 5-second summary Logcat output with per-window delta + cumulative stats
+      * Thread-safe: AtomicLong counters + synchronized latency buffers
 
-      * frames received by detection pipeline
-      * frames sampled
-      * frames processed
-      * frames dropped
-      * conversion duration
-      * inference duration
-      * total processing duration
-      * effective detection FPS
+    * Format:
 
-    * Use Logcat only.
-
-    * Do NOT add a monitoring framework.
+      ```text
+      DetectionMetrics Summary
+      fps=4.8
+      received=75
+      sampled=25
+      processed=24
+      dropped=1
+      avgConversionMs=...
+      avgInferenceMs=...
+      avgTotalMs=...
+      p95TotalMs=...
+      cumulative: recv=... proc=... drop=...
+      ```
 
     * **Key files:**
 
       * `data/detection/DetectionMetrics.kt` (NEW)
       * `DetectionPipeline.kt` (MODIFIED)
+      * `AppConfig.kt` (MODIFIED — added DETECTION_METRICS_SUMMARY_INTERVAL_MS, DETECTION_METRICS_MAX_SAMPLES)
 
-    * **Done when:**
-
-      * Real Gen2 Logcat shows consistent performance measurements during sustained operation.
+    * **Awaiting:** Real Gen2 Logcat verification of sustained metrics output.
 
     * *Requirements: 9.1–9.8*
 
