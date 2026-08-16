@@ -21,6 +21,8 @@ android {
         // Meta Wearables DAT manifest placeholders (Developer Mode: use "0" per official docs)
         manifestPlaceholders["mwdat_application_id"] = "0"
         manifestPlaceholders["mwdat_client_token"] = "0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
