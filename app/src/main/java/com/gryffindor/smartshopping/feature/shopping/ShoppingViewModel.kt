@@ -14,10 +14,16 @@ import com.gryffindor.smartshopping.domain.model.RecognitionResult
 import com.gryffindor.smartshopping.domain.model.SessionProduct
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
 import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import java.util.concurrent.atomic.AtomicBoolean
 
 data class ShoppingUiState(
     val products: List<SessionProduct> = emptyList(),
@@ -34,6 +40,13 @@ class ShoppingViewModel(
 
     companion object {
         private const val TAG = "ShoppingVM"
+        private const val TIMING_TAG = "AttentionTiming"
+
+        /** Cooldown period after a recognition response before accepting the next candidate. */
+        private const val RECOGNITION_COOLDOWN_MS = 800L
+
+        /** Slow fallback must not block one independent fast-path request. */
+        private const val RECOGNITION_MAX_CONCURRENT_REQUESTS = 2
     }
 
     private val _uiState = MutableStateFlow<UiState<ShoppingUiState>>(UiState.Loading)
@@ -45,7 +58,25 @@ class ShoppingViewModel(
     private val recognizedProductIds = mutableSetOf<String>()
 
     /** Whether the shopping session is still active. Guards recognition requests. */
+    @Volatile
     private var sessionActive: Boolean = false
+
+    // --- Bounded recognition concurrency state ---
+
+    /** Serializes recognition registration with session shutdown. Never held across suspension. */
+    private val recognitionStateLock = Any()
+
+    /** Two non-blocking permits: a third candidate is dropped instead of queued. */
+    private val recognitionSlots = Semaphore(RECOGNITION_MAX_CONCURRENT_REQUESTS)
+
+    /** Every request/cooldown Job registered for the active session. */
+    private val recognitionJobs = mutableSetOf<Job>()
+
+    /** Suppresses concurrent requests for the same safely identifiable tracked object. */
+    private val activeRecognitionTrackingIds = mutableSetOf<String>()
+
+    /** A counter prevents overlapping cooldowns from clearing the global guard early. */
+    private var activeRecognitionCooldowns: Int = 0
 
     init {
         // Observe detection pipeline — ensures the lazy DetectionPipeline is accessed
@@ -56,17 +87,19 @@ class ShoppingViewModel(
             }
         }
 
-        // A4: Collect attention candidates and send to Backend for recognition.
+        // A4: Collect attention candidates — non-blocking consumer that drops when busy.
         viewModelScope.launch {
             attentionCandidateProvider.candidates.collect { candidate ->
-                handleAttentionCandidate(candidate)
+                dispatchRecognition(candidate)
             }
         }
     }
 
     fun loadProducts(sessionId: String) {
-        currentSessionId = sessionId
-        sessionActive = true
+        synchronized(recognitionStateLock) {
+            currentSessionId = sessionId
+            sessionActive = true
+        }
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
@@ -83,8 +116,15 @@ class ShoppingViewModel(
     }
 
     fun endShopping(sessionId: String) {
-        // Immediately stop sending recognition requests.
-        sessionActive = false
+        // Registration and shutdown share a lock, so no recognition Job can escape cancellation.
+        val jobsToCancel = synchronized(recognitionStateLock) {
+            sessionActive = false
+            recognitionJobs.toList()
+        }
+        jobsToCancel.forEach(Job::cancel)
+        if (jobsToCancel.isNotEmpty()) {
+            Log.i(TAG, "[A4] recognitions cancelled: session completed count=${jobsToCancel.size}")
+        }
 
         viewModelScope.launch {
             // Camera stop is best-effort — failure does NOT block session completion.
@@ -111,16 +151,151 @@ class ShoppingViewModel(
     }
 
     /**
+     * Non-blocking dispatcher: accepts up to two recognition requests and drops a candidate
+     * immediately when both slots are occupied, the same tracked object is already active,
+     * or the unchanged cooldown is active.
+     * The collector itself never suspends on network I/O — backpressure is resolved by dropping.
+     */
+    private fun dispatchRecognition(candidate: AttentionCandidate) {
+        val dispatchWallMs = System.currentTimeMillis()
+
+        val recognitionJob = synchronized(recognitionStateLock) {
+            val dispatchSessionId = currentSessionId
+            if (dispatchSessionId == null || !sessionActive) {
+                Log.i(TIMING_TAG, buildString {
+                    append("[Dispatch] DROP trackingId=${candidate.trackingId}")
+                    append(" | reason=session_inactive")
+                    append(" | dwellMs=${candidate.dwellMs}")
+                    append(" | occupancy=${"%.4f".format(candidate.occupancyRatio)}")
+                    append(" | wallMs=$dispatchWallMs")
+                })
+                Log.d(TAG, "Candidate ignored: session=$dispatchSessionId, active=$sessionActive")
+                return
+            }
+
+            if (activeRecognitionCooldowns > 0) {
+                Log.i(TIMING_TAG, buildString {
+                    append("[Dispatch] DROP trackingId=${candidate.trackingId}")
+                    append(" | reason=cooldown")
+                    append(" | dwellMs=${candidate.dwellMs}")
+                    append(" | occupancy=${"%.4f".format(candidate.occupancyRatio)}")
+                    append(" | wallMs=$dispatchWallMs")
+                })
+                Log.d(TAG, "[A4] candidate dropped: cooldown")
+                return
+            }
+
+            val trackingId = candidate.trackingId
+            if (trackingId != null && !activeRecognitionTrackingIds.add(trackingId)) {
+                Log.i(TIMING_TAG, buildString {
+                    append("[Dispatch] DROP trackingId=$trackingId")
+                    append(" | reason=same_trackingId_inflight")
+                    append(" | dwellMs=${candidate.dwellMs}")
+                    append(" | occupancy=${"%.4f".format(candidate.occupancyRatio)}")
+                    append(" | wallMs=$dispatchWallMs")
+                })
+                Log.d(TAG, "[A4] candidate dropped: trackingId=$trackingId already in-flight")
+                return
+            }
+
+            if (!recognitionSlots.tryAcquire()) {
+                trackingId?.let(activeRecognitionTrackingIds::remove)
+                Log.i(TIMING_TAG, buildString {
+                    append("[Dispatch] DROP trackingId=$trackingId")
+                    append(" | reason=concurrency_full")
+                    append(" | dwellMs=${candidate.dwellMs}")
+                    append(" | occupancy=${"%.4f".format(candidate.occupancyRatio)}")
+                    append(" | wallMs=$dispatchWallMs")
+                })
+                Log.d(TAG, "[A4] candidate dropped: max concurrent recognitions reached")
+                return
+            }
+
+            Log.i(TIMING_TAG, buildString {
+                append("[Dispatch] ACCEPTED trackingId=$trackingId")
+                append(" | dwellMs=${candidate.dwellMs}")
+                append(" | occupancy=${"%.4f".format(candidate.occupancyRatio)}")
+                append(" | capturedAt=${candidate.capturedAt}")
+                append(" | dispatchWallMs=$dispatchWallMs")
+            })
+
+            // The fallback cleanup handles cancellation after registration but before coroutine entry.
+            val slotReleased = AtomicBoolean(false)
+            lateinit var job: Job
+            job = viewModelScope.launch(start = CoroutineStart.LAZY) {
+                try {
+                    handleAttentionCandidate(candidate, dispatchSessionId, dispatchWallMs)
+                } finally {
+                    val cooldownStarted = releaseRecognitionResources(
+                        trackingId = trackingId,
+                        dispatchSessionId = dispatchSessionId,
+                        slotReleased = slotReleased,
+                        startCooldown = true
+                    )
+                    if (cooldownStarted) {
+                        try {
+                            delay(RECOGNITION_COOLDOWN_MS)
+                        } finally {
+                            synchronized(recognitionStateLock) {
+                                activeRecognitionCooldowns--
+                            }
+                        }
+                    }
+                }
+            }
+
+            recognitionJobs.add(job)
+            job.invokeOnCompletion {
+                releaseRecognitionResources(
+                    trackingId = trackingId,
+                    dispatchSessionId = dispatchSessionId,
+                    slotReleased = slotReleased,
+                    startCooldown = false
+                )
+                synchronized(recognitionStateLock) {
+                    recognitionJobs.remove(job)
+                }
+            }
+            job
+        }
+
+        recognitionJob.start()
+    }
+
+    /**
+     * Releases a permit and tracking reservation exactly once. When request code ran, it also
+     * starts the existing global cooldown while holding the same lock used by dispatch.
+     */
+    private fun releaseRecognitionResources(
+        trackingId: String?,
+        dispatchSessionId: String,
+        slotReleased: AtomicBoolean,
+        startCooldown: Boolean
+    ): Boolean {
+        if (!slotReleased.compareAndSet(false, true)) return false
+
+        return synchronized(recognitionStateLock) {
+            recognitionSlots.release()
+            trackingId?.let(activeRecognitionTrackingIds::remove)
+
+            val shouldStartCooldown =
+                startCooldown && sessionActive && currentSessionId == dispatchSessionId
+            if (shouldStartCooldown) {
+                activeRecognitionCooldowns++
+            }
+            shouldStartCooldown
+        }
+    }
+
+    /**
      * A4 core: sends AttentionCandidate to Backend /recognize,
      * adds MATCHED products to the product card list (dedup by productId).
      */
-    private suspend fun handleAttentionCandidate(candidate: AttentionCandidate) {
-        val sessionId = currentSessionId
-        if (sessionId == null || !sessionActive) {
-            Log.d(TAG, "Candidate ignored: session=${sessionId}, active=$sessionActive")
-            return
-        }
-
+    private suspend fun handleAttentionCandidate(
+        candidate: AttentionCandidate,
+        dispatchSessionId: String,
+        dispatchWallMs: Long
+    ) {
         Log.i(TAG, buildString {
             append("[A4] AttentionCandidate received: ")
             append("trackingId=${candidate.trackingId} ")
@@ -131,8 +306,32 @@ class ShoppingViewModel(
         })
 
         try {
-            Log.d(TAG, "[A4] recognize request start: sessionId=$sessionId")
-            val result = shoppingRepository.recognize(sessionId, candidate)
+            val recognizeStartMs = System.currentTimeMillis()
+            Log.i(TIMING_TAG, buildString {
+                append("[Recognize] START trackingId=${candidate.trackingId}")
+                append(" | sessionId=$dispatchSessionId")
+                append(" | latencySinceDispatchMs=${recognizeStartMs - dispatchWallMs}")
+            })
+            Log.d(TAG, "[A4] recognize request start: sessionId=$dispatchSessionId")
+            val result = shoppingRepository.recognize(dispatchSessionId, candidate)
+            val recognizeEndMs = System.currentTimeMillis()
+
+            Log.i(TIMING_TAG, buildString {
+                append("[Recognize] END trackingId=${candidate.trackingId}")
+                append(" | networkMs=${recognizeEndMs - recognizeStartMs}")
+                append(" | totalSinceDispatchMs=${recognizeEndMs - dispatchWallMs}")
+                append(" | result=${result::class.simpleName}")
+            })
+
+            // Session lifecycle guard: ignore stale results
+            val isCurrentSession = synchronized(recognitionStateLock) {
+                sessionActive && currentSessionId == dispatchSessionId
+            }
+            if (!isCurrentSession) {
+                Log.i(TIMING_TAG, "[Recognize] STALE trackingId=${candidate.trackingId} | result ignored (session ended)")
+                Log.i(TAG, "[A4] stale recognition result ignored")
+                return
+            }
 
             when (result) {
                 is RecognitionResult.Matched -> handleMatched(result)
@@ -143,7 +342,16 @@ class ShoppingViewModel(
                     Log.i(TAG, "[A4] recognize result=UNKNOWN")
                 }
             }
+        } catch (e: CancellationException) {
+            Log.i(TIMING_TAG, "[Recognize] CANCELLED trackingId=${candidate.trackingId}")
+            Log.i(TAG, "[A4] recognize cancelled")
+            throw e
         } catch (e: Exception) {
+            Log.i(TIMING_TAG, buildString {
+                append("[Recognize] ERROR trackingId=${candidate.trackingId}")
+                append(" | error=${e.javaClass.simpleName}: ${e.message}")
+                append(" | elapsedMs=${System.currentTimeMillis() - dispatchWallMs}")
+            })
             Log.e(TAG, "[A4] recognize network error: ${e.javaClass.simpleName} - ${e.message}")
         }
     }
