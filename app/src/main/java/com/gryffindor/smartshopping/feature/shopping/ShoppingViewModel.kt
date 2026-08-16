@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.core.common.UiState
+import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
 import com.gryffindor.smartshopping.domain.model.SessionProduct
@@ -24,7 +25,8 @@ class ShoppingViewModel(
     private val shoppingRepository: ShoppingRepository,
     private val sessionRepository: SessionRepository,
     private val cameraFrameProvider: CameraFrameProvider,
-    private val detectionResultProvider: DetectionResultProvider
+    private val detectionResultProvider: DetectionResultProvider,
+    private val attentionCandidateProvider: AttentionCandidateProvider
 ) : ViewModel() {
 
     companion object {
@@ -44,6 +46,21 @@ class ShoppingViewModel(
                 // Detection results are logged by DetectionPipeline itself.
                 // Future: feed into AttentionPolicy / UI.
                 Log.d(TAG, "Detection received: ts=${result.frameTimestampUs}, count=${result.detections.size}")
+            }
+        }
+
+        // A3: Collect attention candidates (log/verify for now; A4 will send to Backend).
+        viewModelScope.launch {
+            attentionCandidateProvider.candidates.collect { candidate ->
+                Log.i(TAG, buildString {
+                    append("AttentionCandidate received: ")
+                    append("trackingId=${candidate.trackingId} ")
+                    append("occupancy=${"%.3f".format(candidate.occupancyRatio)} ")
+                    append("dwell=${candidate.dwellMs}ms ")
+                    append("crop=${candidate.cropWidth}x${candidate.cropHeight} ")
+                    append("jpeg=${candidate.jpegBytes.size} bytes ")
+                    append("capturedAt=${candidate.capturedAt}")
+                })
             }
         }
     }
@@ -92,11 +109,18 @@ class ShoppingViewModel(
         private val shoppingRepository: ShoppingRepository,
         private val sessionRepository: SessionRepository,
         private val cameraFrameProvider: CameraFrameProvider,
-        private val detectionResultProvider: DetectionResultProvider
+        private val detectionResultProvider: DetectionResultProvider,
+        private val attentionCandidateProvider: AttentionCandidateProvider
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ShoppingViewModel(shoppingRepository, sessionRepository, cameraFrameProvider, detectionResultProvider) as T
+            return ShoppingViewModel(
+                shoppingRepository,
+                sessionRepository,
+                cameraFrameProvider,
+                detectionResultProvider,
+                attentionCandidateProvider
+            ) as T
         }
     }
 }

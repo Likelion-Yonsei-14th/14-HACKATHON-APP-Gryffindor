@@ -53,7 +53,8 @@ fun AppNavGraph(
                     appContainer.shoppingRepository,
                     appContainer.sessionRepository,
                     appContainer.cameraFrameProvider,
-                    appContainer.detectionResultProvider
+                    appContainer.detectionResultProvider,
+                    appContainer.attentionCandidateProvider
                 )
             )
             ShoppingScreen(

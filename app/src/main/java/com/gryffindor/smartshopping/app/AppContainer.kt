@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.app
 
 import android.content.Context
+import com.gryffindor.smartshopping.data.attention.AttentionPipeline
 import com.gryffindor.smartshopping.data.detection.DetectionPipeline
 import com.gryffindor.smartshopping.data.meta.MetaCameraSource
 import com.gryffindor.smartshopping.data.repository.FakeChecklistRepository
@@ -8,6 +9,7 @@ import com.gryffindor.smartshopping.data.repository.FakeRecommendationRepository
 import com.gryffindor.smartshopping.data.repository.FakeSessionRepository
 import com.gryffindor.smartshopping.data.repository.FakeShoppingRepository
 import com.gryffindor.smartshopping.data.repository.FakeTravelRepository
+import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
 import com.gryffindor.smartshopping.domain.repository.ChecklistRepository
@@ -48,4 +50,13 @@ class AppContainer(private val applicationContext: Context) {
         )
     }
     val detectionResultProvider: DetectionResultProvider get() = detectionPipeline
+
+    // A3: Attention pipeline — auto-starts/stops with camera streaming state.
+    private val attentionPipeline: AttentionPipeline by lazy {
+        AttentionPipeline(
+            cameraFrameProvider = cameraFrameProvider,
+            detectionResultProvider = detectionResultProvider
+        )
+    }
+    val attentionCandidateProvider: AttentionCandidateProvider get() = attentionPipeline
 }
