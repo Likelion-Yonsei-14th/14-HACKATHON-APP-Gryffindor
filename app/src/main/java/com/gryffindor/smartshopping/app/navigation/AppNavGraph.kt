@@ -60,7 +60,9 @@ fun AppNavGraph(
                 viewModel = viewModel,
                 sessionId = sessionId,
                 onNavigateToReview = {
-                    navController.navigate(Routes.review(sessionId))
+                    navController.navigate(Routes.review(sessionId)) {
+                        popUpTo(Routes.HOME) { inclusive = false }
+                    }
                 }
             )
         }
