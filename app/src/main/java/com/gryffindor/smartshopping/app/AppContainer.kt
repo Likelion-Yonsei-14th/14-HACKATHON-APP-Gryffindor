@@ -8,9 +8,9 @@ import com.gryffindor.smartshopping.data.meta.MetaCameraSource
 import com.gryffindor.smartshopping.data.remote.api.ShoppingApiService
 import com.gryffindor.smartshopping.data.repository.FakeChecklistRepository
 import com.gryffindor.smartshopping.data.repository.FakeRecommendationRepository
-import com.gryffindor.smartshopping.data.repository.FakeShoppingRepository
 import com.gryffindor.smartshopping.data.repository.FakeTravelRepository
 import com.gryffindor.smartshopping.data.repository.RemoteSessionRepository
+import com.gryffindor.smartshopping.data.repository.RemoteShoppingRepository
 import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
@@ -32,9 +32,9 @@ class AppContainer(private val applicationContext: Context) {
         retrofit.create(ShoppingApiService::class.java)
     }
 
-    // Repositories — SessionRepository now uses real Backend (A4 Checkpoint 1).
+    // Repositories — SessionRepository and ShoppingRepository now use real Backend (A4).
     val sessionRepository: SessionRepository by lazy { RemoteSessionRepository(apiService) }
-    val shoppingRepository: ShoppingRepository = FakeShoppingRepository()
+    val shoppingRepository: ShoppingRepository by lazy { RemoteShoppingRepository(apiService) }
     val checklistRepository: ChecklistRepository = FakeChecklistRepository()
     val recommendationRepository: RecommendationRepository = FakeRecommendationRepository()
     val travelRepository: TravelRepository = FakeTravelRepository()
