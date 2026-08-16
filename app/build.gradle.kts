@@ -18,9 +18,9 @@ android {
 
         buildConfigField("String", "BACKEND_BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
 
-        // Meta Wearables DAT manifest placeholders (empty for Developer Mode / Mock Device)
-        manifestPlaceholders["mwdat_application_id"] = ""
-        manifestPlaceholders["mwdat_client_token"] = ""
+        // Meta Wearables DAT manifest placeholders (Developer Mode: use "0" per official docs)
+        manifestPlaceholders["mwdat_application_id"] = "0"
+        manifestPlaceholders["mwdat_client_token"] = "0"
     }
 
     buildFeatures {
