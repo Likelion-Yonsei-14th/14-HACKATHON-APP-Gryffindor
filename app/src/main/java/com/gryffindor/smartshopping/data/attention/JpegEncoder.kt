@@ -39,17 +39,25 @@ internal open class JpegEncoder(
         return try {
             doEncode(bitmap)
         } catch (e: Exception) {
-            Log.e(TAG, "JPEG encoding failed: ${e.message}")
+            Log.e(TAG, "JPEG encoding failed: ${e.javaClass.simpleName}: ${e.message}")
             // Ensure bitmap is recycled even on unexpected error
-            try { bitmap.recycle() } catch (_: Exception) {}
+            try { if (!bitmap.isRecycled) bitmap.recycle() } catch (_: Exception) {}
             null
         }
     }
 
     private fun doEncode(bitmap: Bitmap): ByteArray? {
+        Log.d(TAG, "JpegEncoder entry: ${bitmap.width}x${bitmap.height} isRecycled=${bitmap.isRecycled}")
+
+        if (bitmap.isRecycled) {
+            Log.e(TAG, "Cannot encode recycled bitmap!")
+            return null
+        }
+
         outputStream.reset()
 
         val success = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+        Log.d(TAG, "JpegEncoder compress result=$success bytes=${outputStream.size()}")
         bitmap.recycle()
 
         if (!success) {

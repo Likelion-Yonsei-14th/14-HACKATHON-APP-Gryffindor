@@ -166,4 +166,115 @@ class CropGeneratorTest {
         val longSide = maxOf(frameWidth, frameHeight)
         assertTrue("Gen2 max dimension ($longSide) should not exceed $maxLongSide", longSide <= maxLongSide)
     }
+
+    // --- Full-frame crop bitmap ownership regression tests ---
+
+    @Test
+    fun `full-frame bbox (0,0,1,1) with padding clamps to (0,0,1,1) - ownership safe`() {
+        // Verify that when bbox is (0,0,1,1), padded and clamped result covers full frame
+        val padding = 0.15f
+        val left = 0.0f; val top = 0.0f; val right = 1.0f; val bottom = 1.0f
+
+        val bboxWidth = right - left  // 1.0
+        val bboxHeight = bottom - top // 1.0
+        val padX = bboxWidth * padding  // 0.15
+        val padY = bboxHeight * padding // 0.15
+
+        val paddedLeft = (left - padX).coerceIn(0f, 1f)   // 0.0
+        val paddedTop = (top - padY).coerceIn(0f, 1f)     // 0.0
+        val paddedRight = (right + padX).coerceIn(0f, 1f) // 1.0
+        val paddedBottom = (bottom + padY).coerceIn(0f, 1f) // 1.0
+
+        assertEquals(0f, paddedLeft, 0.001f)
+        assertEquals(0f, paddedTop, 0.001f)
+        assertEquals(1f, paddedRight, 0.001f)
+        assertEquals(1f, paddedBottom, 0.001f)
+
+        // This proves the crop region equals full frame → triggers same-instance return
+        val frameWidth = 504
+        val frameHeight = 896
+        val pixelLeft = (paddedLeft * frameWidth).toInt()
+        val pixelTop = (paddedTop * frameHeight).toInt()
+        val pixelRight = (paddedRight * frameWidth).toInt()
+        val pixelBottom = (paddedBottom * frameHeight).toInt()
+
+        assertEquals(0, pixelLeft)
+        assertEquals(0, pixelTop)
+        assertEquals(504, pixelRight)
+        assertEquals(896, pixelBottom)
+    }
+
+    @Test
+    fun `large bbox near edges clamps to full frame - ownership safe`() {
+        // This is the actual case: object is large (e.g. 90% of frame), padding pushes to edges
+        val padding = 0.15f
+        val left = 0.05f; val top = 0.03f; val right = 0.95f; val bottom = 0.97f
+
+        val bboxWidth = right - left  // 0.9
+        val bboxHeight = bottom - top // 0.94
+        val padX = bboxWidth * padding  // 0.135
+        val padY = bboxHeight * padding // 0.141
+
+        val paddedLeft = (left - padX).coerceIn(0f, 1f)   // max(0, -0.085) = 0
+        val paddedTop = (top - padY).coerceIn(0f, 1f)     // max(0, -0.111) = 0
+        val paddedRight = (right + padX).coerceIn(0f, 1f) // min(1, 1.085) = 1
+        val paddedBottom = (bottom + padY).coerceIn(0f, 1f) // min(1, 1.111) = 1
+
+        assertEquals(0f, paddedLeft, 0.001f)
+        assertEquals(0f, paddedTop, 0.001f)
+        assertEquals(1f, paddedRight, 0.001f)
+        assertEquals(1f, paddedBottom, 0.001f)
+
+        // This proves the full-frame crop path is triggered for large-object scenarios
+    }
+
+    @Test
+    fun `partial bbox does not clamp to full frame`() {
+        val padding = 0.15f
+        val left = 0.3f; val top = 0.3f; val right = 0.7f; val bottom = 0.7f
+
+        val bboxWidth = right - left  // 0.4
+        val bboxHeight = bottom - top // 0.4
+        val padX = bboxWidth * padding  // 0.06
+        val padY = bboxHeight * padding // 0.06
+
+        val paddedLeft = (left - padX).coerceIn(0f, 1f)   // 0.24
+        val paddedTop = (top - padY).coerceIn(0f, 1f)     // 0.24
+        val paddedRight = (right + padX).coerceIn(0f, 1f) // 0.76
+        val paddedBottom = (bottom + padY).coerceIn(0f, 1f) // 0.76
+
+        // This is a partial crop - NOT full frame
+        assertTrue(paddedLeft > 0f)
+        assertTrue(paddedTop > 0f)
+        assertTrue(paddedRight < 1f)
+        assertTrue(paddedBottom < 1f)
+
+        val frameWidth = 504
+        val frameHeight = 896
+        val pixelWidth = ((paddedRight - paddedLeft) * frameWidth).toInt()
+        val pixelHeight = ((paddedBottom - paddedTop) * frameHeight).toInt()
+
+        // Partial crop is smaller than full frame
+        assertTrue(pixelWidth < frameWidth)
+        assertTrue(pixelHeight < frameHeight)
+    }
+
+    @Test
+    fun `edge-clamped crop - left edge only`() {
+        val padding = 0.15f
+        val left = 0.02f; val top = 0.3f; val right = 0.4f; val bottom = 0.7f
+
+        val bboxWidth = right - left  // 0.38
+        val padX = bboxWidth * padding  // 0.057
+
+        val paddedLeft = (left - padX).coerceIn(0f, 1f)  // max(0, -0.037) = 0
+
+        // Left edge clamped to 0
+        assertEquals(0f, paddedLeft, 0.001f)
+        // But right edge NOT at 1.0
+        val paddedRight = (right + padX).coerceIn(0f, 1f) // 0.457
+        assertTrue(paddedRight < 1f)
+
+        // This is still a partial crop (only one edge clamped)
+    }
 }

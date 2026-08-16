@@ -111,6 +111,12 @@ internal open class CropGenerator(
         val cropWidth = pixelRight - pixelLeft
         val cropHeight = pixelBottom - pixelTop
 
+        Log.d(TAG, buildString {
+            append("CropGenerator: rect=($pixelLeft,$pixelTop,$pixelRight,$pixelBottom) ")
+            append("output=${cropWidth}x${cropHeight} ")
+            append("frame=${frameWidth}x${frameHeight}")
+        })
+
         // 4. Validate minimum short-side requirement
         val shortSide = min(cropWidth, cropHeight)
         if (shortSide < minShortSide) {
@@ -120,8 +126,25 @@ internal open class CropGenerator(
         }
 
         // 5. Crop region from full-resolution Bitmap
-        val croppedBitmap = Bitmap.createBitmap(fullBitmap, pixelLeft, pixelTop, cropWidth, cropHeight)
-        fullBitmap.recycle()
+        val rawCrop = Bitmap.createBitmap(fullBitmap, pixelLeft, pixelTop, cropWidth, cropHeight)
+
+        // CRITICAL: Bitmap.createBitmap() may return the source bitmap itself
+        // when the crop region equals the entire source (full-frame clamp).
+        // In that case, we must NOT recycle fullBitmap because it IS the crop.
+        val croppedBitmap = if (rawCrop === fullBitmap) {
+            // Full-frame crop case: create an independent copy so we have clear ownership
+            Log.d(TAG, "Full-frame crop detected (crop === source), creating independent copy")
+            val copy = rawCrop.copy(rawCrop.config ?: Bitmap.Config.ARGB_8888, false)
+            fullBitmap.recycle()
+            copy ?: run {
+                Log.e(TAG, "Bitmap.copy() returned null for full-frame crop")
+                return null
+            }
+        } else {
+            // Normal partial crop: safe to recycle source
+            fullBitmap.recycle()
+            rawCrop
+        }
 
         // 6. Downscale if long side exceeds maximum
         val longSide = max(croppedBitmap.width, croppedBitmap.height)
@@ -139,6 +162,8 @@ internal open class CropGenerator(
         // Capture dimensions BEFORE any potential recycle by caller
         val resultWidth = finalBitmap.width
         val resultHeight = finalBitmap.height
+
+        Log.d(TAG, "CropGenerator output: ${resultWidth}x${resultHeight} isRecycled=${finalBitmap.isRecycled}")
 
         return CropResult(
             bitmap = finalBitmap,

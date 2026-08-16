@@ -120,6 +120,10 @@ class ShoppingFlowIsolationTest {
         ) {
             // no-op
         }
+
+        override suspend fun recognize(sessionId: String, candidate: AttentionCandidate): com.gryffindor.smartshopping.domain.model.RecognitionResult {
+            return com.gryffindor.smartshopping.domain.model.RecognitionResult.Unknown
+        }
     }
 
     private class FailingCameraFrameProvider : CameraFrameProvider {
