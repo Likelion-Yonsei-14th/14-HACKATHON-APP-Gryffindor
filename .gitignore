@@ -360,3 +360,6 @@ obj/
 !/gradle/wrapper/gradle-wrapper.jar
 
 # End of https://www.toptal.com/developers/gitignore/api/android,kotlin,gradle,macos,intellij,androidstudio,java
+
+# Python virtual environment
+.venv/
