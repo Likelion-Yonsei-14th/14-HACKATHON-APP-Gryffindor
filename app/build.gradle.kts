@@ -53,6 +53,11 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    // Prevent compression of TFLite model files (required for memory-mapped loading)
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
@@ -96,7 +101,16 @@ dependencies {
     implementation("com.meta.wearable:mwdat-camera:0.9.0")
     debugImplementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
 
+    // TensorFlow Lite — Object Detection (confined to data/detection/)
+    implementation("org.tensorflow:tensorflow-lite:2.16.1")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+
     // Unit Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+
+    // Instrumented Testing
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 }
