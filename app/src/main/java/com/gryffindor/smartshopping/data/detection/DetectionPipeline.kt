@@ -65,6 +65,7 @@ internal class DetectionPipeline(
     private val formatVerifier = FormatVerifier()
     private val frameConverter = FrameConverter()
     private val detector = TFLiteDetectorAdapter(context)
+    private val metrics = DetectionMetrics()
 
     private var detectionJob: Job? = null
 
@@ -98,6 +99,7 @@ internal class DetectionPipeline(
             }
 
             frameSampler.reset()
+            metrics.reset()
             _pipelineState.value = DetectionPipelineState.Running
 
             detectionJob = scope.launch {
@@ -133,31 +135,43 @@ internal class DetectionPipeline(
             cameraFrameProvider.frames
                 .conflate()
                 .collect { frame ->
+                    // Track every frame that reaches the pipeline (post-conflate)
+                    metrics.recordFrameReceived()
+
                     // Rate limiting
                     if (!frameSampler.shouldProcess(frame)) return@collect
 
-                    val startTime = System.nanoTime()
+                    metrics.recordFrameSampled()
+
+                    val totalStartNs = System.nanoTime()
 
                     // One-time format verification (logs diagnostics)
                     formatVerifier.verifyIfNeeded(frame)
 
                     // Convert CameraFrame → Bitmap
+                    val conversionStartNs = System.nanoTime()
                     val bitmap = frameConverter.convert(frame)
+                    val conversionMs = (System.nanoTime() - conversionStartNs) / 1_000_000
+
                     if (bitmap == null) {
                         Log.w(TAG, "Frame conversion failed, skipping frame ts=${frame.timestampUs}")
+                        metrics.recordFrameDropped()
                         return@collect
                     }
 
                     // Run inference with timeout
+                    val inferenceStartNs = System.nanoTime()
                     val rawResults = withTimeoutOrNull(AppConfig.DETECTION_INFERENCE_TIMEOUT_MS) {
                         detector.detect(bitmap)
                     }
+                    val inferenceMs = (System.nanoTime() - inferenceStartNs) / 1_000_000
 
                     // Recycle bitmap after inference
                     bitmap.recycle()
 
                     if (rawResults == null) {
                         Log.w(TAG, "Inference timeout for frame ts=${frame.timestampUs}")
+                        metrics.recordFrameDropped()
                         return@collect
                     }
 
@@ -165,6 +179,11 @@ internal class DetectionPipeline(
                     val filtered = rawResults
                         .filter { it.confidence >= AppConfig.DETECTION_CONFIDENCE_THRESHOLD }
                         .take(AppConfig.DETECTION_MAX_PER_FRAME)
+
+                    val totalMs = (System.nanoTime() - totalStartNs) / 1_000_000
+
+                    // Record successful processing metrics
+                    metrics.recordFrameProcessed(conversionMs, inferenceMs, totalMs)
 
                     val result = DetectionFrameResult(
                         frameTimestampUs = frame.timestampUs,
@@ -175,10 +194,9 @@ internal class DetectionPipeline(
                     _detections.tryEmit(result)
 
                     // Log detection results for live verification
-                    val e2eMs = (System.nanoTime() - startTime) / 1_000_000
                     if (filtered.isNotEmpty()) {
                         Log.i(TAG, buildString {
-                            append("Detection [${e2eMs}ms] frame=${frame.timestampUs} count=${filtered.size}\n")
+                            append("Detection [${totalMs}ms] frame=${frame.timestampUs} count=${filtered.size}\n")
                             filtered.forEach { det ->
                                 append("  → ${det.label} conf=${"%.2f".format(det.confidence)} " +
                                     "bbox(${("%.3f".format(det.left))}, ${("%.3f".format(det.top))}, " +
@@ -186,7 +204,7 @@ internal class DetectionPipeline(
                             }
                         })
                     } else {
-                        Log.d(TAG, "Detection [${e2eMs}ms] frame=${frame.timestampUs} count=0 (no objects above threshold)")
+                        Log.d(TAG, "Detection [${totalMs}ms] frame=${frame.timestampUs} count=0 (no objects above threshold)")
                     }
                 }
         } catch (e: kotlinx.coroutines.CancellationException) {

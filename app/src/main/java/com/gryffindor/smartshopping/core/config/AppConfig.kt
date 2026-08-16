@@ -9,7 +9,7 @@ object AppConfig {
     // ===== Detection Pipeline =====
 
     /** Minimum interval between frame deliveries to detector (ms). Range: 66–1000. */
-    const val DETECTION_FRAME_INTERVAL_MS: Long = 100L  // ~10 FPS max detection rate
+    const val DETECTION_FRAME_INTERVAL_MS: Long = 200L  // ~5 FPS target detection rate
 
     /** Minimum confidence threshold for emitting detections. */
     const val DETECTION_CONFIDENCE_THRESHOLD: Float = 0.3f
@@ -35,4 +35,10 @@ object AppConfig {
 
     /** Rolling window for FPS calculation (ms). */
     const val DETECTION_METRICS_WINDOW_MS: Long = 5000L
+
+    /** Metrics summary log interval (ms). */
+    const val DETECTION_METRICS_SUMMARY_INTERVAL_MS: Long = 5000L
+
+    /** Maximum samples retained for p95 latency calculation. */
+    const val DETECTION_METRICS_MAX_SAMPLES: Int = 200
 }
