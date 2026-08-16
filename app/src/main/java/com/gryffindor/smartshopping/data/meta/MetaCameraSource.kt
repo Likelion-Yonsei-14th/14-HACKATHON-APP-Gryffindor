@@ -15,6 +15,8 @@ import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.selectors.AutoDeviceSelector
 import com.meta.wearable.dat.core.session.DeviceSession
 import com.meta.wearable.dat.core.session.DeviceSessionState
+import com.meta.wearable.dat.core.types.Permission
+import com.meta.wearable.dat.core.types.PermissionStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,12 @@ class MetaCameraSource(
         private const val DEFAULT_FRAME_RATE = 15
         private const val SESSION_START_TIMEOUT_MS = 15_000L
     }
+
+    /**
+     * Set by the Activity after creation. Used to request DAT camera permission
+     * via Meta AI when permission is not yet granted.
+     */
+    var permissionRequester: WearablePermissionRequester? = null
 
     // --- SDK-independent public state ---
 
@@ -137,18 +145,21 @@ class MetaCameraSource(
             // Step 2: Start session and await STARTED state
             awaitSessionStarted(session)
 
-            // Step 3: Add camera capability (only after STARTED)
+            // Step 3: Check/request DAT camera permission
+            ensureCameraPermission()
+
+            // Step 4: Add camera capability (only after STARTED + permission)
             val camera = addCameraCapability(session)
             activeCamera = camera
 
             _cameraState.value = CameraState.Ready
 
-            // Step 4: Start the camera stream
+            // Step 5: Start the camera stream
             startStream(camera.stream)
 
             _cameraState.value = CameraState.Streaming
 
-            // Step 5: Collect frames — suspends until cancellation or stream end
+            // Step 6: Collect frames — suspends until cancellation or stream end
             collectFrames(camera)
 
         } catch (e: CancellationException) {
@@ -227,6 +238,41 @@ class MetaCameraSource(
             else -> {
                 throw RuntimeException("Unexpected session state during startup: $reachedState")
             }
+        }
+    }
+
+    /**
+     * Check DAT camera permission. If not granted, request it via the injected requester.
+     * Throws if permission is denied or no requester is available.
+     *
+     * Per official DAT docs:
+     *   Wearables.checkPermissionStatus(Permission.CAMERA) → PermissionStatus.Granted/Denied
+     *   If not granted, launch Wearables.RequestPermissionContract via Activity.
+     */
+    private suspend fun ensureCameraPermission() {
+        Log.i(TAG, "Checking DAT camera permission...")
+
+        val checkResult = Wearables.checkPermissionStatus(Permission.CAMERA)
+        val currentStatus = checkResult.getOrNull()
+
+        if (currentStatus is PermissionStatus.Granted) {
+            Log.i(TAG, "DAT camera permission already granted")
+            return
+        }
+
+        Log.i(TAG, "DAT camera permission not granted (status=$currentStatus), requesting...")
+
+        val requester = permissionRequester
+            ?: throw RuntimeException(
+                "DAT camera permission denied and no permissionRequester available. " +
+                "Ensure MetaCameraSource is created with a WearablePermissionRequester."
+            )
+
+        val granted = requester.requestCameraPermission()
+        if (granted) {
+            Log.i(TAG, "DAT camera permission granted by user")
+        } else {
+            throw RuntimeException("DAT camera permission denied by user")
         }
     }
 

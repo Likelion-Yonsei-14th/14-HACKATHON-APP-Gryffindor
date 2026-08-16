@@ -34,5 +34,6 @@ class AppContainer {
     val travelRepository: TravelRepository = FakeTravelRepository()
 
     // A1: Camera input — SDK-independent boundary exposed to ViewModels.
-    val cameraFrameProvider: CameraFrameProvider by lazy { MetaCameraSource() }
+    val metaCameraSource: MetaCameraSource by lazy { MetaCameraSource() }
+    val cameraFrameProvider: CameraFrameProvider get() = metaCameraSource
 }
