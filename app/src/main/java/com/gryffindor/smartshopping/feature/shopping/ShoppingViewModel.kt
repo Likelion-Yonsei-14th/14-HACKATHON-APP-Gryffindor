@@ -5,13 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.core.common.UiState
+import com.gryffindor.smartshopping.data.detection.FormatVerifier
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.model.SessionProduct
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
 import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class ShoppingUiState(
@@ -33,6 +36,20 @@ class ShoppingViewModel(
     val uiState: StateFlow<UiState<ShoppingUiState>> = _uiState.asStateFlow()
 
     private var currentSessionId: String? = null
+
+    // A2-Task1: One-shot format diagnostic — collects first frame and runs FormatVerifier.
+    private val formatVerifier = FormatVerifier()
+
+    init {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val frame = cameraFrameProvider.frames.first()
+                formatVerifier.verifyIfNeeded(frame)
+            } catch (e: Exception) {
+                Log.w(TAG, "FormatVerifier one-shot diagnostic failed", e)
+            }
+        }
+    }
 
     fun loadProducts(sessionId: String) {
         currentSessionId = sessionId
