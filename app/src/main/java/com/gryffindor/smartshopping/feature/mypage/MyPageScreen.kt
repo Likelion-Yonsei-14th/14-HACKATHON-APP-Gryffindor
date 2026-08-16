@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,8 +26,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -71,6 +74,7 @@ fun MyPageScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             LooketTopBar(title = stringResource(R.string.mypage_title))
+            Spacer(Modifier.height(32.dp))
 
             Column(
                 modifier = Modifier
@@ -133,17 +137,28 @@ private fun ProfileSection(
     }
 }
 
+// Figma: linear-gradient(92.37deg, BrandPrimary 7.015%, BrandGradientEnd 113.15%)
+// — 거의 수평(왼쪽→오른쪽)이라 92.37°를 90°로 근사해도 80dp 원 안에서는 육안상 차이가 없다.
 @Composable
 private fun ProfileAvatar() {
-    val gradient = Brush.linearGradient(
-        colors = listOf(LooketColors.BrandPrimary, LooketColors.BrandGradientEnd),
-    )
     Box(
         modifier = Modifier
             .size(80.dp)
-            .shadow(elevation = 8.dp, shape = CircleShape)
+            .shadow(
+                elevation = 8.dp,
+                shape = CircleShape,
+                ambientColor = Color.Black.copy(alpha = 0.15f),
+                spotColor = Color.Black.copy(alpha = 0.15f),
+            )
             .clip(CircleShape)
-            .background(gradient),
+            .drawWithCache {
+                val brush = Brush.linearGradient(
+                    colors = listOf(LooketColors.BrandPrimary, LooketColors.BrandGradientEnd),
+                    start = Offset(0f, size.height / 2f),
+                    end = Offset(size.width, size.height / 2f),
+                )
+                onDrawBehind { drawRect(brush) }
+            },
     )
 }
 
@@ -159,7 +174,7 @@ private fun MyPageMenuRow(text: String, onClick: () -> Unit) {
     ) {
         Text(text = text, style = LooketTextStyles.titleTwo, color = LooketColors.TextPrimary)
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            painter = painterResource(R.drawable.ic_chevron_right),
             contentDescription = null,
             tint = LooketColors.TextPrimary,
         )
