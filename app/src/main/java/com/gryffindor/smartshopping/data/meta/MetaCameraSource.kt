@@ -166,6 +166,10 @@ class MetaCameraSource(
             throw RuntimeException("Wearables SDK not initialized — call WearablesInitializer.initialize() first")
         }
 
+        // Diagnostic: log registration/device state before session creation
+        Log.i(TAG, "createAndStartSession: logging pre-start diagnostics")
+        WearablesInitializer.logDiagnostics()
+
         val deviceSelector = AutoDeviceSelector()
         val result = Wearables.createSession(deviceSelector)
 
@@ -174,7 +178,9 @@ class MetaCameraSource(
                 "Failed to create DeviceSession: ${result.errorOrNull()?.description ?: "unknown error"}"
             )
 
+        Log.i(TAG, "DeviceSession created, calling start()")
         session.start()
+        Log.i(TAG, "DeviceSession start() called")
         return session
     }
 

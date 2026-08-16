@@ -15,19 +15,14 @@ import com.gryffindor.smartshopping.data.meta.WearablesInitializer
 
 class MainActivity : ComponentActivity() {
 
-    companion object {
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.INTERNET
-        )
-    }
+    private var wearablesSetupDone = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         val allGranted = results.entries.all { it.value }
         if (allGranted) {
-            initializeWearables()
+            setupWearables()
         }
     }
 
@@ -47,28 +42,34 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
 
-    override fun onStart() {
-        super.onStart()
-        // Check and request permissions, then initialize DAT SDK.
-        if (hasRequiredPermissions()) {
-            initializeWearables()
+        // Request BLUETOOTH_CONNECT once during Activity creation.
+        // Only proceed with Wearables setup after permission is granted.
+        if (isBluetoothConnectGranted()) {
+            setupWearables()
         } else {
-            permissionLauncher.launch(REQUIRED_PERMISSIONS)
+            permissionLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
         }
     }
 
-    private fun hasRequiredPermissions(): Boolean {
-        return REQUIRED_PERMISSIONS.all { permission ->
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
-        }
+    private fun isBluetoothConnectGranted(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, Manifest.permission.BLUETOOTH_CONNECT
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun initializeWearables() {
-        // Initialize DAT SDK (idempotent — safe to call multiple times)
+    /**
+     * Initialize and register Wearables SDK exactly once.
+     * Called only after BLUETOOTH_CONNECT is confirmed granted.
+     */
+    private fun setupWearables() {
+        if (wearablesSetupDone) return
+        wearablesSetupDone = true
+
+        // 1. Initialize (requires BLUETOOTH_CONNECT granted)
         WearablesInitializer.initialize(this)
-        // Start registration to enable device discovery
-        WearablesInitializer.startRegistration(this)
+
+        // 2. Register only if not already REGISTERED
+        WearablesInitializer.startRegistrationIfNeeded(this)
     }
 }
