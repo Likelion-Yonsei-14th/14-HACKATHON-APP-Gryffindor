@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
+import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
+import com.gryffindor.smartshopping.domain.model.CameraState
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +18,9 @@ data class HomeUiState(
     val sessionId: String? = null,
     val isSessionActive: Boolean = false,
     val isStarting: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val datUpdateRequired: Boolean = false,
+    val datUpdateError: String? = null
 )
 
 class HomeViewModel(
@@ -30,6 +34,30 @@ class HomeViewModel(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    init {
+        // Observe camera state to detect DAT update requirement
+        viewModelScope.launch {
+            cameraFrameProvider.cameraState.collect { state ->
+                when (state) {
+                    is CameraState.DatUpdateRequired -> {
+                        _uiState.update {
+                            it.copy(
+                                datUpdateRequired = true,
+                                datUpdateError = null,
+                                errorMessage = state.message
+                            )
+                        }
+                    }
+                    else -> {
+                        _uiState.update {
+                            it.copy(datUpdateRequired = false, datUpdateError = null)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     fun startShopping() {
         viewModelScope.launch {
@@ -64,8 +92,41 @@ class HomeViewModel(
         }
     }
 
+    fun requestGlassesUpdate() {
+        viewModelScope.launch {
+            val result = cameraFrameProvider.openGlassesUpdate()
+            when (result) {
+                is GlassesUpdateResult.Success -> {
+                    Log.i(TAG, "Glasses update flow launched successfully")
+                    // User will update externally, then tap retry
+                }
+                is GlassesUpdateResult.Failed -> {
+                    Log.w(TAG, "Glasses update flow failed: ${result.reason}")
+                    _uiState.update { it.copy(datUpdateError = result.reason) }
+                }
+                is GlassesUpdateResult.Unsupported -> {
+                    Log.w(TAG, "Glasses update not supported")
+                    _uiState.update {
+                        it.copy(datUpdateError = "업데이트 기능을 사용할 수 없습니다")
+                    }
+                }
+            }
+        }
+    }
+
+    fun retryCamera() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(datUpdateRequired = false, datUpdateError = null) }
+            try {
+                cameraFrameProvider.startCamera()
+            } catch (e: Exception) {
+                Log.w(TAG, "Camera retry failed", e)
+            }
+        }
+    }
+
     fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
+        _uiState.update { it.copy(errorMessage = null, datUpdateError = null) }
     }
 
     fun resetSessionNavigation() {

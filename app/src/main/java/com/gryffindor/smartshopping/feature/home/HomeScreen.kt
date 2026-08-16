@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,7 +56,15 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        if (uiState.isStarting) {
+        if (uiState.datUpdateRequired) {
+            // DAT update required UI
+            DatUpdateSection(
+                errorMessage = uiState.errorMessage,
+                datUpdateError = uiState.datUpdateError,
+                onRequestUpdate = { viewModel.requestGlassesUpdate() },
+                onRetry = { viewModel.retryCamera() }
+            )
+        } else if (uiState.isStarting) {
             CircularProgressIndicator()
         } else {
             Button(onClick = { viewModel.startShopping() }) {
@@ -62,12 +72,54 @@ fun HomeScreen(
             }
         }
 
-        uiState.errorMessage?.let { message ->
+        // General error message (non-DAT-update)
+        if (!uiState.datUpdateRequired && uiState.errorMessage != null) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = message,
+                text = uiState.errorMessage!!,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun DatUpdateSection(
+    errorMessage: String?,
+    datUpdateError: String?,
+    onRequestUpdate: () -> Unit,
+    onRetry: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = errorMessage ?: "스마트글래스 앱 업데이트가 필요합니다",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.error
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onRequestUpdate) {
+            Text("안경 앱 업데이트")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(onClick = onRetry) {
+            Text("재시도")
+        }
+
+        // Show specific navigation error if update failed
+        datUpdateError?.let { error ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }

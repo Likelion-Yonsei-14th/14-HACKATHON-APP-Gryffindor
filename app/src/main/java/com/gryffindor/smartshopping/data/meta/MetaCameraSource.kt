@@ -2,6 +2,7 @@ package com.gryffindor.smartshopping.data.meta
 
 import android.util.Log
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
+import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.gryffindor.smartshopping.domain.model.CameraFrame
 import com.gryffindor.smartshopping.domain.model.CameraState
 import com.meta.wearable.dat.camera.Camera
@@ -15,6 +16,7 @@ import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.selectors.AutoDeviceSelector
 import com.meta.wearable.dat.core.session.DeviceSession
 import com.meta.wearable.dat.core.session.DeviceSessionState
+import com.meta.wearable.dat.core.types.DeviceSessionError
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import kotlinx.coroutines.CancellationException
@@ -36,6 +38,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Meta DAT camera adapter.
@@ -62,6 +65,12 @@ class MetaCameraSource(
      * via Meta AI when permission is not yet granted.
      */
     var permissionRequester: WearablePermissionRequester? = null
+
+    /**
+     * Set by the Activity after creation. Used to open the DAT glasses app update
+     * flow when the glasses DAT app is outdated.
+     */
+    var updateRequester: WearableUpdateRequester? = null
 
     // --- SDK-independent public state ---
 
@@ -124,6 +133,12 @@ class MetaCameraSource(
         }
     }
 
+    override suspend fun openGlassesUpdate(): GlassesUpdateResult {
+        val requester = updateRequester
+            ?: return GlassesUpdateResult.Unsupported
+        return requester.openDatGlassesUpdate()
+    }
+
     // --- DAT pipeline ---
 
     /**
@@ -165,6 +180,11 @@ class MetaCameraSource(
         } catch (e: CancellationException) {
             // Normal cancellation (stopCamera called) — propagate
             throw e
+        } catch (e: DatUpdateRequiredException) {
+            Log.w(TAG, "DAT glasses app update required", e)
+            _cameraState.value = CameraState.DatUpdateRequired(
+                "스마트글래스 앱 업데이트가 필요합니다"
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Camera pipeline error", e)
             _cameraState.value = CameraState.RecoverableError(
@@ -208,8 +228,10 @@ class MetaCameraSource(
      * Handles:
      * - Normal IDLE → STARTING → STARTED transition
      * - STOPPED arrival → treated as startup failure
+     * - STOPPED + DAT_APP_ON_THE_GLASSES_UPDATE_REQUIRED → DatUpdateRequiredException
      * - Timeout → treated as startup failure
      *
+     * Concurrently observes session.errors to detect DAT update requirement.
      * Does NOT block the main thread — uses Flow observation.
      */
     private suspend fun awaitSessionStarted(session: DeviceSession) {
@@ -217,27 +239,50 @@ class MetaCameraSource(
         session.start()
         Log.i(TAG, "session.start() called (fire-and-forget), awaiting STARTED...")
 
-        val reachedState = withTimeoutOrNull(SESSION_START_TIMEOUT_MS) {
-            // first { } suspends until a matching emission
-            session.state.first { state ->
-                Log.i(TAG, "Session state=$state")
-                state == DeviceSessionState.STARTED || state == DeviceSessionState.STOPPED
+        // Atomic flag set by the error observer if DAT update error is detected
+        val datUpdateErrorDetected = AtomicBoolean(false)
+
+        // Launch a side coroutine to observe session.errors concurrently
+        val errorObserverJob = scope.launch {
+            session.errors.collect { error ->
+                Log.w(TAG, "Session error received: $error")
+                if (error == DeviceSessionError.DAT_APP_ON_THE_GLASSES_UPDATE_REQUIRED) {
+                    Log.w(TAG, "DAT glasses app update required error detected")
+                    datUpdateErrorDetected.set(true)
+                }
             }
         }
 
-        when (reachedState) {
-            DeviceSessionState.STARTED -> {
-                Log.i(TAG, "Session reached STARTED")
+        try {
+            val reachedState = withTimeoutOrNull(SESSION_START_TIMEOUT_MS) {
+                // first { } suspends until a matching emission
+                session.state.first { state ->
+                    Log.i(TAG, "Session state=$state")
+                    state == DeviceSessionState.STARTED || state == DeviceSessionState.STOPPED
+                }
             }
-            DeviceSessionState.STOPPED -> {
-                throw RuntimeException("Session reached STOPPED during startup — device may have disconnected")
+
+            when (reachedState) {
+                DeviceSessionState.STARTED -> {
+                    Log.i(TAG, "Session reached STARTED")
+                }
+                DeviceSessionState.STOPPED -> {
+                    // Check if the STOPPED was caused by a DAT update requirement
+                    if (datUpdateErrorDetected.get()) {
+                        throw DatUpdateRequiredException()
+                    }
+                    throw RuntimeException("Session reached STOPPED during startup — device may have disconnected")
+                }
+                null -> {
+                    throw RuntimeException("Session start timeout (${SESSION_START_TIMEOUT_MS}ms) — stuck in state=${session.state.value}")
+                }
+                else -> {
+                    throw RuntimeException("Unexpected session state during startup: $reachedState")
+                }
             }
-            null -> {
-                throw RuntimeException("Session start timeout (${SESSION_START_TIMEOUT_MS}ms) — stuck in state=${session.state.value}")
-            }
-            else -> {
-                throw RuntimeException("Unexpected session state during startup: $reachedState")
-            }
+        } finally {
+            // Always cancel the error observer to prevent leaks
+            errorObserverJob.cancel()
         }
     }
 
@@ -369,6 +414,16 @@ class MetaCameraSource(
             isCompressed = videoFrame.isCompressed
         )
     }
+
+    // --- Private exception for DAT update requirement ---
+
+    /**
+     * Internal exception thrown when DAT_APP_ON_THE_GLASSES_UPDATE_REQUIRED is detected.
+     * Caught in runCameraPipeline() to set the correct CameraState.
+     */
+    private class DatUpdateRequiredException : RuntimeException(
+        "DAT glasses app update required"
+    )
 
     // --- Ordered cleanup ---
 
