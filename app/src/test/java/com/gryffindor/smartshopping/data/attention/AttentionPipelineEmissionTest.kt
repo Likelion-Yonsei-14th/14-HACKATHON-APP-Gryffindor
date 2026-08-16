@@ -12,7 +12,6 @@ import com.gryffindor.smartshopping.domain.model.DetectionResult
 import com.gryffindor.smartshopping.domain.model.TriggerType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,10 +64,7 @@ class AttentionPipelineEmissionTest {
     @Test
     fun `candidate queued without subscriber - suppression committed - collector receives later`() = runTest {
         // Simulate the Channel-based emission pattern used in AttentionPipeline
-        val channel = Channel<AttentionCandidate>(
-            capacity = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
+        val channel = Channel<AttentionCandidate>(capacity = 1)
         val suppressedIds = mutableSetOf<String>()
 
         val candidate = makeCandidate("track-1")
@@ -97,10 +93,7 @@ class AttentionPipelineEmissionTest {
      */
     @Test
     fun `channel closed - trySend fails - no suppression commit`() = runTest {
-        val channel = Channel<AttentionCandidate>(
-            capacity = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
+        val channel = Channel<AttentionCandidate>(capacity = 1)
         val suppressedIds = mutableSetOf<String>()
 
         // Close channel to simulate failure
@@ -118,15 +111,52 @@ class AttentionPipelineEmissionTest {
     }
 
     /**
+     * Verifies that when buffer is full (SUSPEND policy), trySend fails immediately
+     * and suppression is NOT committed — allowing retry on next qualifying frame.
+     */
+    @Test
+    fun `buffer full - trySend fails - no suppression - retry possible`() = runTest {
+        val channel = Channel<AttentionCandidate>(capacity = 1)
+        val suppressedIds = mutableSetOf<String>()
+
+        // Fill the buffer
+        val candidateA = makeCandidate("track-A")
+        val resultA = channel.trySend(candidateA)
+        assertTrue("First send should succeed", resultA.isSuccess)
+        suppressedIds.add("track-A")
+
+        // Buffer is now full — second trySend for different track should fail
+        val candidateB = makeCandidate("track-B")
+        val resultB = channel.trySend(candidateB)
+        assertFalse("trySend should fail when buffer full (SUSPEND policy)", resultB.isSuccess)
+
+        // track-B is NOT suppressed → can retry later
+        if (resultB.isSuccess) {
+            suppressedIds.add("track-B")
+        }
+        assertFalse("track-B should NOT be suppressed", "track-B" in suppressedIds)
+
+        // Consumer drains candidateA
+        val received = channel.tryReceive()
+        assertTrue(received.isSuccess)
+        assertEquals("track-A", received.getOrNull()?.trackingId)
+
+        // Now retry for track-B succeeds
+        val retryResult = channel.trySend(candidateB)
+        assertTrue("Retry should succeed after consumer drains", retryResult.isSuccess)
+        if (retryResult.isSuccess) {
+            suppressedIds.add("track-B")
+        }
+        assertTrue("track-B should now be suppressed after successful retry", "track-B" in suppressedIds)
+    }
+
+    /**
      * Verifies that the Channel (not closed on stop) remains usable after simulated stop/restart.
      * The pipeline's clearState drains stale candidates but does not close the channel.
      */
     @Test
     fun `stop and restart - channel remains usable - new candidates deliverable`() = runTest {
-        val channel = Channel<AttentionCandidate>(
-            capacity = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
+        val channel = Channel<AttentionCandidate>(capacity = 1)
 
         // Session 1: send a candidate
         val candidate1 = makeCandidate("track-session1")
@@ -156,10 +186,7 @@ class AttentionPipelineEmissionTest {
      */
     @Test
     fun `duplicate suppression - second send for same trackingId is blocked`() = runTest {
-        val channel = Channel<AttentionCandidate>(
-            capacity = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
+        val channel = Channel<AttentionCandidate>(capacity = 1)
         val suppressedIds = mutableSetOf<String>()
 
         // First emission
@@ -187,10 +214,7 @@ class AttentionPipelineEmissionTest {
      */
     @Test
     fun `AttentionCandidateProvider exposes Flow type`() {
-        val channel = Channel<AttentionCandidate>(
-            capacity = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
+        val channel = Channel<AttentionCandidate>(capacity = 1)
         val provider = object : AttentionCandidateProvider {
             override val candidates: Flow<AttentionCandidate> = channel.receiveAsFlow()
         }

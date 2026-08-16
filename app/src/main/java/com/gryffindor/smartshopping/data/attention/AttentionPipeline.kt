@@ -12,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -64,10 +63,7 @@ internal class AttentionPipeline(
 
     // --- Output channel (bounded, not closed on stop for restart compatibility) ---
 
-    private val _candidateChannel = Channel<AttentionCandidate>(
-        capacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
+    private val _candidateChannel = Channel<AttentionCandidate>(capacity = 1)
     override val candidates: Flow<AttentionCandidate> = _candidateChannel.receiveAsFlow()
 
     // --- Lifecycle ---
