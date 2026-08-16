@@ -195,6 +195,7 @@ internal class AttentionPipeline(
             Log.w(TAG, "Source frame miss: ts=$frameTimestampUs — no candidate, no suppression")
             return
         }
+        Log.d(TAG, "Source frame match success: ts=$frameTimestampUs ${sourceFrame.width}x${sourceFrame.height}")
 
         // 5. Crop from original source frame
         val cropResult = cropGenerator.crop(
