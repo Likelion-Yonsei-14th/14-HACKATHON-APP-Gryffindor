@@ -13,9 +13,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -62,14 +62,13 @@ internal class AttentionPipeline(
         private const val TAG = "AttentionPipeline"
     }
 
-    // --- Output flow (bounded) ---
+    // --- Output channel (bounded, not closed on stop for restart compatibility) ---
 
-    private val _candidates = MutableSharedFlow<AttentionCandidate>(
-        replay = 0,
-        extraBufferCapacity = 1,
+    private val _candidateChannel = Channel<AttentionCandidate>(
+        capacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    override val candidates: Flow<AttentionCandidate> = _candidates.asSharedFlow()
+    override val candidates: Flow<AttentionCandidate> = _candidateChannel.receiveAsFlow()
 
     // --- Lifecycle ---
 
@@ -160,6 +159,9 @@ internal class AttentionPipeline(
         attentionEvaluator.reset()
         sourceFrameCache.clear()
         suppressedTrackingIds.clear()
+        // Drain any stale candidate from previous session
+        @Suppress("ControlFlowWithEmptyBody")
+        while (_candidateChannel.tryReceive().isSuccess) {}
     }
 
     // --- Core processing ---
@@ -232,11 +234,11 @@ internal class AttentionPipeline(
             cropHeight = cropResult.height
         )
 
-        // 8. Emit candidate
-        val emitted = _candidates.tryEmit(candidate)
+        // 8. Emit candidate via bounded channel
+        val sendResult = _candidateChannel.trySend(candidate)
 
-        // 9. Commit suppression ONLY after successful emission
-        if (emitted) {
+        // 9. Commit suppression ONLY after successful channel insertion
+        if (sendResult.isSuccess) {
             suppressedTrackingIds.add(trackingId)
             Log.i(TAG, buildString {
                 append("Candidate emitted: trackingId=$trackingId ")
@@ -245,7 +247,7 @@ internal class AttentionPipeline(
                 append("capturedAt=$capturedAt")
             })
         } else {
-            Log.w(TAG, "Candidate emission failed (buffer full) — no suppression for trackingId=$trackingId")
+            Log.w(TAG, "Candidate channel send failed — no suppression for trackingId=$trackingId")
         }
     }
 }
