@@ -5,13 +5,16 @@ import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.model.CameraFrame
 import com.gryffindor.smartshopping.domain.model.CameraState
 import com.meta.wearable.dat.camera.Camera
+import com.meta.wearable.dat.camera.Stream
 import com.meta.wearable.dat.camera.addCamera
 import com.meta.wearable.dat.camera.types.StreamConfiguration
+import com.meta.wearable.dat.camera.types.StreamState
 import com.meta.wearable.dat.camera.types.VideoFrame
 import com.meta.wearable.dat.camera.types.VideoQuality
 import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.selectors.AutoDeviceSelector
 import com.meta.wearable.dat.core.session.DeviceSession
+import com.meta.wearable.dat.core.session.DeviceSessionState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,10 +28,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Meta DAT camera adapter.
@@ -47,6 +52,7 @@ class MetaCameraSource(
     companion object {
         private const val TAG = "MetaCameraSource"
         private const val DEFAULT_FRAME_RATE = 15
+        private const val SESSION_START_TIMEOUT_MS = 15_000L
     }
 
     // --- SDK-independent public state ---
@@ -114,30 +120,35 @@ class MetaCameraSource(
 
     /**
      * Runs the full DAT camera pipeline.
-     * This follows the lifecycle validated in Stage 0:
-     *   Wearables.createSession() → session.start() → session.addCamera() →
-     *   camera.stream.start() → camera.stream.videoStream.collect()
+     * Key fix: waits for DeviceSessionState.STARTED before adding camera.
+     *
+     * Pipeline:
+     *   Wearables.createSession() → session.start() → await STARTED →
+     *   session.addCamera() → stream.start() → videoStream.collect()
      *
      * On cancellation or failure, the finally block triggers ordered cleanup.
      */
     private suspend fun runCameraPipeline() {
         try {
-            // Step 1: Create and start DeviceSession
-            val session = createAndStartSession()
+            // Step 1: Create DeviceSession
+            val session = createSession()
             activeSession = session
 
-            // Step 2: Add camera capability
+            // Step 2: Start session and await STARTED state
+            awaitSessionStarted(session)
+
+            // Step 3: Add camera capability (only after STARTED)
             val camera = addCameraCapability(session)
             activeCamera = camera
 
             _cameraState.value = CameraState.Ready
 
-            // Step 3: Start the camera stream
-            startStream(camera)
+            // Step 4: Start the camera stream
+            startStream(camera.stream)
 
             _cameraState.value = CameraState.Streaming
 
-            // Step 4: Collect frames — suspends until cancellation or stream end
+            // Step 5: Collect frames — suspends until cancellation or stream end
             collectFrames(camera)
 
         } catch (e: CancellationException) {
@@ -156,18 +167,16 @@ class MetaCameraSource(
     }
 
     /**
-     * Create and start a DeviceSession using the validated Stage 0 pattern:
-     *   Wearables.createSession(AutoDeviceSelector()) → session.start()
-     *
-     * Wearables.createSession() is non-suspend; returns DatResult.
+     * Create a DeviceSession using AutoDeviceSelector.
+     * Does NOT call start() — that's handled separately to allow state observation.
      */
-    private fun createAndStartSession(): DeviceSession {
+    private fun createSession(): DeviceSession {
         if (!WearablesInitializer.isInitialized) {
             throw RuntimeException("Wearables SDK not initialized — call WearablesInitializer.initialize() first")
         }
 
         // Diagnostic: log registration/device state before session creation
-        Log.i(TAG, "createAndStartSession: logging pre-start diagnostics")
+        Log.i(TAG, "createSession: logging pre-start diagnostics")
         WearablesInitializer.logDiagnostics()
 
         val deviceSelector = AutoDeviceSelector()
@@ -178,40 +187,80 @@ class MetaCameraSource(
                 "Failed to create DeviceSession: ${result.errorOrNull()?.description ?: "unknown error"}"
             )
 
-        Log.i(TAG, "DeviceSession created, calling start()")
-        session.start()
-        Log.i(TAG, "DeviceSession start() called")
+        Log.i(TAG, "DeviceSession created")
         return session
     }
 
     /**
-     * Add camera capability using the validated Stage 0 pattern:
+     * Start the session and suspend until DeviceSessionState.STARTED is reached.
+     *
+     * Handles:
+     * - Normal IDLE → STARTING → STARTED transition
+     * - STOPPED arrival → treated as startup failure
+     * - Timeout → treated as startup failure
+     *
+     * Does NOT block the main thread — uses Flow observation.
+     */
+    private suspend fun awaitSessionStarted(session: DeviceSession) {
+        Log.i(TAG, "Session start requested, current state=${session.state.value}")
+        session.start()
+        Log.i(TAG, "session.start() called (fire-and-forget), awaiting STARTED...")
+
+        val reachedState = withTimeoutOrNull(SESSION_START_TIMEOUT_MS) {
+            // first { } suspends until a matching emission
+            session.state.first { state ->
+                Log.i(TAG, "Session state=$state")
+                state == DeviceSessionState.STARTED || state == DeviceSessionState.STOPPED
+            }
+        }
+
+        when (reachedState) {
+            DeviceSessionState.STARTED -> {
+                Log.i(TAG, "Session reached STARTED")
+            }
+            DeviceSessionState.STOPPED -> {
+                throw RuntimeException("Session reached STOPPED during startup — device may have disconnected")
+            }
+            null -> {
+                throw RuntimeException("Session start timeout (${SESSION_START_TIMEOUT_MS}ms) — stuck in state=${session.state.value}")
+            }
+            else -> {
+                throw RuntimeException("Unexpected session state during startup: $reachedState")
+            }
+        }
+    }
+
+    /**
+     * Add camera capability using the extension:
      *   session.addCamera(StreamConfiguration(...))
      *
-     * session.addCamera() is non-suspend; returns DatResult.
+     * Must only be called after session reaches STARTED.
      */
     private fun addCameraCapability(session: DeviceSession): Camera {
         val config = StreamConfiguration(
             videoQuality = videoQuality,
-            frameRate = frameRate,
-            compressVideo = false
+            frameRate = frameRate
         )
+        Log.i(TAG, "Adding camera capability (quality=$videoQuality, fps=$frameRate)")
         val result = session.addCamera(config)
 
-        return result.getOrNull()
-            ?: throw RuntimeException(
-                "Failed to add camera: ${result.errorOrNull()?.description ?: "unknown error"}"
-            )
+        val camera = result.getOrNull()
+        if (camera != null) {
+            Log.i(TAG, "Camera capability added successfully")
+            return camera
+        }
+
+        val error = result.errorOrNull()
+        throw RuntimeException(
+            "Failed to add camera: ${error?.description ?: "unknown error"}"
+        )
     }
 
     /**
-     * Start the camera stream using the validated Stage 0 pattern:
-     *   camera.stream.start()
-     *
-     * stream.start() is non-suspend; returns DatResult.
+     * Start the camera stream and log state transitions.
      */
-    private fun startStream(camera: Camera) {
-        val stream = camera.stream
+    private fun startStream(stream: Stream) {
+        Log.i(TAG, "Stream start requested, current streamState=${stream.state.value}")
         val result = stream.start()
 
         if (!result.isSuccess) {
@@ -219,21 +268,39 @@ class MetaCameraSource(
                 "Failed to start stream: ${result.errorOrNull()?.description ?: "unknown error"}"
             )
         }
+        Log.i(TAG, "Stream start() called successfully")
     }
 
     /**
      * Collect VideoFrames and convert to app-owned CameraFrame.
-     *
-     * For each frame, we perform the minimum work inside the collection scope:
-     *   1. Read metadata
-     *   2. Copy SDK-owned ByteBuffer → app-owned ByteArray (via duplicate to preserve position)
-     *   3. Construct CameraFrame
-     *   4. Bounded emit (tryEmit with DROP_OLDEST)
+     * Also observes stream state transitions for diagnostics.
      */
     private suspend fun collectFrames(camera: Camera) {
-        camera.stream.videoStream.collect { videoFrame: VideoFrame ->
-            val frame = transferFrameOwnership(videoFrame)
-            _frames.tryEmit(frame)
+        val stream = camera.stream
+
+        // Launch a diagnostic observer for stream state (non-blocking)
+        val stateObserverJob = scope.launch {
+            stream.state.collect { state ->
+                Log.i(TAG, "Stream state=$state")
+            }
+        }
+
+        try {
+            var frameCount = 0L
+            stream.videoStream.collect { videoFrame: VideoFrame ->
+                val frame = transferFrameOwnership(videoFrame)
+                _frames.tryEmit(frame)
+                frameCount++
+                if (frameCount == 1L) {
+                    Log.i(TAG, "VideoFrame received (first frame: ${frame.width}x${frame.height})")
+                    Log.i(TAG, "CameraFrame emitted to downstream")
+                }
+                if (frameCount % 100 == 0L) {
+                    Log.d(TAG, "Frames emitted: $frameCount")
+                }
+            }
+        } finally {
+            stateObserverJob.cancel()
         }
     }
 
@@ -276,6 +343,7 @@ class MetaCameraSource(
         if (camera != null) {
             try {
                 camera.close()
+                Log.d(TAG, "Camera closed")
             } catch (e: Exception) {
                 Log.w(TAG, "Error closing camera", e)
             }
@@ -287,6 +355,7 @@ class MetaCameraSource(
         if (session != null) {
             try {
                 session.stop()
+                Log.d(TAG, "Session stopped")
             } catch (e: Exception) {
                 Log.w(TAG, "Error stopping session", e)
             }
