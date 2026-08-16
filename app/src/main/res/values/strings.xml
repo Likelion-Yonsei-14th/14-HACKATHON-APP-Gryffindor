@@ -12,4 +12,11 @@
     <string name="mypage_travel">TRAVEL</string>
     <string name="mypage_receipt">RECEIPT</string>
     <string name="mypage_logout">LOGOUT</string>
+
+    <string name="mypage_travel_departure_airport">출발지</string>
+    <string name="mypage_travel_arrival_airport">도착지</string>
+    <string name="mypage_travel_terminal">터미널</string>
+    <string name="mypage_travel_departure_time">출발 시간</string>
+    <string name="mypage_travel_arrival_time">도착 시간</string>
+    <string name="mypage_travel_airport_arrival_estimate">공항 도착 예정시간</string>
 </resources>

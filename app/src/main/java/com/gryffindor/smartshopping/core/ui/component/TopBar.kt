@@ -3,15 +3,15 @@ package com.gryffindor.smartshopping.core.ui.component
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 
@@ -38,7 +38,7 @@ fun LooketTopBar(
                 modifier = Modifier.align(Alignment.CenterStart),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    painter = painterResource(R.drawable.ic_chevron_left),
                     contentDescription = null,
                     tint = LooketColors.TextPrimary,
                 )
