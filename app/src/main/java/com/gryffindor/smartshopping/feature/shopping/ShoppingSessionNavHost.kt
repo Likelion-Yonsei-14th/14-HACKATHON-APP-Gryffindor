@@ -17,6 +17,7 @@ private object ShoppingSessionRoutes {
     const val LIVE = "shopping-session/live"
     const val RESULT_RECEIPT = "shopping-session/result/receipt"
     const val RESULT_PURCHASED_ITEMS = "shopping-session/result/purchased-items"
+    const val RESULT_INTERESTED_PRODUCTS = "shopping-session/result/interested-products"
 }
 
 /**
@@ -78,7 +79,29 @@ fun ShoppingSessionNavHost(
                         viewedItems = viewedItems.filterNot { it.id == id }
                     }
                 },
-                onConfirmClick = { navController.popBackStack() },
+                onConfirmClick = { navController.navigate(ShoppingSessionRoutes.RESULT_INTERESTED_PRODUCTS) },
+                onBackClick = { navController.popBackStack() },
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        }
+
+        composable(ShoppingSessionRoutes.RESULT_INTERESTED_PRODUCTS) {
+            var selectedProductIds by remember { mutableStateOf(setOf<String>()) }
+
+            InterestedProductsScreen(
+                products = dummyRecommendedProducts,
+                selectedProductIds = selectedProductIds,
+                onToggleProduct = { id ->
+                    selectedProductIds = if (id in selectedProductIds) {
+                        selectedProductIds - id
+                    } else {
+                        selectedProductIds + id
+                    }
+                },
+                // 세션 종료 후 진짜 이동해야 할 화면(쇼핑 홈 등)이 아직 없어서, 임시로
+                // 이 NavHost의 시작 지점(LIVE)까지 스택을 정리한다.
+                onCompleteClick = { navController.popBackStack(ShoppingSessionRoutes.LIVE, inclusive = false) },
                 onBackClick = { navController.popBackStack() },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,

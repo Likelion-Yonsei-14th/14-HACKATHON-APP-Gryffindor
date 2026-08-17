@@ -44,4 +44,9 @@
     <string name="shopping_result_wishlist_heart">♥</string>
     <string name="shopping_result_viewed_products_title">내가 본 상품</string>
     <string name="shopping_result_add">추가</string>
+
+    <string name="shopping_result_interested_title">관심 상품</string>
+    <string name="shopping_result_interested_heading">아쉽게 못 산 제품이 있으신가요?\n관심 상품으로 등록해두세요</string>
+    <string name="shopping_result_interested_caption">관심 상품을 기반으로 OO님께 딱 맞는 제품을 추천해드려요</string>
+    <string name="common_done">완료</string>
 </resources>
