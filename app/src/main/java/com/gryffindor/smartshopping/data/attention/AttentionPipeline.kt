@@ -6,7 +6,6 @@ import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
 import com.gryffindor.smartshopping.domain.model.AttentionCandidate
 import com.gryffindor.smartshopping.domain.model.CameraState
-import com.gryffindor.smartshopping.domain.model.TriggerType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -190,6 +189,7 @@ internal class AttentionPipeline(
 
         val trackingId = evaluation.trackingId ?: return
         val trackedObject = evaluation.trackedObject ?: return
+        val triggerType = evaluation.triggerType ?: return
 
         // --- Timing log: attention trigger fired ---
         val firstSeenUs = objectTracker.getFirstSeenTimestampUs(trackingId)
@@ -202,6 +202,7 @@ internal class AttentionPipeline(
             append(" | trackAgeMs=$trackAgeSinceFirstSeenMs")
             append(" | dwellMs=${evaluation.dwellMs}")
             append(" | occupancy=${"%.4f".format(evaluation.occupancyRatio)}")
+            append(" | triggerType=$triggerType")
             append(" | center=(${("%.3f".format(trackedObject.centerX))}, ${("%.3f".format(trackedObject.centerY))})")
         })
 
@@ -255,7 +256,7 @@ internal class AttentionPipeline(
         val candidate = AttentionCandidate(
             jpegBytes = jpegBytes,
             capturedAt = capturedAt,
-            triggerType = TriggerType.OCCUPANCY_AND_DWELL,
+            triggerType = triggerType,
             occupancyRatio = evaluation.occupancyRatio,
             dwellMs = evaluation.dwellMs,
             trackingId = trackingId,

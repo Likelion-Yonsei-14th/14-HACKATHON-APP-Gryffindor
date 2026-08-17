@@ -3,12 +3,15 @@ package com.gryffindor.smartshopping.data.attention
 import com.gryffindor.smartshopping.core.config.AppConfig
 import com.gryffindor.smartshopping.domain.attention.DwellState
 import com.gryffindor.smartshopping.domain.attention.TrackedObject
+import com.gryffindor.smartshopping.domain.model.TriggerType
 import kotlin.math.sqrt
 
 /**
  * Evaluates whether tracked objects satisfy the attention trigger policy:
  *
- *   Center ROI AND Occupancy >= threshold AND Dwell >= threshold
+ *   (Center ROI AND strong Occupancy AND short stability)
+ *   OR
+ *   (Center ROI AND minimum Occupancy AND Dwell >= threshold)
  *
  * Manages per-trackingId dwell state. Uses frameTimestampUs for dwell calculation
  * (NOT wall-clock time). Protects against large timestamp gaps.
@@ -22,10 +25,15 @@ class AttentionEvaluator(
     private val centerRoiBottom: Float = AppConfig.ATTENTION_CENTER_ROI_BOTTOM,
     private val minOccupancyRatio: Float = AppConfig.ATTENTION_MIN_OCCUPANCY_RATIO,
     private val minDwellMs: Long = AppConfig.ATTENTION_MIN_DWELL_MS,
+    private val fastOccupancyRatio: Float = AppConfig.ATTENTION_FAST_OCCUPANCY_RATIO,
+    private val fastOccupancyStabilityMs: Long = AppConfig.ATTENTION_FAST_OCCUPANCY_STABILITY_MS,
     private val maxDwellGapMs: Long = AppConfig.ATTENTION_MAX_DWELL_GAP_MS
 ) {
     /** Per-trackingId dwell accumulation state. */
     private val dwellStates = mutableMapOf<String, DwellState>()
+
+    /** Separate state so a single high-occupancy frame cannot inherit moderate dwell. */
+    private val fastOccupancyStates = mutableMapOf<String, DwellState>()
 
     /**
      * Result of evaluating a single frame's tracked objects.
@@ -40,7 +48,9 @@ class AttentionEvaluator(
         /** Accumulated dwell time (ms) of the triggered object. */
         val dwellMs: Long,
         /** The TrackedObject that triggered, if any. */
-        val trackedObject: TrackedObject?
+        val trackedObject: TrackedObject?,
+        /** Evidence path represented in Backend metadata. */
+        val triggerType: TriggerType?
     )
 
     /**
@@ -70,18 +80,38 @@ class AttentionEvaluator(
             val occupancy = obj.area
             val occupancySatisfied = occupancy >= minOccupancyRatio
             val centerAndOccupancy = inCenter && occupancySatisfied
+            val centerAndFastOccupancy = inCenter && occupancy >= fastOccupancyRatio
 
             val currentDwell = dwellStates[obj.trackingId] ?: DwellState()
             val updatedDwell = updateDwell(currentDwell, centerAndOccupancy, frameTimestampUs)
             dwellStates[obj.trackingId] = updatedDwell
 
-            // Check full trigger: center AND occupancy AND dwell
-            if (centerAndOccupancy && updatedDwell.accumulatedDwellMs >= minDwellMs) {
+            val currentFastOccupancy = fastOccupancyStates[obj.trackingId] ?: DwellState()
+            val updatedFastOccupancy = updateDwell(
+                currentFastOccupancy,
+                centerAndFastOccupancy,
+                frameTimestampUs
+            )
+            fastOccupancyStates[obj.trackingId] = updatedFastOccupancy
+
+            val fastOccupancyTriggered =
+                centerAndFastOccupancy &&
+                    updatedFastOccupancy.accumulatedDwellMs >= fastOccupancyStabilityMs
+            val dwellTriggered =
+                centerAndOccupancy && updatedDwell.accumulatedDwellMs >= minDwellMs
+
+            if (fastOccupancyTriggered || dwellTriggered) {
+                val triggerType = when {
+                    fastOccupancyTriggered && dwellTriggered -> TriggerType.OCCUPANCY_AND_DWELL
+                    fastOccupancyTriggered -> TriggerType.OCCUPANCY
+                    else -> TriggerType.DWELL
+                }
                 qualifiedCandidates.add(
                     CandidateInfo(
                         trackedObject = obj,
                         occupancyRatio = occupancy,
-                        dwellMs = updatedDwell.accumulatedDwellMs
+                        dwellMs = updatedDwell.accumulatedDwellMs,
+                        triggerType = triggerType
                     )
                 )
             }
@@ -99,7 +129,8 @@ class AttentionEvaluator(
                 trackingId = null,
                 occupancyRatio = 0f,
                 dwellMs = 0L,
-                trackedObject = null
+                trackedObject = null,
+                triggerType = null
             )
         }
 
@@ -114,7 +145,8 @@ class AttentionEvaluator(
             trackingId = best.trackedObject.trackingId,
             occupancyRatio = best.occupancyRatio,
             dwellMs = best.dwellMs,
-            trackedObject = best.trackedObject
+            trackedObject = best.trackedObject,
+            triggerType = best.triggerType
         )
     }
 
@@ -124,6 +156,7 @@ class AttentionEvaluator(
     @Synchronized
     fun reset() {
         dwellStates.clear()
+        fastOccupancyStates.clear()
     }
 
     /**
@@ -132,6 +165,7 @@ class AttentionEvaluator(
     @Synchronized
     fun removeTrack(trackingId: String) {
         dwellStates.remove(trackingId)
+        fastOccupancyStates.remove(trackingId)
     }
 
     // --- Private helpers ---
@@ -216,6 +250,7 @@ class AttentionEvaluator(
     private data class CandidateInfo(
         val trackedObject: TrackedObject,
         val occupancyRatio: Float,
-        val dwellMs: Long
+        val dwellMs: Long,
+        val triggerType: TriggerType
     )
 }
