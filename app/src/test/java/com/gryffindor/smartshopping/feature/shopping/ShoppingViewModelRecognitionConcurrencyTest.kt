@@ -89,7 +89,7 @@ class ShoppingViewModelRecognitionConcurrencyTest {
         assertEquals(0, fixture.shoppingRepository.activeRequests)
         assertTrue(fixture.sessionRepository.completeSessionCalled)
 
-        fixture.viewModel.loadProducts("session-2")
+        fixture.viewModel.loadProducts("session-2", "USD")
         runCurrent()
         fixture.candidates.emit(candidate("C"))
         fixture.candidates.emit(candidate("D"))
@@ -192,7 +192,7 @@ class ShoppingViewModelRecognitionConcurrencyTest {
 
         // Start collectors before emitting and put the ViewModel in an active loaded session.
         kotlinx.coroutines.yield()
-        viewModel.loadProducts(SESSION_ID)
+        viewModel.loadProducts(SESSION_ID, "USD")
         kotlinx.coroutines.yield()
         return Fixture(viewModel, candidates, shoppingRepository, sessionRepository)
     }
@@ -319,6 +319,9 @@ class ShoppingViewModelRecognitionConcurrencyTest {
                 retailPriceKrw = 10_000,
                 estimatedRefundKrw = 1_000,
                 estimatedRefundPriceKrw = 9_000,
+                convertedRetailPrice = null,
+                convertedEstimatedRefund = null,
+                convertedEstimatedRefundPrice = null,
                 convertedAmount = null,
                 convertedCurrency = null,
                 instantRefundEligible = false,

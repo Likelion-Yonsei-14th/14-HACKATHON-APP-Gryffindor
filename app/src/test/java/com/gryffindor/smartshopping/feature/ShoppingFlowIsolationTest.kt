@@ -102,6 +102,9 @@ class ShoppingFlowIsolationTest {
                         retailPriceKrw = 10000,
                         estimatedRefundKrw = 2000,
                         estimatedRefundPriceKrw = 8000,
+                        convertedRetailPrice = "60.00",
+                        convertedEstimatedRefund = "12.00",
+                        convertedEstimatedRefundPrice = "48.00",
                         convertedAmount = "60.00",
                         convertedCurrency = "USD",
                         instantRefundEligible = false,
@@ -223,7 +226,7 @@ class ShoppingFlowIsolationTest {
         val failingCamera = FailingCameraFrameProvider()
         val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
-        viewModel.loadProducts("test-session-001")
+        viewModel.loadProducts("test-session-001", "USD")
         advanceUntilIdle()
 
         viewModel.endShopping("test-session-001")
@@ -245,7 +248,7 @@ class ShoppingFlowIsolationTest {
         val failingCamera = FailingCameraFrameProvider()
         val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
-        viewModel.loadProducts("test-session-001")
+        viewModel.loadProducts("test-session-001", "USD")
         advanceUntilIdle()
 
         viewModel.endShopping("test-session-001")
@@ -266,7 +269,7 @@ class ShoppingFlowIsolationTest {
         val camera = NoOpCameraFrameProvider()
         val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, camera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
-        viewModel.loadProducts("test-session-001")
+        viewModel.loadProducts("test-session-001", "USD")
         advanceUntilIdle()
 
         viewModel.endShopping("test-session-001")
