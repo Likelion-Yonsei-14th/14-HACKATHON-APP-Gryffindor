@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.data.remote.api
 
 import com.gryffindor.smartshopping.data.remote.dto.ProductListResponseDto
+import com.gryffindor.smartshopping.data.remote.dto.StoreListResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.RecommendationsResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.RecognitionResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.RefundChecklistDto
@@ -26,6 +27,9 @@ import retrofit2.http.Path
  * Skeleton only in A0 — no actual network calls are made.
  */
 interface ShoppingApiService {
+
+    @GET("stores")
+    suspend fun getStores(): StoreListResponseDto
 
     @POST("sessions")
     suspend fun createSession(
