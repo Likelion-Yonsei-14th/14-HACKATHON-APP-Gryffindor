@@ -36,4 +36,10 @@
     <string name="shopping_live_refund_type_post">사후 환급</string>
     <string name="shopping_live_refund_amount">환급액: %1$s</string>
     <string name="shopping_live_currency_symbol">₩</string>
+
+    <string name="shopping_result_receipt_guide">쇼핑 완료 후 받은\n구매 영수증을 등록해주세요.</string>
+    <string name="shopping_result_register">등록하기</string>
+    <string name="shopping_result_purchased_title">구매 상품</string>
+    <string name="shopping_result_add_manually">직접 추가하기</string>
+    <string name="shopping_result_wishlist_heart">♥</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.gryffindor.smartshopping.feature.mypage
+package com.gryffindor.smartshopping.feature.shopping
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -10,24 +10,23 @@ import com.gryffindor.smartshopping.core.ui.component.LooketReceiptPhotoScreen
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
- * 마이페이지 > RECEIPT > 매장 카드 확인 — 그 매장에서 등록한 영수증 사진을 보여준다.
- * Figma 마이페이지_Receipt_영수증 편집(376:5422) 기준(제목이 매장명이라는 점만
- * [MyPageReceiptRegisterScreen]과 다르고 레이아웃은 동일해 [LooketReceiptPhotoScreen]을 공유한다).
+ * 쇼핑 결과 기록 > 영수증 등록 — 실시간 쇼핑 종료(문 버튼) 직후 진입.
+ * Figma 쇼핑 결과 기록_영수증 등록(376:5047) 기준. 카메라 촬영/OCR 연동은 아직 없고,
+ * [onRegisterClick]만 콜백으로 열어둔 상태(화면 우선 제작 단계).
  */
 @Composable
-fun MyPageReceiptViewScreen(
-    storeName: String,
+fun ShoppingResultReceiptScreen(
     onBackClick: () -> Unit,
-    onRetakePhotoClick: () -> Unit,
+    onRegisterClick: () -> Unit,
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LooketReceiptPhotoScreen(
-        title = storeName,
-        buttonText = stringResource(R.string.mypage_receipt_retake_photo),
+        title = stringResource(R.string.shopping_result_receipt_guide),
+        buttonText = stringResource(R.string.shopping_result_register),
         onBackClick = onBackClick,
-        onButtonClick = onRetakePhotoClick,
+        onButtonClick = onRegisterClick,
         selectedTab = selectedTab,
         onTabSelected = onTabSelected,
         modifier = modifier,
@@ -36,13 +35,12 @@ fun MyPageReceiptViewScreen(
 
 @Preview(showBackground = true, heightDp = 917, widthDp = 412)
 @Composable
-private fun MyPageReceiptViewScreenPreview() {
+private fun ShoppingResultReceiptScreenPreview() {
     LooketTheme {
-        MyPageReceiptViewScreen(
-            storeName = "MCM 신세계백화점 본점",
+        ShoppingResultReceiptScreen(
             onBackClick = {},
-            onRetakePhotoClick = {},
-            selectedTab = BottomNavTab.MY_PAGE,
+            onRegisterClick = {},
+            selectedTab = BottomNavTab.SHOP,
             onTabSelected = {},
         )
     }

@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
+import com.gryffindor.smartshopping.core.ui.component.LooketReceiptPhotoScreen
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
@@ -21,10 +22,11 @@ fun MyPageReceiptRegisterScreen(
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ReceiptPhotoScreen(
+    LooketReceiptPhotoScreen(
         title = stringResource(R.string.mypage_receipt_register_guide),
+        buttonText = stringResource(R.string.mypage_receipt_retake_photo),
         onBackClick = onBackClick,
-        onRetakePhotoClick = onRetakePhotoClick,
+        onButtonClick = onRetakePhotoClick,
         selectedTab = selectedTab,
         onTabSelected = onTabSelected,
         modifier = modifier,

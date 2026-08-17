@@ -23,4 +23,7 @@ object LooketColors {
 
     val KakaoYellow = Color(0xFFFBE300)
     val KakaoText = Color(0xFF3B1E1E)
+
+    val Red = Color(0xFFED1519)
+    val RedLight = Color(0xFFFFF1F1)
 }

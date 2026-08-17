@@ -1,4 +1,4 @@
-package com.gryffindor.smartshopping.feature.mypage
+package com.gryffindor.smartshopping.core.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -12,25 +12,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.gryffindor.smartshopping.R
-import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
-import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
-import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
-import com.gryffindor.smartshopping.core.ui.component.LooketSectionHeader
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 
 /**
- * [MyPageReceiptRegisterScreen](새 영수증 등록, Figma 376:5433)와
- * [MyPageReceiptViewScreen](매장 선택 후 기존 영수증 보기, Figma 376:5422)이
- * 공유하는 레이아웃 — 제목만 다르고 사진 placeholder/재촬영 버튼은 동일하다.
+ * 큰 제목(매장명 또는 안내문) + 영수증 사진 placeholder + 하단 버튼 하나로 이루어진
+ * 화면 템플릿. 마이페이지 영수증 등록/보기(Figma 376:5433, 376:5422)와 쇼핑 결과 기록
+ * 영수증 등록(Figma 376:5047)이 전부 이 구조를 그대로 공유한다 — 제목과 버튼 텍스트만 다르다.
  */
 @Composable
-internal fun ReceiptPhotoScreen(
+fun LooketReceiptPhotoScreen(
     title: String,
+    buttonText: String,
     onBackClick: () -> Unit,
-    onRetakePhotoClick: () -> Unit,
+    onButtonClick: () -> Unit,
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
@@ -63,8 +58,8 @@ internal fun ReceiptPhotoScreen(
                 )
                 Spacer(Modifier.height(24.dp))
                 LooketPrimaryButton(
-                    text = stringResource(R.string.mypage_receipt_retake_photo),
-                    onClick = onRetakePhotoClick,
+                    text = buttonText,
+                    onClick = onButtonClick,
                 )
             }
         }

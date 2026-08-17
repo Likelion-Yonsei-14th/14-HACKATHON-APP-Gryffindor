@@ -376,7 +376,7 @@ private fun LiveShoppingScreenPreview() {
     }
 }
 
-private val dummyLiveReceiptItems = listOf(
+internal val dummyLiveReceiptItems = listOf(
     LiveReceiptItem("1", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
     LiveReceiptItem("2", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
     LiveReceiptItem("3", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
