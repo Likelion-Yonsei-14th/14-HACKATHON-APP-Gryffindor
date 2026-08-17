@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -118,7 +117,7 @@ fun LooketStoreSelectionScreen(
                         .height(48.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    IconButton(onClick = onAddClick) {
+                    LooketIconButton(onClick = onAddClick) {
                         Icon(
                             painter = painterResource(R.drawable.ic_plus),
                             contentDescription = stringResource(R.string.mypage_receipt_add),

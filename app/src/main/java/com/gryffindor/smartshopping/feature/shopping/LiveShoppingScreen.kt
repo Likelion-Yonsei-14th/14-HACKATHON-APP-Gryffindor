@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
+import com.gryffindor.smartshopping.core.ui.component.LooketIconButton
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
@@ -107,7 +107,7 @@ fun LiveShoppingScreen(
 
         if (!isSessionActive) {
             Box(modifier = Modifier.padding(top = 68.dp)) {
-                IconButton(onClick = onBackClick) {
+                LooketIconButton(onClick = onBackClick) {
                     Icon(
                         painter = painterResource(R.drawable.ic_chevron_left),
                         contentDescription = null,
