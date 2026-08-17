@@ -37,17 +37,21 @@ fun AppNavGraph(
             )
             HomeScreen(
                 viewModel = viewModel,
-                onNavigateToShopping = { sessionId ->
-                    navController.navigate(Routes.shopping(sessionId))
+                onNavigateToShopping = { sessionId, currency ->
+                    navController.navigate(Routes.shopping(sessionId, currency))
                 }
             )
         }
 
         composable(
             route = Routes.SHOPPING,
-            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("sessionId") { type = NavType.StringType },
+                navArgument("currency") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+            val currency = backStackEntry.arguments?.getString("currency") ?: "USD"
             val viewModel: ShoppingViewModel = viewModel(
                 factory = ShoppingViewModel.Factory(
                     appContainer.shoppingRepository,
@@ -60,6 +64,7 @@ fun AppNavGraph(
             ShoppingScreen(
                 viewModel = viewModel,
                 sessionId = sessionId,
+                currency = currency,
                 onNavigateToReview = {
                     navController.navigate(Routes.review(sessionId)) {
                         popUpTo(Routes.HOME) { inclusive = false }
