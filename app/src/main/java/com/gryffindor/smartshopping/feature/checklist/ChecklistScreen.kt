@@ -21,32 +21,44 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.common.UiState
+import com.gryffindor.smartshopping.core.ui.component.LooketIconButton
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
+import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private val StatusGreen = Color(0xFF00D96C)
+private val checklistDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
 @Composable
 fun ChecklistScreen(
     viewModel: ChecklistViewModel,
     sessionId: String,
     onNavigateToRecommendation: () -> Unit,
+    initialDate: LocalDate = LocalDate.now(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -54,15 +66,83 @@ fun ChecklistScreen(
         viewModel.loadChecklist(sessionId)
     }
 
-    when (val state = uiState) {
-        is UiState.Loading -> ChecklistLoadingContent()
-        is UiState.Error -> ChecklistErrorContent(message = state.message, onRetry = { viewModel.retry() })
-        is UiState.Success -> ChecklistSuccessContent(
-            items = state.data.items,
-            checkedIds = state.data.checkedIds,
-            onToggle = { itemId -> viewModel.toggleChecked(itemId) },
-            onNavigateToRecommendation = onNavigateToRecommendation,
+    ChecklistContent(
+        uiState = uiState,
+        initialDate = initialDate,
+        onToggle = { itemId -> viewModel.toggleChecked(itemId) },
+        onRetry = { viewModel.retry() },
+        onNavigateToRecommendation = onNavigateToRecommendation,
+    )
+}
+
+/**
+ * ViewModel 없이도 그릴 수 있는 상태 없는 본문. [ChecklistScreen]과 Preview가 함께 쓴다 —
+ * 실제 ViewModel을 preview에서 띄우기 번거로워 [UiState]를 직접 넘기는 쪽을 택했다.
+ */
+@Composable
+private fun ChecklistContent(
+    uiState: UiState<ChecklistUiState>,
+    initialDate: LocalDate,
+    onToggle: (String) -> Unit,
+    onRetry: () -> Unit,
+    onNavigateToRecommendation: () -> Unit,
+) {
+    var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
+
+    Column(modifier = Modifier.fillMaxSize().background(LooketColors.Surface)) {
+        // Figma 온보딩_항공편에서 확인한 날짜부터 시작 — 화살표는 날짜 숫자만 앞뒤로 넘긴다.
+        // TODO: 선택한 날짜에 맞춰 체크리스트 항목을 필터링하는 로직은 아직 없음 (항목은 날짜와 무관하게 동일).
+        ChecklistDateNavigator(
+            date = selectedDate,
+            onPreviousDay = { selectedDate = selectedDate.minusDays(1) },
+            onNextDay = { selectedDate = selectedDate.plusDays(1) },
         )
+
+        Box(modifier = Modifier.weight(1f)) {
+            when (uiState) {
+                is UiState.Loading -> ChecklistLoadingContent()
+                is UiState.Error -> ChecklistErrorContent(message = uiState.message, onRetry = onRetry)
+                is UiState.Success -> ChecklistSuccessContent(
+                    items = uiState.data.items,
+                    checkedIds = uiState.data.checkedIds,
+                    onToggle = onToggle,
+                    onNavigateToRecommendation = onNavigateToRecommendation,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChecklistDateNavigator(
+    date: LocalDate,
+    onPreviousDay: () -> Unit,
+    onNextDay: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LooketIconButton(onClick = onPreviousDay) {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_left),
+                contentDescription = "전날",
+                tint = LooketColors.TextPrimary,
+            )
+        }
+        Text(
+            text = date.format(checklistDateFormatter),
+            style = LooketTextStyles.titleTwo,
+            color = LooketColors.TextPrimary,
+        )
+        LooketIconButton(onClick = onNextDay) {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_right),
+                contentDescription = "다음날",
+                tint = LooketColors.TextPrimary,
+            )
+        }
     }
 }
 
@@ -179,14 +259,17 @@ private val previewItems = listOf(
     ChecklistItem(id = "2", title = "미환급 물품 환급받기", description = "시간: ~17:30 / 장소: 면세구역 내 환급 카운터", required = true),
 )
 
+private val previewDate = LocalDate.of(2026, 8, 21)
+
 @Preview(showBackground = true, widthDp = 412, heightDp = 917)
 @Composable
 private fun ChecklistSuccessPreview() {
     LooketTheme {
-        ChecklistSuccessContent(
-            items = previewItems,
-            checkedIds = setOf("1"),
+        ChecklistContent(
+            uiState = UiState.Success(ChecklistUiState(items = previewItems, checkedIds = setOf("1"))),
+            initialDate = previewDate,
             onToggle = {},
+            onRetry = {},
             onNavigateToRecommendation = {},
         )
     }
@@ -196,7 +279,13 @@ private fun ChecklistSuccessPreview() {
 @Composable
 private fun ChecklistLoadingPreview() {
     LooketTheme {
-        ChecklistLoadingContent()
+        ChecklistContent(
+            uiState = UiState.Loading,
+            initialDate = previewDate,
+            onToggle = {},
+            onRetry = {},
+            onNavigateToRecommendation = {},
+        )
     }
 }
 
@@ -204,6 +293,12 @@ private fun ChecklistLoadingPreview() {
 @Composable
 private fun ChecklistErrorPreview() {
     LooketTheme {
-        ChecklistErrorContent(message = "체크리스트를 불러올 수 없습니다.", onRetry = {})
+        ChecklistContent(
+            uiState = UiState.Error("체크리스트를 불러올 수 없습니다."),
+            initialDate = previewDate,
+            onToggle = {},
+            onRetry = {},
+            onNavigateToRecommendation = {},
+        )
     }
 }

@@ -16,6 +16,9 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val sessionId: String? = null,
+    // 쇼핑 화면으로 이동하자마자 sessionId는 resetSessionNavigation()으로 null이 되므로,
+    // 홈에 머무는 동안에도 체크리스트로 이동할 수 있도록 가장 최근 세션 ID를 따로 보관한다.
+    val lastSessionId: String? = null,
     val isSessionActive: Boolean = false,
     val isStarting: Boolean = false,
     val errorMessage: String? = null,
@@ -67,6 +70,7 @@ class HomeViewModel(
                 _uiState.update {
                     it.copy(
                         sessionId = session.sessionId,
+                        lastSessionId = session.sessionId,
                         isSessionActive = true,
                         isStarting = false
                     )

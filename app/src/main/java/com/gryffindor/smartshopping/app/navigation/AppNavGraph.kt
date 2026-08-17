@@ -1,8 +1,12 @@
 package com.gryffindor.smartshopping.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -14,21 +18,177 @@ import com.gryffindor.smartshopping.feature.checklist.ChecklistScreen
 import com.gryffindor.smartshopping.feature.checklist.ChecklistViewModel
 import com.gryffindor.smartshopping.feature.home.HomeScreen
 import com.gryffindor.smartshopping.feature.home.HomeViewModel
+import com.gryffindor.smartshopping.feature.login.LoginScreen
+import com.gryffindor.smartshopping.feature.onboarding.FlightInfoConfirmScreen
+import com.gryffindor.smartshopping.feature.onboarding.FlightInfoField
+import com.gryffindor.smartshopping.feature.onboarding.FlightRegisterScreen
+import com.gryffindor.smartshopping.feature.onboarding.OnboardingPurchaseConfirmScreen
+import com.gryffindor.smartshopping.feature.onboarding.OnboardingReceiptRegisterScreen
+import com.gryffindor.smartshopping.feature.onboarding.PermissionScreen
+import com.gryffindor.smartshopping.feature.onboarding.PurchaseConfirmItem
+import com.gryffindor.smartshopping.feature.onboarding.UserInfoScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewModel
 import com.gryffindor.smartshopping.feature.review.ReviewScreen
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
 import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingViewModel
+import com.gryffindor.smartshopping.feature.splash.SplashScreen
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
 import com.gryffindor.smartshopping.feature.travel.TravelViewModel
+import com.gryffindor.smartshopping.domain.model.TripDates
+import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     appContainer: AppContainer
 ) {
-    NavHost(navController = navController, startDestination = Routes.HOME) {
+    NavHost(navController = navController, startDestination = Routes.SPLASH) {
+
+        // 1. 스플래시 (2초 후 로그인으로 이동)
+        composable(Routes.SPLASH) {
+            SplashScreen()
+            LaunchedEffect(Unit) {
+                delay(2000L)
+                navController.navigate(Routes.LOGIN) {
+                    popUpTo(Routes.SPLASH) { inclusive = true }
+                }
+            }
+        }
+
+        // 2. 로그인 (카카오/게스트 로그인 시 온보딩 첫 단계인 권한 화면으로 이동)
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onKakaoLogin = {
+                    navController.navigate(Routes.ONBOARDING_PERMISSION) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onGuestLogin = {
+                    navController.navigate(Routes.ONBOARDING_PERMISSION) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // --- 온보딩 플로우 시작 ---
+
+        // 3. 권한 허용 화면
+        composable(Routes.ONBOARDING_PERMISSION) {
+            PermissionScreen(
+                onNext = {
+                    navController.navigate(Routes.ONBOARDING_USER_INFO)
+                }
+            )
+        }
+
+        // 4. 사용자 정보 입력 화면
+        composable(Routes.ONBOARDING_USER_INFO) {
+            UserInfoScreen(
+                onComplete = {
+                    navController.navigate(Routes.ONBOARDING_FLIGHT_REGISTER)
+                }
+            )
+        }
+
+        // 5. 항공편 사진 등록 화면
+        composable(Routes.ONBOARDING_FLIGHT_REGISTER) {
+            var hasPhoto by remember { mutableStateOf(false) }
+
+            FlightRegisterScreen(
+                hasPhoto = hasPhoto,
+                onBackClick = { navController.popBackStack() },
+                onCaptureClick = {
+                    // TODO: 실제 사진 촬영/선택 로직 구현
+                    if (!hasPhoto) {
+                        hasPhoto = true // 사진 등록 상태로 변경 예시
+                    } else {
+                        // 사진 등록 완료 후 확인 화면으로 이동
+                        navController.navigate(Routes.ONBOARDING_FLIGHT_CONFIRM)
+                    }
+                },
+                onSkipClick = {
+                    // 항공편 확인 단계를 건너뛰고 바로 영수증 등록으로 이동
+                    navController.navigate(Routes.ONBOARDING_RECEIPT_REGISTER)
+                }
+            )
+        }
+
+        // 6. 항공편 정보 확인 화면 (온보딩 마지막)
+        composable(Routes.ONBOARDING_FLIGHT_CONFIRM) {
+            val initialFields = listOf(
+                FlightInfoField("1", "출발지", "BEJ"),
+                FlightInfoField("2", "도착지", "ICN"),
+                FlightInfoField("3", "터미널", "인천공항 T2"),
+                FlightInfoField("4", "출발 시간", "2026.08.21 10:00"),
+                FlightInfoField("5", "도착 시간", "2026.08.25 19:00"),
+                FlightInfoField("6", "공항 도착 예정시간", "2026.08.25 15:00"),
+            )
+
+            FlightInfoConfirmScreen(
+                fields = initialFields,
+                onBackClick = { navController.popBackStack() },
+                onConfirmClick = { updatedFields ->
+                    // 체크리스트 날짜 네비게이터 초기값으로 쓸 수 있게 확인한 출발 날짜를 보관
+                    appContainer.tripDates = TripDates(departureDate = parseDepartureDate(updatedFields))
+                    // 항공편 확인 완료 후 영수증 등록 단계로 이동
+                    navController.navigate(Routes.ONBOARDING_RECEIPT_REGISTER)
+                }
+            )
+        }
+
+        // 7. 영수증 등록 화면 (건너뛰면 홈으로 바로 이동)
+        composable(Routes.ONBOARDING_RECEIPT_REGISTER) {
+            var hasPhoto by remember { mutableStateOf(false) }
+
+            OnboardingReceiptRegisterScreen(
+                hasPhoto = hasPhoto,
+                onBackClick = { navController.popBackStack() },
+                onCaptureClick = {
+                    // TODO: 실제 영수증 촬영/선택 로직 구현
+                    if (!hasPhoto) {
+                        hasPhoto = true
+                    } else {
+                        navController.navigate(Routes.ONBOARDING_PURCHASE_CONFIRM)
+                    }
+                },
+                onSkipClick = {
+                    // 온보딩 완료! 홈 화면으로 이동하며 온보딩 스택들을 백스택에서 제거
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.ONBOARDING_PERMISSION) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // 8. 구매 물품 목록 확인 화면 (온보딩 마지막)
+        composable(Routes.ONBOARDING_PURCHASE_CONFIRM) {
+            // TODO: 실제 인식된 구매 물품 목록으로 교체
+            val initialItems = listOf(
+                PurchaseConfirmItem("1", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "환급액: ₩ 76,000"),
+                PurchaseConfirmItem("2", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "환급액: ₩ 76,000"),
+            )
+            var items by remember { mutableStateOf(initialItems) }
+
+            OnboardingPurchaseConfirmScreen(
+                items = items,
+                onBackClick = { navController.popBackStack() },
+                onRemoveItem = { id -> items = items.filterNot { it.id == id } },
+                onConfirmClick = {
+                    // 온보딩 완료! 홈 화면으로 이동하며 온보딩 스택들을 백스택에서 제거
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.ONBOARDING_PERMISSION) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // --- 메인 홈 및 기능 화면들 ---
 
         composable(Routes.HOME) {
             val viewModel: HomeViewModel = viewModel(
@@ -44,8 +204,9 @@ fun AppNavGraph(
                     navController.navigate(Routes.shopping(sessionId))
                 },
                 onNavigateToChecklist = {
-                    // TODO: Home 미리보기 체크리스트가 어느 sessionId 기준인지 아직 미확정 (내일 대웅님께 확인)
-                    uiState.sessionId?.let { sessionId ->
+                    // sessionId는 쇼핑 화면 이동 즉시 null로 리셋되므로, 홈에 머무는 동안엔
+                    // 가장 최근에 시작한 세션(lastSessionId)으로 체크리스트를 연다.
+                    uiState.lastSessionId?.let { sessionId ->
                         navController.navigate(Routes.checklist(sessionId))
                     }
                 }
@@ -122,6 +283,7 @@ fun AppNavGraph(
             ChecklistScreen(
                 viewModel = viewModel,
                 sessionId = sessionId,
+                initialDate = appContainer.tripDates.departureDate ?: LocalDate.now(),
                 onNavigateToRecommendation = {
                     navController.navigate(Routes.recommendation(sessionId))
                 }
@@ -141,5 +303,20 @@ fun AppNavGraph(
                 sessionId = sessionId
             )
         }
+    }
+}
+
+private val flightDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+
+/**
+ * [FlightInfoConfirmScreen]의 "출발 시간" 필드("2026.08.21 10:00")에서 날짜만 뽑아낸다.
+ * 사용자가 자유 텍스트로 수정 가능한 필드라 형식이 안 맞을 수 있어 실패하면 null.
+ */
+private fun parseDepartureDate(fields: List<FlightInfoField>): LocalDate? {
+    val rawValue = fields.firstOrNull { it.label == "출발 시간" }?.value ?: return null
+    return try {
+        LocalDate.parse(rawValue.substringBefore(" "), flightDateFormatter)
+    } catch (e: DateTimeParseException) {
+        null
     }
 }
