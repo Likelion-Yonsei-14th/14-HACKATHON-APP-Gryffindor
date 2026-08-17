@@ -28,4 +28,11 @@
 
     <string name="store_selection_section_title">매장 선택하기</string>
     <string name="shopping_store_selection_title">SHOP</string>
+
+    <string name="common_remove">제거</string>
+    <string name="shopping_live_list">실시간 리스트</string>
+    <string name="shopping_live_refund_title">OO님의 환급 금액</string>
+    <string name="shopping_live_refund_of_total">총 구매 금액 %1$s 중</string>
+    <string name="shopping_live_refund_type_post">사후 환급</string>
+    <string name="shopping_live_refund_amount">환급액: %1$s</string>
 </resources>
