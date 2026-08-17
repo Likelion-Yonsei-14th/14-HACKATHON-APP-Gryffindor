@@ -3,6 +3,7 @@ package com.gryffindor.smartshopping.core.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,7 @@ fun LooketDropdown(
     var headerHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val borderColor = if (expanded) LooketColors.BrandPrimary else LooketColors.BorderDefault
+    val headerInteractionSource = remember { MutableInteractionSource() }
 
     Box(modifier = modifier.width(180.dp)) {
         Row(
@@ -60,7 +62,10 @@ fun LooketDropdown(
                 .clip(RoundedCornerShape(10.dp))
                 .border(1.dp, borderColor, RoundedCornerShape(10.dp))
                 .background(LooketColors.Surface)
-                .clickable { expanded = !expanded }
+                .clickable(
+                    interactionSource = headerInteractionSource,
+                    indication = null,
+                ) { expanded = !expanded }
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -89,6 +94,7 @@ fun LooketDropdown(
                 ) {
                     options.forEach { option ->
                         val isSelected = option == selectedOption
+                        val itemInteractionSource = remember { MutableInteractionSource() }
                         Text(
                             text = option,
                             style = LooketTextStyles.bodyTwo,
@@ -96,7 +102,10 @@ fun LooketDropdown(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(if (isSelected) LooketColors.BrandPrimarySubtle else LooketColors.Surface)
-                                .clickable {
+                                .clickable(
+                                    interactionSource = itemInteractionSource,
+                                    indication = null,
+                                ) {
                                     onOptionSelected(option)
                                     expanded = false
                                 }
