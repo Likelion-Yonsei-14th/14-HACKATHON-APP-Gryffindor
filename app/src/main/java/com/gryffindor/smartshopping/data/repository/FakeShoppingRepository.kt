@@ -14,13 +14,35 @@ class FakeShoppingRepository : ShoppingRepository {
     private val fakeProducts = listOf(
         SessionProduct(
             product = Product("mcm_001", "SKU001", "MCM", "Visetos Backpack", "bag", null),
-            pricing = Pricing(1090000, 60000, 1030000, "5210.35", "CNY", true, "MOCK"),
+            pricing = Pricing(
+                retailPriceKrw = 1090000,
+                estimatedRefundKrw = 60000,
+                estimatedRefundPriceKrw = 1030000,
+                convertedRetailPrice = "5513.86",
+                convertedEstimatedRefund = "384.45",
+                convertedEstimatedRefundPrice = "5129.41",
+                convertedAmount = "5129.41",
+                convertedCurrency = "CNY",
+                instantRefundEligible = true,
+                pricingMode = "MOCK"
+            ),
             purchaseState = PurchaseState.UNSET,
             interested = false
         ),
         SessionProduct(
             product = Product("mcm_002", "SKU002", "MCM", "Patricia Crossbody", "bag", null),
-            pricing = Pricing(890000, 49000, 841000, "4254.80", "CNY", false, "MOCK"),
+            pricing = Pricing(
+                retailPriceKrw = 890000,
+                estimatedRefundKrw = 49000,
+                estimatedRefundPriceKrw = 841000,
+                convertedRetailPrice = "4502.53",
+                convertedEstimatedRefund = "248.04",
+                convertedEstimatedRefundPrice = "4254.49",
+                convertedAmount = "4254.49",
+                convertedCurrency = "CNY",
+                instantRefundEligible = false,
+                pricingMode = "MOCK"
+            ),
             purchaseState = PurchaseState.UNSET,
             interested = true
         )
