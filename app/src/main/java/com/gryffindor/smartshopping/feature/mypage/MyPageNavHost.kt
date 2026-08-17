@@ -88,9 +88,10 @@ fun MyPageNavHost(
             MyPageReceiptScreen(
                 selectedStoreId = selectedStoreId,
                 onStoreSelected = { selectedStoreId = it },
-                onStoreClick = { storeId -> navController.navigate(MyPageRoutes.receiptStore(storeId)) },
                 onAddReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT_REGISTER) },
-                onConfirmClick = { navController.popBackStack() },
+                onConfirmClick = {
+                    selectedStoreId?.let { navController.navigate(MyPageRoutes.receiptStore(it)) }
+                },
                 onBackClick = { navController.popBackStack() },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,

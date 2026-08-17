@@ -1,5 +1,10 @@
 package com.gryffindor.smartshopping.feature.mypage
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +64,8 @@ internal val dummyStores = listOf(
 
 /**
  * 마이페이지 > RECEIPT — 등록된 영수증(매장) 목록에서 하나를 선택한다.
+ * 카드 탭은 선택만 하고(보라 테두리), 확인 버튼은 하단 네비게이션 바로 위에
+ * 팝업처럼 떠서 스크롤 없이 바로 눌러 [onConfirmClick]으로 진행할 수 있다.
  * "+"는 새 매장을 추가하는 버튼이 아니라 영수증을 새로 등록하는 버튼이다
  * ([onAddReceiptClick] -> MyPageReceiptRegisterScreen으로 이동, 카메라로 찍으면
  * 매장 정보가 인식되어 목록에 새 항목으로 추가되는 방식).
@@ -68,7 +75,6 @@ internal val dummyStores = listOf(
 fun MyPageReceiptScreen(
     selectedStoreId: String?,
     onStoreSelected: (String) -> Unit,
-    onStoreClick: (String) -> Unit,
     onAddReceiptClick: () -> Unit,
     onConfirmClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -78,7 +84,25 @@ fun MyPageReceiptScreen(
 ) {
     Scaffold(
         modifier = modifier,
-        bottomBar = { BottomNavBar(selectedTab = selectedTab, onTabSelected = onTabSelected) },
+        bottomBar = {
+            Column {
+                AnimatedVisibility(
+                    visible = selectedStoreId != null,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                    exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                ) {
+                    LooketPrimaryButton(
+                        text = stringResource(R.string.common_confirm),
+                        onClick = onConfirmClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(LooketColors.Surface)
+                            .padding(16.dp),
+                    )
+                }
+                BottomNavBar(selectedTab = selectedTab, onTabSelected = onTabSelected)
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -112,10 +136,7 @@ fun MyPageReceiptScreen(
                         LooketStoreCard(
                             store = store,
                             selected = store.id == selectedStoreId,
-                            onClick = {
-                                onStoreSelected(store.id)
-                                onStoreClick(store.id)
-                            },
+                            onClick = { onStoreSelected(store.id) },
                         )
                     }
                 }
@@ -137,16 +158,6 @@ fun MyPageReceiptScreen(
                 }
             }
             Spacer(Modifier.height(32.dp))
-
-            LooketPrimaryButton(
-                text = stringResource(R.string.common_confirm),
-                enabled = selectedStoreId != null,
-                onClick = onConfirmClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            )
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -159,7 +170,6 @@ private fun MyPageReceiptScreenPreview() {
         MyPageReceiptScreen(
             selectedStoreId = selectedStoreId,
             onStoreSelected = { selectedStoreId = it },
-            onStoreClick = {},
             onAddReceiptClick = {},
             onConfirmClick = {},
             onBackClick = {},
