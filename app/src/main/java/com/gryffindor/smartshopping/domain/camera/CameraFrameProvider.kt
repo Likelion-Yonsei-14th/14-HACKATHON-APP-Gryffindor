@@ -26,4 +26,7 @@ interface CameraFrameProvider {
 
     /** Stop the camera pipeline. Releases all DAT resources. Safe to call repeatedly. */
     suspend fun stopCamera()
+
+    /** Open DAT glasses app update flow. Requires Activity context. */
+    suspend fun openGlassesUpdate(): GlassesUpdateResult = GlassesUpdateResult.Unsupported
 }

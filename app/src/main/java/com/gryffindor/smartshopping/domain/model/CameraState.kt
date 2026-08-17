@@ -24,4 +24,7 @@ sealed class CameraState {
 
     /** User or device intervention is required before retry. */
     data class BlockingError(val message: String) : CameraState()
+
+    /** DAT glasses app update is required before camera can function. */
+    data class DatUpdateRequired(val message: String) : CameraState()
 }

@@ -1,9 +1,11 @@
 package com.gryffindor.smartshopping.feature
 
 import com.gryffindor.smartshopping.core.common.UiState
+import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionPipelineState
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
+import com.gryffindor.smartshopping.domain.model.AttentionCandidate
 import com.gryffindor.smartshopping.domain.model.CameraFrame
 import com.gryffindor.smartshopping.domain.model.CameraState
 import com.gryffindor.smartshopping.domain.model.DetectionFrameResult
@@ -157,6 +159,10 @@ class ShoppingFlowIsolationTest {
             MutableStateFlow(DetectionPipelineState.Idle)
     }
 
+    private class NoOpAttentionCandidateProvider : AttentionCandidateProvider {
+        override val candidates: Flow<AttentionCandidate> = emptyFlow()
+    }
+
     // --- Tests ---
 
     @Test
@@ -211,7 +217,7 @@ class ShoppingFlowIsolationTest {
         val sessionRepo = FakeSessionRepository()
         val shoppingRepo = FakeShoppingRepository()
         val failingCamera = FailingCameraFrameProvider()
-        val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider())
+        val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
         viewModel.loadProducts("test-session-001")
         advanceUntilIdle()
@@ -233,7 +239,7 @@ class ShoppingFlowIsolationTest {
         val sessionRepo = FakeSessionRepository()
         val shoppingRepo = FakeShoppingRepository()
         val failingCamera = FailingCameraFrameProvider()
-        val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider())
+        val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
         viewModel.loadProducts("test-session-001")
         advanceUntilIdle()
@@ -254,7 +260,7 @@ class ShoppingFlowIsolationTest {
         val sessionRepo = FakeSessionRepository()
         val shoppingRepo = FakeShoppingRepository()
         val camera = NoOpCameraFrameProvider()
-        val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, camera, NoOpDetectionResultProvider())
+        val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, camera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
         viewModel.loadProducts("test-session-001")
         advanceUntilIdle()

@@ -28,9 +28,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gryffindor.smartshopping.R
+import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 private val TextPrimary = Color(0xFF1B1A22)
 private val TextSecondary = Color(0xFF47455F)
@@ -39,7 +41,7 @@ private val Disabled = Color(0xFFEEEDF1)
 
 private enum class Authority(val label: String, val description: String, val iconRes: Int) {
     NOTIFICATION("알림", "알림 메시지 발송", R.drawable.icon_bell),
-    CAMERA("카메라", "시선 및 제품 인식", R.drawable.icon_camera),
+    META("Meta 계정", "글래스 시선 및 제품 인식 데이터 가져오기", R.drawable.icon_meta),
     LOCATION("위치", "매장 위치 정보 인식", R.drawable.icon_location),
 }
 
@@ -66,7 +68,7 @@ fun PermissionScreen(onNext: () -> Unit) {
                 AuthorityRow(
                     authority = authority,
                     onClick = {
-                        // TODO: 실제 권한 요청 연동 (notification/camera/location)
+                        // TODO: 실제 권한 요청 연동 (notification/meta 계정 연동/location)
                         granted = granted + authority
                     },
                 )
@@ -99,15 +101,25 @@ private fun AuthorityRow(authority: Authority, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(id = authority.iconRes),
-            contentDescription = authority.label,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(44.dp),
-        )
+        Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(id = authority.iconRes),
+                contentDescription = authority.label,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(44.dp),
+            )
+        }
         Spacer(modifier = Modifier.width(10.dp))
         Text(authority.label, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.width(10.dp))
         Text(authority.description, color = TextSecondary, fontSize = 14.sp)
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 917)
+@Composable
+private fun PermissionScreenPreview() {
+    LooketTheme {
+        PermissionScreen(onNext = {})
     }
 }

@@ -13,8 +13,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
+import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 private val BrandPrimary = Color(0xFF616AF3)
 private val BrandGradientEnd = Color(0xFF3B36CC)
@@ -33,5 +35,13 @@ fun SplashScreen() {
             contentScale = ContentScale.Fit,
             modifier = Modifier.width(100.dp).height(25.dp),
         )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 917)
+@Composable
+private fun SplashScreenPreview() {
+    LooketTheme {
+        SplashScreen()
     }
 }

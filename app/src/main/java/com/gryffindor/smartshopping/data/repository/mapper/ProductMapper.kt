@@ -5,11 +5,13 @@ import com.gryffindor.smartshopping.data.remote.dto.ObservedProductDto
 import com.gryffindor.smartshopping.data.remote.dto.PricingDto
 import com.gryffindor.smartshopping.data.remote.dto.ProductDto
 import com.gryffindor.smartshopping.data.remote.dto.ProductListItemDto
+import com.gryffindor.smartshopping.data.remote.dto.RecognitionResponseDto
 import com.gryffindor.smartshopping.domain.model.Observation
 import com.gryffindor.smartshopping.domain.model.ObservedProduct
 import com.gryffindor.smartshopping.domain.model.Pricing
 import com.gryffindor.smartshopping.domain.model.Product
 import com.gryffindor.smartshopping.domain.model.PurchaseState
+import com.gryffindor.smartshopping.domain.model.RecognitionResult
 import com.gryffindor.smartshopping.domain.model.SessionProduct
 import com.gryffindor.smartshopping.domain.model.TriggerType
 
@@ -52,3 +54,20 @@ fun ObservationDto.toDomain(): Observation = Observation(
     firstObservedAt = firstObservedAt,
     lastObservedAt = lastObservedAt
 )
+
+fun RecognitionResponseDto.toDomain(): RecognitionResult {
+    return when (recognitionStatus.uppercase()) {
+        "MATCHED" -> {
+            val observed = observedProduct?.toDomain()
+                ?: throw IllegalStateException("MATCHED response missing observedProduct")
+            RecognitionResult.Matched(
+                isNew = isNew ?: true,
+                observedProduct = observed
+            )
+        }
+        "AMBIGUOUS" -> RecognitionResult.Ambiguous(
+            candidateProductIds = candidateProductIds ?: emptyList()
+        )
+        else -> RecognitionResult.Unknown
+    }
+}

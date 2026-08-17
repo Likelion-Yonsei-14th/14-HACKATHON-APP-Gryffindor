@@ -1,6 +1,8 @@
 package com.gryffindor.smartshopping.feature.onboarding
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.tooling.preview.Preview
+import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -272,7 +274,7 @@ private fun TermsRow(label: String, checked: Boolean, onToggle: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painter = painterResource(id = if (checked) R.drawable.check_after else R.drawable.check_before),
+                painter = painterResource(id = if (checked) R.drawable.check_active else R.drawable.check_inactive),
                 contentDescription = if (checked) "체크됨" else "체크 안 됨",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(24.dp),
@@ -281,5 +283,13 @@ private fun TermsRow(label: String, checked: Boolean, onToggle: () -> Unit) {
             Text(label, color = TextPrimary, fontSize = 14.sp)
         }
         Text("›", color = TextPrimary, fontSize = 18.sp)
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 917)
+@Composable
+private fun UserInfoScreenPreview() {
+    LooketTheme {
+        UserInfoScreen(onComplete = {})
     }
 }

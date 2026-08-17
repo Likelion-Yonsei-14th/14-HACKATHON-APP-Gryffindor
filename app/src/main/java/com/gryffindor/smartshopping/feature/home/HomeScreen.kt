@@ -1,7 +1,10 @@
 package com.gryffindor.smartshopping.feature.home
 
+import androidx.compose.foundation.Image
+import androidx.compose.material3.Scaffold
+import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
+import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import androidx.compose.foundation.background
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,20 +40,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gryffindor.smartshopping.R
+import com.gryffindor.smartshopping.core.ui.component.HomeTopBar
+import com.gryffindor.smartshopping.core.ui.component.HomeTopBarTab
+import com.gryffindor.smartshopping.core.ui.theme.LooketColors
+import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
 
-private val BrandPrimary = Color(0xFF616AF3)
-private val BrandGradientEnd = Color(0xFF3B36CC)
-private val TextPrimary = Color(0xFF1B1A22)
-private val BorderDefault = Color(0xFFD7D6E1)
-private val BorderDisabled = Color(0xFFEEEDF1)
+// LooketColors에 아직 없는 상태/배지 색상만 로컬로 유지 (팀 팔레트에 추가되면 교체)
 private val StatusGreen = Color(0xFF00D96C)
 private val StatusOrange = Color(0xFFFF8633)
-
-private enum class HomeTab { REFUND, LOOKET }
+private val TextSecondaryOnDisabled = Color(0xFF9C9AAE)
 
 @Composable
 fun HomeScreen(
@@ -67,10 +74,10 @@ fun HomeScreen(
         }
     }
 
-    var selectedTab by remember { mutableStateOf(HomeTab.REFUND) }
+    var selectedTab by remember { mutableStateOf(HomeTopBarTab.REFUND) }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        HomeTopNav(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
+    Column(modifier = Modifier.fillMaxSize().background(LooketColors.Surface)) {
+        HomeTopBar(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
 
         Column(
             modifier = Modifier
@@ -80,87 +87,19 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(32.dp))
             when (selectedTab) {
-                HomeTab.REFUND -> RefundTabContent(
+                HomeTopBarTab.REFUND -> RefundTabContent(
                     summary = HomeMockData.refundSummary,
                     purchasedItems = HomeMockData.purchasedItems,
                     checklistItems = HomeMockData.checklistItems,
                     checklistCheckedIds = HomeMockData.checklistCheckedIds,
                     onChecklistClick = onNavigateToChecklist,
                 )
-                HomeTab.LOOKET -> LooketTabContent(
+                HomeTopBarTab.LOOKET -> LooketTabContent(
                     recommended = HomeMockData.recommendedProducts,
                     brands = HomeMockData.brandFilters,
                     myLooket = HomeMockData.looketProducts,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun HomeTopNav(selectedTab: HomeTab, onTabSelected: (HomeTab) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            // Figma 원본 pt-68은 상태바 포함 값이라 줄여서 사용 (실제 기기 보고 조정)
-            .padding(top = 24.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .height(41.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = "looket", color = BrandPrimary, fontSize = 22.sp)
-            // TODO: 실제 알림 아이콘 이미지/벡터 생기면 교체
-            Text(text = "🔔", fontSize = 20.sp)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            HomeTabItem(
-                label = "REFUND",
-                selected = selectedTab == HomeTab.REFUND,
-                onClick = { onTabSelected(HomeTab.REFUND) },
-                modifier = Modifier.width(180.dp),
-            )
-            HomeTabItem(
-                label = "LOOKET",
-                selected = selectedTab == HomeTab.LOOKET,
-                onClick = { onTabSelected(HomeTab.LOOKET) },
-                modifier = Modifier.width(180.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun HomeTabItem(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.clickable(onClick = onClick).padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = label,
-            color = if (selected) BrandPrimary else TextPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        if (selected) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(BrandPrimary))
         }
     }
 }
@@ -193,29 +132,43 @@ private fun RefundSummaryCard(summary: RefundSummary, modifier: Modifier = Modif
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(Brush.linearGradient(colors = listOf(BrandPrimary, BrandGradientEnd)))
-            .padding(vertical = 16.dp, horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .background(Brush.horizontalGradient(colors = listOf(LooketColors.BrandPrimary, LooketColors.BrandGradientEnd)))
+            .padding(vertical = 20.dp, horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("OO님의 환급 금액", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Text("총 구매 금액 ₩ ${formatKrw(summary.totalPurchaseAmountKrw)} 중", color = Color.White, fontSize = 14.sp)
-        Text("₩ ${formatKrw(summary.totalRefundAmountKrw)}", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-        Text(summary.totalRefundAmountForeign, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text("OO님의 환급 금액", color = LooketColors.TextInverse, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        Text("총 구매 금액 ₩ ${formatKrw(summary.totalPurchaseAmountKrw)} 중", color = LooketColors.TextInverse, fontSize = 14.sp)
+        Column {
+            Text("₩ ${formatKrw(summary.totalRefundAmountKrw)}", color = LooketColors.TextInverse, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+            Text(summary.totalRefundAmountForeign, color = LooketColors.TextInverse, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-            RefundStatusChip("완료 ${summary.completedCount}건", summary.completedAmountKrw)
-            RefundStatusChip("진행중 ${summary.inProgressCount}건", summary.inProgressAmountKrw)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+        ) {
+            RefundStatusChip("완료 ${summary.completedCount}건", summary.completedAmountKrw, dotColor = StatusGreen)
+            RefundStatusChip("진행중 ${summary.inProgressCount}건", summary.inProgressAmountKrw, dotColor = StatusOrange)
         }
     }
 }
 
 @Composable
-private fun RefundStatusChip(label: String, amountKrw: Long) {
+private fun RefundStatusChip(label: String, amountKrw: Long, dotColor: Color) {
     Column {
-        Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text("₩ ${formatKrw(amountKrw)}", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(dotColor))
+            }
+            Box(modifier = Modifier.padding(10.dp)) {
+                Text(label, color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+        Box(modifier = Modifier.padding(10.dp)) {
+            Text("₩ ${formatKrw(amountKrw)}", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
@@ -229,14 +182,14 @@ private fun PurchasedItemsSection(items: List<PurchasedItem>) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("구매물품별 금액", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text("구매물품별 금액", color = LooketColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             CurrencyToggle(checked = showKrw, onCheckedChange = { showKrw = it })
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Column {
-            items.forEach { item -> PurchasedItemRow(item) }
+            items.forEach { item -> PurchasedItemRow(item, showKrw = showKrw) }
         }
     }
 }
@@ -247,7 +200,7 @@ private fun CurrencyToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit)
         modifier = Modifier
             .size(width = 52.dp, height = 32.dp)
             .clip(RoundedCornerShape(100.dp))
-            .background(BrandPrimary)
+            .background(LooketColors.BrandPrimary)
             .clickable { onCheckedChange(!checked) }
             .padding(4.dp),
         contentAlignment = if (checked) Alignment.CenterStart else Alignment.CenterEnd,
@@ -256,37 +209,37 @@ private fun CurrencyToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit)
             modifier = Modifier.size(24.dp).clip(CircleShape).background(Color(0xFFF6F6F9)),
             contentAlignment = Alignment.Center,
         ) {
-            // TODO: showKrw 값에 따라 실제 통화 전환 로직 연결
-            Text("₩", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+            Text(if (checked) "₩" else "¥", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
         }
     }
 }
 
 @Composable
-private fun PurchasedItemRow(item: PurchasedItem) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(width = 1.dp, color = BorderDefault)
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        // TODO: 실제 상품 이미지로 교체
-        Box(modifier = Modifier.size(width = 80.dp, height = 126.dp).background(BorderDefault))
+private fun PurchasedItemRow(item: PurchasedItem, showKrw: Boolean) {
+    Column {
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LooketColors.BorderDefault))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            // TODO: 실제 상품 이미지로 교체
+            Box(modifier = Modifier.size(width = 80.dp, height = 126.dp).background(LooketColors.BorderDefault))
 
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(item.name, fontSize = 14.sp, color = Color.Black)
-                    Text(item.store, fontSize = 12.sp, color = TextPrimary)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column {
+                        Text(item.name, fontSize = 14.sp, color = Color.Black)
+                        Text(item.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(formatAmount(item.priceKrw, showKrw), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                        Text("환급액: ${formatAmount(item.refundAmountKrw, showKrw)}", fontSize = 12.sp, color = Color.Black)
+                    }
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("₩ ${formatKrw(item.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-                    Text("환급액: ₩ ${formatKrw(item.refundAmountKrw)}", fontSize = 12.sp, color = Color.Black)
-                }
+                RefundStatusBadge(item.status)
             }
-            RefundStatusBadge(item.status)
         }
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LooketColors.BorderDefault))
     }
 }
 
@@ -298,7 +251,7 @@ private fun RefundStatusBadge(status: RefundStatus) {
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
-        Text(label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Text(label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = LooketColors.TextPrimary)
     }
 }
 
@@ -312,9 +265,9 @@ private fun ChecklistPreviewSection(items: List<ChecklistItem>, onSeeAllClick: (
             modifier = Modifier.clickable(onClick = onSeeAllClick),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("CHECKLIST", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text("CHECKLIST", color = LooketColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.width(4.dp))
-            Text("›", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text("›", color = LooketColors.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
         }
 
         items.forEach { item -> ChecklistPreviewRow(item) }
@@ -327,28 +280,26 @@ private fun ChecklistPreviewRow(item: ChecklistItem) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.White)
-            .border(width = 1.dp, color = BrandPrimary, shape = RoundedCornerShape(8.dp))
+            .background(LooketColors.Surface)
+            .border(width = 1.dp, color = LooketColors.BrandPrimary, shape = RoundedCornerShape(8.dp))
             .padding(end = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f).padding(vertical = 10.dp, horizontal = 16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(item.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-                if (item.required) {
-                    RequiredBadge()
-                }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(item.description, fontSize = 12.sp, color = Color.Black)
+            // TODO: 실제로는 "시간:~15:00 / 장소:T1 3층" 두 줄일 수 있음 — description 포맷 확인되면 분리
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text(item.description, fontSize = 12.sp, color = Color.Black)
+            }
         }
-        // 여기서는 미완료 항목만 표시되므로 항상 회색(미완료) 원
         Box(
-            modifier = Modifier.size(56.dp).clip(CircleShape).background(BorderDisabled),
+            modifier = Modifier.size(56.dp).clip(CircleShape).background(LooketColors.BorderDisabled),
             contentAlignment = Alignment.Center,
         ) {
-            Text("✓", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("✓", color = TextSecondaryOnDisabled, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -361,7 +312,6 @@ private fun LooketTabContent(
     brands: List<BrandFilter>,
     myLooket: List<LooketProduct>,
 ) {
-    // 요구사항 3: 브랜드 로고는 다중 토글 선택 (여러 개 동시 선택 가능)
     var selectedBrandIds by remember { mutableStateOf(setOf<String>()) }
 
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
@@ -369,11 +319,10 @@ private fun LooketTabContent(
             Text(
                 "FOR YOU",
                 modifier = Modifier.padding(horizontal = 16.dp),
-                color = TextPrimary,
+                color = LooketColors.TextPrimary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            // 요구사항 2: 옆으로 스크롤
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
@@ -386,7 +335,7 @@ private fun LooketTabContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("MY LOOKET", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text("MY LOOKET", color = LooketColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
 
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 brands.forEach { brand ->
@@ -405,7 +354,6 @@ private fun LooketTabContent(
                 }
             }
 
-            // 선택된 브랜드가 없으면 전체 표시, 있으면 선택된 브랜드들만 (합집합)
             val filteredProducts = if (selectedBrandIds.isEmpty()) {
                 myLooket
             } else {
@@ -432,33 +380,44 @@ private fun RecommendedProductCard(product: RecommendedProduct) {
         modifier = Modifier
             .width(280.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.White)
-            .border(width = 1.dp, color = BorderDisabled, shape = RoundedCornerShape(8.dp)),
+            .background(LooketColors.Surface)
+            .border(width = 1.dp, color = LooketColors.BorderDisabled, shape = RoundedCornerShape(8.dp)),
     ) {
         Row(
             modifier = Modifier.padding(top = 10.dp, start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // TODO: 실제 브랜드 로고로 교체
-            Box(
-                modifier = Modifier.size(43.dp).clip(CircleShape).background(Color.White)
-                    .border(width = 1.dp, color = BorderDefault, shape = CircleShape),
+            Image(
+                painter = painterResource(id = R.drawable.logo_mcm),
+                contentDescription = product.brandName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(43.dp)
+                    .clip(CircleShape)
+                    .border(width = 1.dp, color = LooketColors.BorderDefault, shape = CircleShape),
             )
-            Text(product.brandName, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text(product.brandName, color = LooketColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
         Text(
             product.title,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            color = TextPrimary,
+            color = LooketColors.TextPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(product.productName, modifier = Modifier.padding(horizontal = 16.dp), fontSize = 14.sp, color = Color.Black)
         Spacer(modifier = Modifier.height(8.dp))
         // TODO: 실제 상품 이미지로 교체
-        Box(modifier = Modifier.fillMaxWidth().height(120.dp).background(BorderDefault))
-        Text(product.location, modifier = Modifier.padding(16.dp), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+        Box(modifier = Modifier.fillMaxWidth().height(120.dp).background(LooketColors.BorderDefault))
+        Text(
+            product.location,
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -468,80 +427,109 @@ private fun BrandFilterChip(brand: BrandFilter, selected: Boolean, onClick: () -
         modifier = Modifier
             .size(56.dp)
             .clip(CircleShape)
-            .background(Color.White)
+            .background(LooketColors.Surface)
             .then(
-                if (selected) Modifier.border(width = 1.dp, color = BrandPrimary, shape = CircleShape) else Modifier,
+                if (selected) Modifier.border(width = 1.dp, color = LooketColors.BrandPrimary, shape = CircleShape) else Modifier,
             )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        // TODO: brand.iconRes 실제 로고 이미지로 교체
-        Text(brand.name.take(1), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Image(
+            painter = painterResource(id = brand.iconRes),
+            contentDescription = brand.name,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.size(48.dp).clip(CircleShape),
+        )
     }
 }
 
 @Composable
 private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modifier) {
+    val statusColor = if (product.statusLabel == "구매") {
+        LooketColors.BrandPrimary
+    } else {
+        LooketColors.BrandPrimarySubtle
+    }
+
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // TODO: 실제 상품 이미지로 교체
-            Box(modifier = Modifier.fillMaxWidth().height(170.dp).background(BorderDefault))
-            Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(10.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(170.dp).background(LooketColors.BorderDefault))
+            Column(modifier = Modifier.fillMaxWidth().background(LooketColors.Surface).padding(10.dp)) {
                 Text(product.name, fontSize = 14.sp, color = Color.Black)
-                Text(product.store, fontSize = 12.sp, color = TextPrimary)
+                Text(product.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("₩ ${formatKrw(product.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-                    Text("• ${product.statusLabel}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(statusColor))
+                        Text(product.statusLabel, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = LooketColors.TextPrimary)
+                    }
                 }
             }
         }
         Button(
             onClick = { /* TODO: 관심리스트에서 제거 로직 연결 */ },
-            colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = LooketColors.BrandPrimary),
             shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
             modifier = Modifier.fillMaxWidth().height(56.dp),
         ) {
-            Text("관심리스트에서 제거", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text("관심리스트에서 제거", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
 private fun formatKrw(amount: Long): String = "%,d".format(amount)
 
-@Composable
-private fun RequiredBadge() {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(StatusOrange)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-    ) {
-        Text("필수", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+// TODO: 실제 환율 API 연동 필요 (지금은 대략적인 원-엔 환율로 고정값 사용)
+private const val KRW_TO_JPY_RATE = 210.0
+
+private fun formatAmount(amountKrw: Long, showKrw: Boolean): String {
+    return if (showKrw) {
+        "₩ ${formatKrw(amountKrw)}"
+    } else {
+        val jpy = (amountKrw / KRW_TO_JPY_RATE).toLong()
+        "¥ ${formatKrw(jpy)}"
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 412, heightDp = 917)
 @Composable
-private fun RefundTabPreview() {
-    RefundTabContent(
-        summary = HomeMockData.refundSummary,
-        purchasedItems = HomeMockData.purchasedItems,
-        checklistItems = HomeMockData.checklistItems,
-        checklistCheckedIds = HomeMockData.checklistCheckedIds,
-        onChecklistClick = {},
-    )
-}
+private fun HomeScreenPreview() {
+    var selectedTab by remember { mutableStateOf(HomeTopBarTab.REFUND) }
 
-@Preview(showBackground = true)
-@Composable
-private fun LooketTabPreview() {
-    LooketTabContent(
-        recommended = HomeMockData.recommendedProducts,
-        brands = HomeMockData.brandFilters,
-        myLooket = HomeMockData.looketProducts,
-    )
+    LooketTheme {
+        Scaffold(
+            topBar = { HomeTopBar(selectedTab = selectedTab, onTabSelected = { selectedTab = it }) },
+            bottomBar = { BottomNavBar(selectedTab = BottomNavTab.HOME, onTabSelected = {}) },
+            containerColor = LooketColors.Surface,
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 32.dp),
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                when (selectedTab) {
+                    HomeTopBarTab.REFUND -> RefundTabContent(
+                        summary = HomeMockData.refundSummary,
+                        purchasedItems = HomeMockData.purchasedItems,
+                        checklistItems = HomeMockData.checklistItems,
+                        checklistCheckedIds = HomeMockData.checklistCheckedIds,
+                        onChecklistClick = {},
+                    )
+                    HomeTopBarTab.LOOKET -> LooketTabContent(
+                        recommended = HomeMockData.recommendedProducts,
+                        brands = HomeMockData.brandFilters,
+                        myLooket = HomeMockData.looketProducts,
+                    )
+                }
+            }
+        }
+    }
 }

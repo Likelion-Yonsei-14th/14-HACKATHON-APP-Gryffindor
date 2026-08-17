@@ -1,8 +1,10 @@
 package com.gryffindor.smartshopping.data.repository
 
+import com.gryffindor.smartshopping.domain.model.AttentionCandidate
 import com.gryffindor.smartshopping.domain.model.Pricing
 import com.gryffindor.smartshopping.domain.model.Product
 import com.gryffindor.smartshopping.domain.model.PurchaseState
+import com.gryffindor.smartshopping.domain.model.RecognitionResult
 import com.gryffindor.smartshopping.domain.model.SessionProduct
 import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
 import kotlinx.coroutines.delay
@@ -35,5 +37,13 @@ class FakeShoppingRepository : ShoppingRepository {
         interestedProductIds: List<String>
     ) {
         delay(300)
+    }
+
+    override suspend fun recognize(
+        sessionId: String,
+        candidate: AttentionCandidate
+    ): RecognitionResult {
+        delay(400)
+        return RecognitionResult.Unknown
     }
 }

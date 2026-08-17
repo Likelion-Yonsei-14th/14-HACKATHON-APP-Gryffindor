@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma "icon/mypage" (171:399) — head + body, 텍스트/배경 없이 아이콘만 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <group android:translateX="15.73" android:translateY="9.07">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="2.2"
+            android:pathData="M1.1,4.26667a3.16667,3.16667 0 1,0 6.33333,0a3.16667,3.16667 0 1,0 -6.33333,0" />
+    </group>
+    <group android:translateX="9.6" android:translateY="20.2">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M1.1,11.7667C1.1,5.1 5.1,1.1 10.4333,1.1C15.7667,1.1 19.7667,5.1 19.7667,11.7667" />
+    </group>
+</vector>

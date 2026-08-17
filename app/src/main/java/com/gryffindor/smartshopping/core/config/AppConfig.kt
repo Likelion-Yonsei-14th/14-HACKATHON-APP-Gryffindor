@@ -41,4 +41,60 @@ object AppConfig {
 
     /** Maximum samples retained for p95 latency calculation. */
     const val DETECTION_METRICS_MAX_SAMPLES: Int = 200
+
+    // ===== Attention Pipeline — Center ROI =====
+
+    /** Normalized left boundary of center ROI (horizontal central 70%). */
+    const val ATTENTION_CENTER_ROI_LEFT: Float = 0.15f
+
+    /** Normalized right boundary of center ROI. */
+    const val ATTENTION_CENTER_ROI_RIGHT: Float = 0.85f
+
+    /** Normalized top boundary of center ROI (vertical central 80%). */
+    const val ATTENTION_CENTER_ROI_TOP: Float = 0.10f
+
+    /** Normalized bottom boundary of center ROI. */
+    const val ATTENTION_CENTER_ROI_BOTTOM: Float = 0.90f
+
+    // ===== Attention Pipeline — Thresholds =====
+
+    /** Minimum occupancy ratio (bbox area / frame area) to qualify for attention. */
+    const val ATTENTION_MIN_OCCUPANCY_RATIO: Float = 0.12f
+
+    /** Minimum continuous dwell time (ms) for attention trigger. */
+    const val ATTENTION_MIN_DWELL_MS: Long = 800L
+
+    // ===== Attention Pipeline — Tracking =====
+
+    /** Maximum normalized center distance for associating a detection with an existing track. */
+    const val TRACKING_MAX_CENTER_DISTANCE: Float = 0.20f
+
+    /** Grace period (ms) to retain an unmatched track before removal. Uses frameTimestampUs. */
+    const val TRACKING_GRACE_PERIOD_MS: Long = 500L
+
+    // ===== Attention Pipeline — Crop =====
+
+    /** Padding ratio applied relative to bbox size when cropping. */
+    const val ATTENTION_CROP_PADDING_RATIO: Float = 0.15f
+
+    /** Minimum short-side pixel length for a valid crop. */
+    const val ATTENTION_MIN_CROP_SHORT_SIDE: Int = 160
+
+    /** Maximum long-side pixel length; proportional downscale if exceeded. */
+    const val ATTENTION_MAX_CROP_LONG_SIDE: Int = 1024
+
+    // ===== Attention Pipeline — JPEG =====
+
+    /** JPEG encoding quality [0–100]. */
+    const val ATTENTION_JPEG_QUALITY: Int = 85
+
+    // ===== Attention Pipeline — Source Frame Cache =====
+
+    /** Maximum number of recent CameraFrames retained for timestamp matching. */
+    const val SOURCE_FRAME_CACHE_MAX_SIZE: Int = 15
+
+    // ===== Attention Pipeline — Dwell Gap Protection =====
+
+    /** Maximum gap between consecutive frame timestamps (ms) counted as continuous dwell. */
+    const val ATTENTION_MAX_DWELL_GAP_MS: Long = 2000L
 }

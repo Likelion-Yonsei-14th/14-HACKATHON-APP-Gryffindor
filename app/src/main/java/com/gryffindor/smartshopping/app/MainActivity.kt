@@ -7,13 +7,15 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.gryffindor.smartshopping.app.navigation.AppNavGraph
+import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.data.meta.WearablePermissionRequester
+import com.gryffindor.smartshopping.data.meta.WearableUpdateRequester
 import com.gryffindor.smartshopping.data.meta.WearablesInitializer
+import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
@@ -81,8 +83,20 @@ class MainActivity : ComponentActivity() {
         // Wire the permission requester to MetaCameraSource
         appContainer.metaCameraSource.permissionRequester = wearablePermissionRequester
 
+        // Wire the update requester to MetaCameraSource
+        appContainer.metaCameraSource.updateRequester = WearableUpdateRequester {
+            val result = Wearables.openDATGlassesAppUpdate(this@MainActivity)
+            when {
+                result.isSuccess -> GlassesUpdateResult.Success
+                else -> {
+                    val error = result.errorOrNull()
+                    GlassesUpdateResult.Failed(error?.description ?: "Unknown error")
+                }
+            }
+        }
+
         setContent {
-            MaterialTheme {
+            LooketTheme {
                 Surface {
                     val navController = rememberNavController()
                     AppNavGraph(
