@@ -21,5 +21,9 @@
     <string name="mypage_travel_airport_arrival_estimate">공항 도착 예정시간</string>
 
     <string name="mypage_receipt_select_store">매장 선택하기</string>
+    <string name="mypage_receipt_add">영수증 추가</string>
     <string name="common_confirm">확인</string>
+
+    <string name="mypage_receipt_register_guide">여행 중 받은\n구매 영수증을 등록해주세요.</string>
+    <string name="mypage_receipt_retake_photo">사진 다시찍기</string>
 </resources>

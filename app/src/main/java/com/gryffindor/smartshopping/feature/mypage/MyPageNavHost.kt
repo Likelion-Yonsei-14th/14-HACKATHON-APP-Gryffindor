@@ -17,6 +17,7 @@ private object MyPageRoutes {
     const val HOME = "mypage/home"
     const val TRAVEL = "mypage/travel"
     const val RECEIPT = "mypage/receipt"
+    const val RECEIPT_REGISTER = "mypage/receipt/register"
 }
 
 /**
@@ -70,8 +71,18 @@ fun MyPageNavHost(
             MyPageReceiptScreen(
                 selectedStoreId = selectedStoreId,
                 onStoreSelected = { selectedStoreId = it },
+                onAddReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT_REGISTER) },
                 onConfirmClick = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        }
+
+        composable(MyPageRoutes.RECEIPT_REGISTER) {
+            MyPageReceiptRegisterScreen(
+                onBackClick = { navController.popBackStack() },
+                onRetakePhotoClick = {},
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )

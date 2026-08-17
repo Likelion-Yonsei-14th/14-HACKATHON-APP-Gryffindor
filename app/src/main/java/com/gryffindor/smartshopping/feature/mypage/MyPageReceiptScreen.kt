@@ -2,6 +2,7 @@ package com.gryffindor.smartshopping.feature.mypage
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,7 +38,7 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
-// 실제 매장 검색/등록 API 연결 전까지의 더미 목록. "+" 매장 직접추가 버튼은 이번 단계에서 제외.
+// 실제 매장 검색 API 연결 전까지의 더미 목록.
 private val dummyStores = listOf(
     LooketStore(
         id = "1",
@@ -54,13 +58,17 @@ private val dummyStores = listOf(
 )
 
 /**
- * 마이페이지 > RECEIPT — 영수증에 연결할 매장을 선택한다.
- * Figma 마이페이지_Receipt_매장 선택/추가(376:5408) 기준, "+" 매장 직접추가 버튼은 제외.
+ * 마이페이지 > RECEIPT — 등록된 영수증(매장) 목록에서 하나를 선택한다.
+ * "+"는 새 매장을 추가하는 버튼이 아니라 영수증을 새로 등록하는 버튼이다
+ * ([onAddReceiptClick] -> MyPageReceiptRegisterScreen으로 이동, 카메라로 찍으면
+ * 매장 정보가 인식되어 목록에 새 항목으로 추가되는 방식).
+ * Figma 마이페이지_Receipt_매장 선택/추가(376:5408) 기준.
  */
 @Composable
 fun MyPageReceiptScreen(
     selectedStoreId: String?,
     onStoreSelected: (String) -> Unit,
+    onAddReceiptClick: () -> Unit,
     onConfirmClick: () -> Unit,
     onBackClick: () -> Unit,
     selectedTab: BottomNavTab,
@@ -110,6 +118,21 @@ fun MyPageReceiptScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                IconButton(onClick = onAddReceiptClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_plus),
+                        contentDescription = stringResource(R.string.mypage_receipt_add),
+                        tint = LooketColors.TextPrimary,
+                    )
+                }
+            }
+            Spacer(Modifier.height(32.dp))
 
             LooketPrimaryButton(
                 text = stringResource(R.string.common_confirm),
@@ -132,6 +155,7 @@ private fun MyPageReceiptScreenPreview() {
         MyPageReceiptScreen(
             selectedStoreId = selectedStoreId,
             onStoreSelected = { selectedStoreId = it },
+            onAddReceiptClick = {},
             onConfirmClick = {},
             onBackClick = {},
             selectedTab = BottomNavTab.MY_PAGE,
