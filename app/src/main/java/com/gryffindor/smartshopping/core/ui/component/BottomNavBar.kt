@@ -103,7 +103,7 @@ private fun BottomNavItem(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 412)
 @Composable
 private fun BottomNavBarPreview() {
     var selectedTab by remember { mutableStateOf(BottomNavTab.HOME) }
