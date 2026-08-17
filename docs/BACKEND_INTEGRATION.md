@@ -100,7 +100,10 @@ OCCUPANCY_AND_DWELL
       "retailPriceKrw": 1090000,
       "estimatedRefundKrw": 60000,
       "estimatedRefundPriceKrw": 1030000,
-      "convertedAmount": "5210.35",
+      "convertedRetailPrice": "5513.86",
+      "convertedEstimatedRefund": "384.45",
+      "convertedEstimatedRefundPrice": "5129.41",
+      "convertedAmount": "5129.41",
       "convertedCurrency": "CNY",
       "instantRefundEligible": true,
       "pricingMode": "MOCK"
@@ -115,6 +118,25 @@ OCCUPANCY_AND_DWELL
   }
 }
 ```
+
+#### Pricing Fields
+
+| Field | Type | Nullable | Description |
+|-------|------|----------|-------------|
+| retailPriceKrw | Long | No | 정가 (KRW) |
+| estimatedRefundKrw | Long | No | 예상 환급액 (KRW) |
+| estimatedRefundPriceKrw | Long | No | 환급 적용가 (KRW) |
+| convertedRetailPrice | String | Yes | 정가를 세션 통화로 환산한 금액 |
+| convertedEstimatedRefund | String | Yes | 예상 환급액을 세션 통화로 환산한 금액 |
+| convertedEstimatedRefundPrice | String | Yes | 환급 적용가를 세션 통화로 환산한 금액 |
+| convertedAmount | String | Yes | 환급 적용가 환산 (legacy, = convertedEstimatedRefundPrice) |
+| convertedCurrency | String | Yes | 환산 통화 코드 (USD, CNY) |
+| instantRefundEligible | Boolean | No | 즉시환급 가능 여부 |
+| pricingMode | String | Yes | MOCK / LIVE |
+
+> **Nullable fallback:** `converted*` 필드는 환율 캐시 미스 시 null이 될 수 있다.
+> 앱은 null인 경우 통화 토글을 비활성화하고 KRW 표시를 유지한다.
+> Recognition 또는 product card 추가가 실패해서는 안 된다.
 
 ### AMBIGUOUS
 
