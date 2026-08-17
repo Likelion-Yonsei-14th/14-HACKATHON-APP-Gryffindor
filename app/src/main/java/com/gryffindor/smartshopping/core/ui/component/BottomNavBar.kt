@@ -3,14 +3,13 @@ package com.gryffindor.smartshopping.core.ui.component
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
@@ -52,16 +51,17 @@ fun BottomNavBar(
 ) {
     Row(
         modifier = modifier
+            .fillMaxWidth()
             .border(BorderStroke(1.dp, LooketColors.BorderDisabled))
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(top = 8.dp, bottom = 8.dp, start = 16.dp, end = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(95.dp, Alignment.CenterHorizontally),
     ) {
         BottomNavTab.entries.forEach { tab ->
             BottomNavItem(
                 tab = tab,
                 selected = tab == selectedTab,
                 onClick = { onTabSelected(tab) },
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -72,13 +72,13 @@ private fun BottomNavItem(
     tab: BottomNavTab,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val contentColor = if (selected) LooketColors.TextPrimary else LooketColors.TextDisabled
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
-        modifier = Modifier
-            .width(56.dp)
+        modifier = modifier
             .selectable(
                 selected = selected,
                 onClick = onClick,

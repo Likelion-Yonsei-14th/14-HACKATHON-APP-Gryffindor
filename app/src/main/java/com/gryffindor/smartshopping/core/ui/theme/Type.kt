@@ -18,6 +18,12 @@ val Pretendard = FontFamily(
 // Figma 텍스트 토큰(서비스명/텍스트/*)과 1:1로 대응되는 스타일.
 // Material3 Typography 슬롯 이름과 어긋나는 값들은 여기서 직접 참조한다.
 object LooketTextStyles {
+    val titleOne = TextStyle(
+        fontFamily = Pretendard,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 31.sp,
+    )
     val titleTwo = TextStyle(
         fontFamily = Pretendard,
         fontWeight = FontWeight.SemiBold,

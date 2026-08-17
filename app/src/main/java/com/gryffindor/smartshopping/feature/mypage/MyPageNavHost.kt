@@ -7,9 +7,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
@@ -17,6 +19,10 @@ private object MyPageRoutes {
     const val HOME = "mypage/home"
     const val TRAVEL = "mypage/travel"
     const val RECEIPT = "mypage/receipt"
+    const val RECEIPT_REGISTER = "mypage/receipt/register"
+    const val RECEIPT_STORE = "mypage/receipt/{storeId}"
+
+    fun receiptStore(storeId: String) = "mypage/receipt/$storeId"
 }
 
 /**
@@ -70,8 +76,36 @@ fun MyPageNavHost(
             MyPageReceiptScreen(
                 selectedStoreId = selectedStoreId,
                 onStoreSelected = { selectedStoreId = it },
-                onConfirmClick = { navController.popBackStack() },
+                onAddReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT_REGISTER) },
+                onConfirmClick = {
+                    selectedStoreId?.let { navController.navigate(MyPageRoutes.receiptStore(it)) }
+                },
                 onBackClick = { navController.popBackStack() },
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        }
+
+        composable(MyPageRoutes.RECEIPT_REGISTER) {
+            MyPageReceiptRegisterScreen(
+                onBackClick = { navController.popBackStack() },
+                onRetakePhotoClick = {},
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        }
+
+        composable(
+            route = MyPageRoutes.RECEIPT_STORE,
+            arguments = listOf(navArgument("storeId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
+            val storeName = dummyStores.find { it.id == storeId }?.name ?: storeId
+
+            MyPageReceiptViewScreen(
+                storeName = storeName,
+                onBackClick = { navController.popBackStack() },
+                onRetakePhotoClick = {},
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )
