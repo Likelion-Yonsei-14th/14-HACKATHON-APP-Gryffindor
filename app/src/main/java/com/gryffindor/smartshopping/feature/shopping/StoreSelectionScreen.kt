@@ -1,4 +1,4 @@
-package com.gryffindor.smartshopping.feature.mypage
+package com.gryffindor.smartshopping.feature.shopping
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,8 +14,8 @@ import com.gryffindor.smartshopping.core.ui.component.LooketStore
 import com.gryffindor.smartshopping.core.ui.component.LooketStoreSelectionScreen
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
-// 실제 매장 검색 API 연결 전까지의 더미 목록. MyPageNavHost에서 storeId로 매장을 찾을 때도 재사용한다.
-internal val dummyStores = listOf(
+// 실제 매장 검색 API 연결 전까지의 더미 목록.
+internal val dummyShoppingStores = listOf(
     LooketStore(
         id = "1",
         name = "MCM 신세계백화점 본점",
@@ -28,23 +28,21 @@ internal val dummyStores = listOf(
     ),
     LooketStore(
         id = "3",
-        name = "MCM 여의도 더현대점",
-        address = "서울 영등포구 여의대로 108 더현대서울 4F",
+        name = "MCM 롯데백화점 본점",
+        address = "서울 송파구 송파대로 521 롯데백화점잠실점 1F",
     ),
 )
 
 /**
- * 마이페이지 > RECEIPT — 등록된 영수증(매장) 목록에서 하나를 선택한다.
- * "+"는 새 매장을 추가하는 버튼이 아니라 영수증을 새로 등록하는 버튼이다
- * ([onAddReceiptClick] -> MyPageReceiptRegisterScreen으로 이동, 카메라로 찍으면
- * 매장 정보가 인식되어 목록에 새 항목으로 추가되는 방식).
- * Figma 마이페이지_Receipt_매장 선택/추가(376:5408) 기준.
+ * 쇼핑 - 실시간 > 매장 선택 — 실시간 쇼핑 세션을 시작할 매장을 고른다.
+ * 카드 탭은 선택(보라 테두리)만 하고, 확인 버튼은 매장 선택 시에만 하단
+ * 네비게이션 바 위에 팝업으로 뜬다 — 마이페이지 영수증 매장 선택과 동일한 로직
+ * ([LooketStoreSelectionScreen] 공유). Figma 쇼핑-실시간-매장선택(376:5275) 기준.
  */
 @Composable
-fun MyPageReceiptScreen(
+fun ShoppingStoreSelectionScreen(
     selectedStoreId: String?,
     onStoreSelected: (String) -> Unit,
-    onAddReceiptClick: () -> Unit,
     onConfirmClick: () -> Unit,
     onBackClick: () -> Unit,
     selectedTab: BottomNavTab,
@@ -52,8 +50,8 @@ fun MyPageReceiptScreen(
     modifier: Modifier = Modifier,
 ) {
     LooketStoreSelectionScreen(
-        title = stringResource(R.string.mypage_receipt),
-        stores = dummyStores,
+        title = stringResource(R.string.shopping_store_selection_title),
+        stores = dummyShoppingStores,
         selectedStoreId = selectedStoreId,
         onStoreSelected = onStoreSelected,
         onConfirmClick = onConfirmClick,
@@ -61,22 +59,20 @@ fun MyPageReceiptScreen(
         selectedTab = selectedTab,
         onTabSelected = onTabSelected,
         modifier = modifier,
-        onAddClick = onAddReceiptClick,
     )
 }
 
 @Preview(showBackground = true, heightDp = 917, widthDp = 412)
 @Composable
-private fun MyPageReceiptScreenPreview() {
+private fun ShoppingStoreSelectionScreenPreview() {
     var selectedStoreId by remember { mutableStateOf<String?>(null) }
     LooketTheme {
-        MyPageReceiptScreen(
+        ShoppingStoreSelectionScreen(
             selectedStoreId = selectedStoreId,
             onStoreSelected = { selectedStoreId = it },
-            onAddReceiptClick = {},
             onConfirmClick = {},
             onBackClick = {},
-            selectedTab = BottomNavTab.MY_PAGE,
+            selectedTab = BottomNavTab.SHOP,
             onTabSelected = {},
         )
     }
