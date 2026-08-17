@@ -26,6 +26,4 @@
 
     <string name="mypage_receipt_register_guide">여행 중 받은\n구매 영수증을 등록해주세요.</string>
     <string name="mypage_receipt_retake_photo">사진 다시찍기</string>
-
-    <string name="mypage_receipt_list_empty">등록된 영수증이 없습니다.</string>
 </resources>

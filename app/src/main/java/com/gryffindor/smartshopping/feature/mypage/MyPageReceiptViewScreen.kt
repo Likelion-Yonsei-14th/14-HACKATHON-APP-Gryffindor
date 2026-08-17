@@ -2,19 +2,18 @@ package com.gryffindor.smartshopping.feature.mypage
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
- * 마이페이지 > RECEIPT > "+" — 영수증 사진을 찍어 매장 정보를 등록한다.
- * Figma 마이페이지_Receipt_영수증 등록(376:5433) 기준. 실제 카메라 촬영/OCR 연동은
- * 아직 없고, [onRetakePhotoClick]만 콜백으로 열어둔 상태(화면 우선 제작 단계).
+ * 마이페이지 > RECEIPT > 매장 카드 확인 — 그 매장에서 등록한 영수증 사진을 보여준다.
+ * Figma 마이페이지_Receipt_영수증 편집(376:5422) 기준(제목이 매장명이라는 점만
+ * [MyPageReceiptRegisterScreen]과 다르고 레이아웃은 동일해 [ReceiptPhotoScreen]을 공유한다).
  */
 @Composable
-fun MyPageReceiptRegisterScreen(
+fun MyPageReceiptViewScreen(
+    storeName: String,
     onBackClick: () -> Unit,
     onRetakePhotoClick: () -> Unit,
     selectedTab: BottomNavTab,
@@ -22,7 +21,7 @@ fun MyPageReceiptRegisterScreen(
     modifier: Modifier = Modifier,
 ) {
     ReceiptPhotoScreen(
-        title = stringResource(R.string.mypage_receipt_register_guide),
+        title = storeName,
         onBackClick = onBackClick,
         onRetakePhotoClick = onRetakePhotoClick,
         selectedTab = selectedTab,
@@ -33,9 +32,10 @@ fun MyPageReceiptRegisterScreen(
 
 @Preview(showBackground = true, heightDp = 917, widthDp = 412)
 @Composable
-private fun MyPageReceiptRegisterScreenPreview() {
+private fun MyPageReceiptViewScreenPreview() {
     LooketTheme {
-        MyPageReceiptRegisterScreen(
+        MyPageReceiptViewScreen(
+            storeName = "MCM 신세계백화점 본점",
             onBackClick = {},
             onRetakePhotoClick = {},
             selectedTab = BottomNavTab.MY_PAGE,

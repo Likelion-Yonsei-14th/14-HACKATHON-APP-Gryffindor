@@ -25,18 +25,6 @@ private object MyPageRoutes {
     fun receiptStore(storeId: String) = "mypage/receipt/$storeId"
 }
 
-// 매장별 더미 영수증. 실제로는 온보딩에서 등록한 값을 백엔드/로컬 저장소에서 가져와야 한다.
-private fun dummyReceiptsFor(storeId: String): List<MyPageReceiptItem> = when (storeId) {
-    "1" -> listOf(
-        MyPageReceiptItem("r1", "2026.08.15", "MCM 백팩", "₩890,000"),
-        MyPageReceiptItem("r2", "2026.08.16", "MCM 반지갑", "₩350,000"),
-    )
-    "2" -> listOf(
-        MyPageReceiptItem("r3", "2026.08.14", "MCM 크로스백", "₩620,000"),
-    )
-    else -> emptyList()
-}
-
 /**
  * 마이페이지 탭 하위 화면 전환. 진짜 유저 데이터/Repository 연결 전까지는
  * 더미 값으로 채워두고, 실제 배선은 AppNavGraph에 이 컴포저블을 얹을 때 진행한다.
@@ -114,10 +102,10 @@ fun MyPageNavHost(
             val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
             val storeName = dummyStores.find { it.id == storeId }?.name ?: storeId
 
-            MyPageReceiptListScreen(
+            MyPageReceiptViewScreen(
                 storeName = storeName,
-                receipts = dummyReceiptsFor(storeId),
                 onBackClick = { navController.popBackStack() },
+                onRetakePhotoClick = {},
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )
