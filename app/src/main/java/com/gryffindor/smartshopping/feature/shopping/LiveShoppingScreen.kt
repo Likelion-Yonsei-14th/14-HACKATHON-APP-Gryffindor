@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -297,36 +298,21 @@ private fun LiveReceiptRow(item: LiveReceiptItem, onRemoveClick: () -> Unit) {
 
 @Preview(showBackground = true, heightDp = 917, widthDp = 412)
 @Composable
-private fun LiveShoppingScreenIdlePreview() {
-    LooketTheme {
-        LiveShoppingScreen(
-            isSessionActive = false,
-            onPlayClick = {},
-            onPauseClick = {},
-            onFinishClick = {},
-            onBackClick = {},
-            totalPurchaseAmount = "₩ 3,400,000",
-            refundAmount = "₩ 230,000",
-            items = dummyLiveReceiptItems,
-            onRemoveItem = {},
-        )
-    }
-}
+private fun LiveShoppingScreenPreview() {
+    var isSessionActive by remember { mutableStateOf(false) }
+    var previewItems by remember { mutableStateOf(dummyLiveReceiptItems) }
 
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun LiveShoppingScreenActivePreview() {
     LooketTheme {
         LiveShoppingScreen(
-            isSessionActive = true,
-            onPlayClick = {},
-            onPauseClick = {},
-            onFinishClick = {},
+            isSessionActive = isSessionActive,
+            onPlayClick = { isSessionActive = true },
+            onPauseClick = { isSessionActive = false },
+            onFinishClick = { isSessionActive = false },
             onBackClick = {},
             totalPurchaseAmount = "₩ 3,400,000",
             refundAmount = "₩ 230,000",
-            items = dummyLiveReceiptItems,
-            onRemoveItem = {},
+            items = previewItems,
+            onRemoveItem = { id -> previewItems = previewItems.filterNot { it.id == id } },
         )
     }
 }
