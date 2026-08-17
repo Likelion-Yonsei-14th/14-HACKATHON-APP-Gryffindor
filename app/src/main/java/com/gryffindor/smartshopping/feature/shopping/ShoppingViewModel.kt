@@ -24,9 +24,27 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Which currency the product card prices are currently displayed in.
+ */
+enum class DisplayCurrency { KRW, CONVERTED }
+
+data class PricingSummary(
+    val totalRetailKrw: Long = 0,
+    val totalEstimatedRefundKrw: Long = 0,
+    val totalConvertedRetail: String? = null,
+    val totalConvertedRefund: String? = null,
+    val convertedCurrency: String? = null
+)
+
 data class ShoppingUiState(
     val products: List<SessionProduct> = emptyList(),
-    val isSessionActive: Boolean = true
+    val isSessionActive: Boolean = true,
+    val sessionCurrency: String = "USD",
+    val displayCurrency: DisplayCurrency = DisplayCurrency.KRW,
+    val summary: PricingSummary = PricingSummary(),
+    /** Whether all products have converted pricing available */
+    val convertedAvailable: Boolean = false
 )
 
 class ShoppingViewModel(
@@ -49,6 +67,7 @@ class ShoppingViewModel(
     val uiState: StateFlow<UiState<ShoppingUiState>> = _uiState.asStateFlow()
 
     private var currentSessionId: String? = null
+    private var currentCurrency: String = "USD"
 
     /** Tracks productIds already added to the card list — prevents duplicates. */
     private val recognizedProductIds = mutableSetOf<String>()
@@ -88,9 +107,10 @@ class ShoppingViewModel(
         }
     }
 
-    fun loadProducts(sessionId: String) {
+    fun loadProducts(sessionId: String, currency: String) {
         synchronized(recognitionStateLock) {
             currentSessionId = sessionId
+            currentCurrency = currency
             sessionActive = true
         }
         viewModelScope.launch {
@@ -100,12 +120,67 @@ class ShoppingViewModel(
                 // Seed dedup set with already-known products
                 products.forEach { recognizedProductIds.add(it.product.productId) }
                 _uiState.value = UiState.Success(
-                    ShoppingUiState(products = products, isSessionActive = true)
+                    ShoppingUiState(
+                        products = products,
+                        isSessionActive = true,
+                        sessionCurrency = currency,
+                        displayCurrency = DisplayCurrency.KRW,
+                        summary = computeSummary(products),
+                        convertedAvailable = products.all { hasConvertedPricing(it) }
+                    )
                 )
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "상품 목록을 불러올 수 없습니다.")
             }
         }
+    }
+
+    fun toggleCurrency() {
+        val current = (_uiState.value as? UiState.Success)?.data ?: return
+        if (!current.convertedAvailable && current.displayCurrency == DisplayCurrency.KRW) {
+            // Can't switch to converted if data is unavailable
+            return
+        }
+        val newDisplay = when (current.displayCurrency) {
+            DisplayCurrency.KRW -> DisplayCurrency.CONVERTED
+            DisplayCurrency.CONVERTED -> DisplayCurrency.KRW
+        }
+        _uiState.value = UiState.Success(current.copy(displayCurrency = newDisplay))
+    }
+
+    private fun computeSummary(products: List<SessionProduct>): PricingSummary {
+        val totalRetailKrw = products.sumOf { it.pricing.retailPriceKrw }
+        val totalRefundKrw = products.sumOf { it.pricing.estimatedRefundKrw }
+
+        // Sum converted values (all must be non-null for a valid total)
+        val allConverted = products.all { hasConvertedPricing(it) }
+        val totalConvertedRetail = if (allConverted && products.isNotEmpty()) {
+            sumConvertedStrings(products.map { it.pricing.convertedRetailPrice!! })
+        } else null
+        val totalConvertedRefund = if (allConverted && products.isNotEmpty()) {
+            sumConvertedStrings(products.map { it.pricing.convertedEstimatedRefund!! })
+        } else null
+        val currency = products.firstOrNull()?.pricing?.convertedCurrency
+
+        return PricingSummary(
+            totalRetailKrw = totalRetailKrw,
+            totalEstimatedRefundKrw = totalRefundKrw,
+            totalConvertedRetail = totalConvertedRetail,
+            totalConvertedRefund = totalConvertedRefund,
+            convertedCurrency = currency
+        )
+    }
+
+    private fun hasConvertedPricing(product: SessionProduct): Boolean {
+        val p = product.pricing
+        return p.convertedRetailPrice != null &&
+            p.convertedEstimatedRefund != null &&
+            p.convertedCurrency != null
+    }
+
+    private fun sumConvertedStrings(values: List<String>): String {
+        val total = values.sumOf { it.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO }
+        return total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
     }
 
     fun endShopping(sessionId: String) {
@@ -140,7 +215,7 @@ class ShoppingViewModel(
     }
 
     fun retry() {
-        currentSessionId?.let { loadProducts(it) }
+        currentSessionId?.let { loadProducts(it, currentCurrency) }
     }
 
     /**
@@ -342,7 +417,21 @@ class ShoppingViewModel(
         // Append to existing product list
         val currentState = (_uiState.value as? UiState.Success)?.data ?: return
         val updatedProducts = currentState.products + sessionProduct
-        _uiState.value = UiState.Success(currentState.copy(products = updatedProducts))
+        val newConvertedAvailable = updatedProducts.all { hasConvertedPricing(it) }
+        // If converted becomes unavailable, reset display to KRW
+        val newDisplayCurrency = if (!newConvertedAvailable && currentState.displayCurrency == DisplayCurrency.CONVERTED) {
+            DisplayCurrency.KRW
+        } else {
+            currentState.displayCurrency
+        }
+        _uiState.value = UiState.Success(
+            currentState.copy(
+                products = updatedProducts,
+                summary = computeSummary(updatedProducts),
+                convertedAvailable = newConvertedAvailable,
+                displayCurrency = newDisplayCurrency
+            )
+        )
 
         Log.i(TAG, "[A4] product card added: productId=$productId")
     }
