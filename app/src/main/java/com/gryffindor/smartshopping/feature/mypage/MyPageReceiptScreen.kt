@@ -38,8 +38,8 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
-// 실제 매장 검색 API 연결 전까지의 더미 목록.
-private val dummyStores = listOf(
+// 실제 매장 검색 API 연결 전까지의 더미 목록. MyPageNavHost에서 storeId로 매장을 찾을 때도 재사용한다.
+internal val dummyStores = listOf(
     LooketStore(
         id = "1",
         name = "MCM 신세계백화점 본점",
@@ -68,6 +68,7 @@ private val dummyStores = listOf(
 fun MyPageReceiptScreen(
     selectedStoreId: String?,
     onStoreSelected: (String) -> Unit,
+    onStoreClick: (String) -> Unit,
     onAddReceiptClick: () -> Unit,
     onConfirmClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -111,7 +112,10 @@ fun MyPageReceiptScreen(
                         LooketStoreCard(
                             store = store,
                             selected = store.id == selectedStoreId,
-                            onClick = { onStoreSelected(store.id) },
+                            onClick = {
+                                onStoreSelected(store.id)
+                                onStoreClick(store.id)
+                            },
                         )
                     }
                 }
@@ -155,6 +159,7 @@ private fun MyPageReceiptScreenPreview() {
         MyPageReceiptScreen(
             selectedStoreId = selectedStoreId,
             onStoreSelected = { selectedStoreId = it },
+            onStoreClick = {},
             onAddReceiptClick = {},
             onConfirmClick = {},
             onBackClick = {},

@@ -7,9 +7,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
@@ -18,6 +20,21 @@ private object MyPageRoutes {
     const val TRAVEL = "mypage/travel"
     const val RECEIPT = "mypage/receipt"
     const val RECEIPT_REGISTER = "mypage/receipt/register"
+    const val RECEIPT_STORE = "mypage/receipt/{storeId}"
+
+    fun receiptStore(storeId: String) = "mypage/receipt/$storeId"
+}
+
+// 매장별 더미 영수증. 실제로는 온보딩에서 등록한 값을 백엔드/로컬 저장소에서 가져와야 한다.
+private fun dummyReceiptsFor(storeId: String): List<MyPageReceiptItem> = when (storeId) {
+    "1" -> listOf(
+        MyPageReceiptItem("r1", "2026.08.15", "MCM 백팩", "₩890,000"),
+        MyPageReceiptItem("r2", "2026.08.16", "MCM 반지갑", "₩350,000"),
+    )
+    "2" -> listOf(
+        MyPageReceiptItem("r3", "2026.08.14", "MCM 크로스백", "₩620,000"),
+    )
+    else -> emptyList()
 }
 
 /**
@@ -71,6 +88,7 @@ fun MyPageNavHost(
             MyPageReceiptScreen(
                 selectedStoreId = selectedStoreId,
                 onStoreSelected = { selectedStoreId = it },
+                onStoreClick = { storeId -> navController.navigate(MyPageRoutes.receiptStore(storeId)) },
                 onAddReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT_REGISTER) },
                 onConfirmClick = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },
@@ -83,6 +101,22 @@ fun MyPageNavHost(
             MyPageReceiptRegisterScreen(
                 onBackClick = { navController.popBackStack() },
                 onRetakePhotoClick = {},
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+            )
+        }
+
+        composable(
+            route = MyPageRoutes.RECEIPT_STORE,
+            arguments = listOf(navArgument("storeId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
+            val storeName = dummyStores.find { it.id == storeId }?.name ?: storeId
+
+            MyPageReceiptListScreen(
+                storeName = storeName,
+                receipts = dummyReceiptsFor(storeId),
+                onBackClick = { navController.popBackStack() },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )
