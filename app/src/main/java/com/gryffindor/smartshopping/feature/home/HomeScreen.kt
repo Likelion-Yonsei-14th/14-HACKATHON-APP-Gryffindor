@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,13 +22,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -119,12 +115,8 @@ private fun HomeTopNav(selectedTab: HomeTab, onTabSelected: (HomeTab) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(text = "looket", color = BrandPrimary, fontSize = 22.sp)
-            Icon(
-                imageVector = Icons.Outlined.Notifications,
-                contentDescription = "알림",
-                tint = TextPrimary,
-                modifier = Modifier.size(24.dp),
-            )
+            // TODO: 실제 알림 아이콘 이미지/벡터 생기면 교체
+            Text(text = "🔔", fontSize = 20.sp)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -321,7 +313,8 @@ private fun ChecklistPreviewSection(items: List<ChecklistItem>, onSeeAllClick: (
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("CHECKLIST", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "전체 보기", tint = TextPrimary)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("›", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
         }
 
         items.forEach { item -> ChecklistPreviewRow(item) }
@@ -355,7 +348,7 @@ private fun ChecklistPreviewRow(item: ChecklistItem) {
             modifier = Modifier.size(56.dp).clip(CircleShape).background(BorderDisabled),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Check, contentDescription = "미완료", tint = Color.White)
+            Text("✓", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -368,7 +361,7 @@ private fun LooketTabContent(
     brands: List<BrandFilter>,
     myLooket: List<LooketProduct>,
 ) {
-    // 요구사항: 브랜드 로고는 다중 토글 선택 (여러 개 동시 선택 가능)
+    // 요구사항 3: 브랜드 로고는 다중 토글 선택 (여러 개 동시 선택 가능)
     var selectedBrandIds by remember { mutableStateOf(setOf<String>()) }
 
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
@@ -380,7 +373,7 @@ private fun LooketTabContent(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            // 요구사항: 옆으로 스크롤
+            // 요구사항 2: 옆으로 스크롤
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
@@ -529,4 +522,26 @@ private fun RequiredBadge() {
     ) {
         Text("필수", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RefundTabPreview() {
+    RefundTabContent(
+        summary = HomeMockData.refundSummary,
+        purchasedItems = HomeMockData.purchasedItems,
+        checklistItems = HomeMockData.checklistItems,
+        checklistCheckedIds = HomeMockData.checklistCheckedIds,
+        onChecklistClick = {},
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LooketTabPreview() {
+    LooketTabContent(
+        recommended = HomeMockData.recommendedProducts,
+        brands = HomeMockData.brandFilters,
+        myLooket = HomeMockData.looketProducts,
+    )
 }

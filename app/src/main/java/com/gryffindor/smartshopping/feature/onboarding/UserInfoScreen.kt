@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.feature.onboarding
 
 import androidx.compose.foundation.Image
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -204,8 +205,9 @@ private fun DropdownField(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TermsBottomSheet(onDismiss: () -> Unit, onStart: () -> Unit) {
+private fun TermsBottomSheet(onDismiss: () -> Unit, onStart: () -> Unit)  {
     val sheetState = rememberModalBottomSheetState()
     var checkedTerms by remember { mutableStateOf(setOf("terms1")) }
     val allTerms = listOf("terms1", "terms2", "terms3", "terms4")
