@@ -42,4 +42,6 @@
     <string name="shopping_result_purchased_title">구매 상품</string>
     <string name="shopping_result_add_manually">직접 추가하기</string>
     <string name="shopping_result_wishlist_heart">♥</string>
+    <string name="shopping_result_viewed_products_title">내가 본 상품</string>
+    <string name="shopping_result_add">추가</string>
 </resources>

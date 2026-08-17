@@ -65,12 +65,20 @@ fun ShoppingSessionNavHost(
 
         composable(ShoppingSessionRoutes.RESULT_PURCHASED_ITEMS) {
             var purchasedItems by remember { mutableStateOf(dummyLiveReceiptItems) }
+            var viewedItems by remember { mutableStateOf(dummyViewedItems) }
 
             PurchasedItemsScreen(
                 items = purchasedItems,
                 onRemoveItem = { id -> purchasedItems = purchasedItems.filterNot { it.id == id } },
                 onWishlistItem = {},
-                onAddManuallyClick = {},
+                viewedItems = viewedItems,
+                onAddViewedItem = { id ->
+                    viewedItems.find { it.id == id }?.let { found ->
+                        purchasedItems = purchasedItems + found
+                        viewedItems = viewedItems.filterNot { it.id == id }
+                    }
+                },
+                onConfirmClick = { navController.popBackStack() },
                 onBackClick = { navController.popBackStack() },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
