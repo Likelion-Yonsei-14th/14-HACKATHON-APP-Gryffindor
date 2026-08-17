@@ -2,13 +2,16 @@ package com.gryffindor.smartshopping.feature.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -19,18 +22,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.gryffindor.smartshopping.domain.model.SupportedCountry
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToShopping: (sessionId: String) -> Unit
+    onNavigateToShopping: (sessionId: String, currency: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     // Navigate when sessionId is available
-    LaunchedEffect(uiState.sessionId) {
-        uiState.sessionId?.let { sessionId ->
-            onNavigateToShopping(sessionId)
+    LaunchedEffect(uiState.sessionId, uiState.selectedCurrency) {
+        val sessionId = uiState.sessionId
+        val currency = uiState.selectedCurrency
+        if (sessionId != null && currency != null) {
+            onNavigateToShopping(sessionId, currency)
             viewModel.resetSessionNavigation()
         }
     }
@@ -67,6 +73,24 @@ fun HomeScreen(
         } else if (uiState.isStarting) {
             CircularProgressIndicator()
         } else {
+            // Country selector
+            Text(
+                text = "국가 선택",
+                style = MaterialTheme.typography.labelLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SupportedCountry.entries.forEach { country ->
+                    FilterChip(
+                        selected = uiState.selectedCountry == country,
+                        onClick = { viewModel.selectCountry(country) },
+                        label = {
+                            Text("${country.displayName} (${country.currencyCode})")
+                        }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = { viewModel.startShopping() }) {
                 Text("쇼핑 시작")
             }

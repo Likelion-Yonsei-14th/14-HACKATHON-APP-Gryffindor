@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.gryffindor.smartshopping.domain.model.CameraState
+import com.gryffindor.smartshopping.domain.model.SupportedCountry
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,11 +17,13 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val sessionId: String? = null,
+    val selectedCurrency: String? = null,
     val isSessionActive: Boolean = false,
     val isStarting: Boolean = false,
     val errorMessage: String? = null,
     val datUpdateRequired: Boolean = false,
-    val datUpdateError: String? = null
+    val datUpdateError: String? = null,
+    val selectedCountry: SupportedCountry = SupportedCountry.USA
 )
 
 class HomeViewModel(
@@ -59,14 +62,20 @@ class HomeViewModel(
         }
     }
 
+    fun selectCountry(country: SupportedCountry) {
+        _uiState.update { it.copy(selectedCountry = country) }
+    }
+
     fun startShopping() {
         viewModelScope.launch {
             _uiState.update { it.copy(isStarting = true, errorMessage = null) }
+            val currency = _uiState.value.selectedCountry.currencyCode
             try {
-                val session = sessionRepository.createSession("KRW")
+                val session = sessionRepository.createSession(currency)
                 _uiState.update {
                     it.copy(
                         sessionId = session.sessionId,
+                        selectedCurrency = session.currency,
                         isSessionActive = true,
                         isStarting = false
                     )
@@ -130,7 +139,7 @@ class HomeViewModel(
     }
 
     fun resetSessionNavigation() {
-        _uiState.update { it.copy(sessionId = null, isSessionActive = false) }
+        _uiState.update { it.copy(sessionId = null, selectedCurrency = null, isSessionActive = false) }
     }
 
     class Factory(
