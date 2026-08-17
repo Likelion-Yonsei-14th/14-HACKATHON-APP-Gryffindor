@@ -2,6 +2,7 @@ package com.gryffindor.smartshopping.feature.shopping
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -84,6 +85,8 @@ fun LiveShoppingScreen(
     refundAmount: String,
     items: List<LiveReceiptItem>,
     onRemoveItem: (String) -> Unit,
+    isExchangeRateOn: Boolean,
+    onExchangeRateToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
@@ -166,7 +169,14 @@ fun LiveShoppingScreen(
                                 .width(144.dp)
                                 .height(5.dp)
                                 .clip(RoundedCornerShape(100.dp))
-                                .background(LooketColors.TextPrimary),
+                                .background(LooketColors.TextPrimary)
+                                // 핸들바를 탭하면 확실하게 접힘 상태로 되돌아간다(드래그가 익숙하지
+                                // 않은 사용자를 위한 안전장치).
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { dragDp = 0f },
+                                ),
                         )
                         Text(
                             text = stringResource(R.string.shopping_live_list),
@@ -186,7 +196,12 @@ fun LiveShoppingScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(bottom = 32.dp),
                 ) {
-                    RefundSummary(totalPurchaseAmount = totalPurchaseAmount, refundAmount = refundAmount)
+                    RefundSummary(
+                        totalPurchaseAmount = totalPurchaseAmount,
+                        refundAmount = refundAmount,
+                        isExchangeRateOn = isExchangeRateOn,
+                        onExchangeRateToggle = onExchangeRateToggle,
+                    )
                     Spacer(Modifier.height(16.dp))
                     items.forEach { item ->
                         LiveReceiptRow(item = item, onRemoveClick = { onRemoveItem(item.id) })
@@ -217,12 +232,21 @@ private fun FabButton(iconRes: Int, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RefundSummary(totalPurchaseAmount: String, refundAmount: String) {
+private fun RefundSummary(
+    totalPurchaseAmount: String,
+    refundAmount: String,
+    isExchangeRateOn: Boolean,
+    onExchangeRateToggle: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
     ) {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            ExchangeRateToggle(isOn = isExchangeRateOn, onToggle = onExchangeRateToggle)
+        }
+        Spacer(Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.shopping_live_refund_title),
             style = LooketTextStyles.titleTwo,
@@ -251,6 +275,38 @@ private fun RefundSummary(totalPurchaseAmount: String, refundAmount: String) {
             Text(
                 text = stringResource(R.string.shopping_live_refund_type_post),
                 style = LooketTextStyles.bodyOne,
+                color = LooketColors.TextPrimary,
+            )
+        }
+    }
+}
+
+/** Figma "환율" 토글(351:3141). 다른 환급 관련 화면에서도 재등장하면 core/ui로 옮길 예정. */
+@Composable
+private fun ExchangeRateToggle(isOn: Boolean, onToggle: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(width = 52.dp, height = 32.dp)
+            .clip(RoundedCornerShape(100.dp))
+            .background(LooketColors.BrandPrimary)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onToggle,
+            ),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(if (isOn) Alignment.CenterEnd else Alignment.CenterStart)
+                .padding(4.dp)
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(LooketColors.SurfaceSubtle),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.shopping_live_currency_symbol),
+                style = LooketTextStyles.bodyThree,
                 color = LooketColors.TextPrimary,
             )
         }
@@ -301,6 +357,7 @@ private fun LiveReceiptRow(item: LiveReceiptItem, onRemoveClick: () -> Unit) {
 private fun LiveShoppingScreenPreview() {
     var isSessionActive by remember { mutableStateOf(false) }
     var previewItems by remember { mutableStateOf(dummyLiveReceiptItems) }
+    var isExchangeRateOn by remember { mutableStateOf(false) }
 
     LooketTheme {
         LiveShoppingScreen(
@@ -313,6 +370,8 @@ private fun LiveShoppingScreenPreview() {
             refundAmount = "₩ 230,000",
             items = previewItems,
             onRemoveItem = { id -> previewItems = previewItems.filterNot { it.id == id } },
+            isExchangeRateOn = isExchangeRateOn,
+            onExchangeRateToggle = { isExchangeRateOn = !isExchangeRateOn },
         )
     }
 }

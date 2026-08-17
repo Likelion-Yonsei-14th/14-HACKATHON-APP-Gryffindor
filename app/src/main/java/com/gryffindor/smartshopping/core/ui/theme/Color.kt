@@ -11,6 +11,7 @@ object LooketColors {
 
     val Surface = Color(0xFFFFFFFF)
     val SurfaceEmphasized = Color(0xFFD7D6E1)
+    val SurfaceSubtle = Color(0xFFF6F6F9)
 
     val TextPrimary = Color(0xFF1B1A22)
     val TextBrand = BrandPrimary

@@ -35,4 +35,5 @@
     <string name="shopping_live_refund_of_total">총 구매 금액 %1$s 중</string>
     <string name="shopping_live_refund_type_post">사후 환급</string>
     <string name="shopping_live_refund_amount">환급액: %1$s</string>
+    <string name="shopping_live_currency_symbol">₩</string>
 </resources>
