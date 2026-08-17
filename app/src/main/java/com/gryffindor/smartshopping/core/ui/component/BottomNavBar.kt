@@ -2,6 +2,7 @@ package com.gryffindor.smartshopping.core.ui.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,11 +74,18 @@ private fun BottomNavItem(
     onClick: () -> Unit,
 ) {
     val contentColor = if (selected) LooketColors.TextPrimary else LooketColors.TextDisabled
+    val interactionSource = remember { MutableInteractionSource() }
 
     Column(
         modifier = Modifier
             .width(56.dp)
-            .selectable(selected = selected, onClick = onClick, role = Role.Tab),
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.Tab,
+                interactionSource = interactionSource,
+                indication = null,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
