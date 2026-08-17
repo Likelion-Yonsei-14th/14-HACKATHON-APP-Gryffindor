@@ -1,6 +1,8 @@
 package com.gryffindor.smartshopping.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -35,10 +37,17 @@ fun AppNavGraph(
                     appContainer.cameraFrameProvider
                 )
             )
+            val uiState by viewModel.uiState.collectAsState()
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToShopping = { sessionId ->
                     navController.navigate(Routes.shopping(sessionId))
+                },
+                onNavigateToChecklist = {
+                    // TODO: Home 미리보기 체크리스트가 어느 sessionId 기준인지 아직 미확정 (내일 대웅님께 확인)
+                    uiState.sessionId?.let { sessionId ->
+                        navController.navigate(Routes.checklist(sessionId))
+                    }
                 }
             )
         }
