@@ -1,7 +1,6 @@
 package com.gryffindor.smartshopping.core.ui.component
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -36,13 +35,12 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 enum class BottomNavTab(
-    val activeIconRes: Int,
-    val inactiveIconRes: Int,
+    val iconRes: Int,
     val labelRes: Int,
 ) {
-    HOME(R.drawable.home_active, R.drawable.home_inactive, R.string.nav_home),
-    SHOP(R.drawable.shop_active, R.drawable.shop_inactive, R.string.nav_shop),
-    MY_PAGE(R.drawable.mypage_active, R.drawable.mypage_inactive, R.string.nav_mypage),
+    HOME(R.drawable.ic_nav_home, R.string.nav_home),
+    SHOP(R.drawable.ic_nav_shop, R.string.nav_shop),
+    MY_PAGE(R.drawable.ic_nav_mypage, R.string.nav_mypage),
 }
 
 @Composable
@@ -82,10 +80,10 @@ private fun BottomNavItem(
             .selectable(selected = selected, onClick = onClick, role = Role.Tab),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(if (selected) tab.activeIconRes else tab.inactiveIconRes),
+        Icon(
+            painter = painterResource(tab.iconRes),
             contentDescription = stringResource(tab.labelRes),
-            contentScale = ContentScale.Fit,
+            tint = contentColor,
             modifier = Modifier.size(40.dp),
         )
         Spacer(modifier = Modifier.height(4.dp))

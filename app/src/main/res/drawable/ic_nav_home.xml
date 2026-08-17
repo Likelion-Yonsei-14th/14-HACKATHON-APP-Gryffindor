@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma "icon/home" > "home shape" (127:9) — 텍스트 라벨/배경 없이 아이콘 도형만. 색은 tint로 처리 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <group android:translateX="7.5" android:translateY="7">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M12.5,1.1L23.9,11.1V25.1H1.1V11.1L12.5,1.1Z" />
+    </group>
+</vector>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma "icon/shopping-door" (171:394) — door + knob, 텍스트/배경 없이 아이콘만 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <group android:translateX="10.9" android:translateY="8.2">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M1.1,23.7667V1.1H17.1V23.7667H1.1Z" />
+    </group>
+    <group android:translateX="22" android:translateY="19.33">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="1"
+            android:pathData="M0.5,1.33333a0.833333,0.833333 0 1,0 1.666667,0a0.833333,0.833333 0 1,0 -1.666667,0" />
+    </group>
+</vector>
