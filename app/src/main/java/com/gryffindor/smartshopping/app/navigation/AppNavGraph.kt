@@ -18,6 +18,8 @@ import com.gryffindor.smartshopping.feature.review.ReviewScreen
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
 import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingViewModel
+import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionScreen
+import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionViewModel
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
 import com.gryffindor.smartshopping.feature.travel.TravelViewModel
 
@@ -31,15 +33,39 @@ fun AppNavGraph(
         composable(Routes.HOME) {
             val viewModel: HomeViewModel = viewModel(
                 factory = HomeViewModel.Factory(
-                    appContainer.sessionRepository,
                     appContainer.cameraFrameProvider
                 )
             )
             HomeScreen(
                 viewModel = viewModel,
-                onNavigateToShopping = { sessionId, currency ->
-                    navController.navigate(Routes.shopping(sessionId, currency))
+                onNavigateToStoreSelection = { currency ->
+                    navController.navigate(Routes.storeSelection(currency))
                 }
+            )
+        }
+
+        composable(
+            route = Routes.STORE_SELECTION,
+            arguments = listOf(
+                navArgument("currency") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val currency = backStackEntry.arguments?.getString("currency") ?: "USD"
+            val viewModel: StoreSelectionViewModel = viewModel(
+                factory = StoreSelectionViewModel.Factory(
+                    appContainer.storeRepository,
+                    appContainer.sessionRepository,
+                    currency
+                )
+            )
+            StoreSelectionScreen(
+                viewModel = viewModel,
+                onNavigateToShopping = { sessionId, sessionCurrency ->
+                    navController.navigate(Routes.shopping(sessionId, sessionCurrency)) {
+                        popUpTo(Routes.HOME) { inclusive = false }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

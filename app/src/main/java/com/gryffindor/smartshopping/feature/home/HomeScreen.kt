@@ -8,15 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -27,19 +24,9 @@ import com.gryffindor.smartshopping.domain.model.SupportedCountry
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToShopping: (sessionId: String, currency: String) -> Unit
+    onNavigateToStoreSelection: (currency: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    // Navigate when sessionId is available
-    LaunchedEffect(uiState.sessionId, uiState.selectedCurrency) {
-        val sessionId = uiState.sessionId
-        val currency = uiState.selectedCurrency
-        if (sessionId != null && currency != null) {
-            onNavigateToShopping(sessionId, currency)
-            viewModel.resetSessionNavigation()
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -70,8 +57,6 @@ fun HomeScreen(
                 onRequestUpdate = { viewModel.requestGlassesUpdate() },
                 onRetry = { viewModel.retryCamera() }
             )
-        } else if (uiState.isStarting) {
-            CircularProgressIndicator()
         } else {
             // Country selector
             Text(
@@ -91,7 +76,11 @@ fun HomeScreen(
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = { viewModel.startShopping() }) {
+            Button(
+                onClick = {
+                    onNavigateToStoreSelection(uiState.selectedCountry.currencyCode)
+                }
+            ) {
                 Text("쇼핑 시작")
             }
         }
