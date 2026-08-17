@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
+import com.gryffindor.smartshopping.core.ui.component.LooketConfirmDialog
 import com.gryffindor.smartshopping.core.ui.component.LooketDropdown
 import com.gryffindor.smartshopping.core.ui.component.LooketTopBar
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
@@ -61,6 +62,8 @@ fun MyPageScreen(
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier,
         bottomBar = { BottomNavBar(selectedTab = selectedTab, onTabSelected = onTabSelected) },
@@ -93,10 +96,21 @@ fun MyPageScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(63.dp)) {
                     MyPageMenuRow(text = stringResource(R.string.mypage_travel), onClick = onTravelClick)
                     MyPageMenuRow(text = stringResource(R.string.mypage_receipt), onClick = onReceiptClick)
-                    MyPageMenuRow(text = stringResource(R.string.mypage_logout), onClick = onLogoutClick)
+                    MyPageMenuRow(text = stringResource(R.string.mypage_logout), onClick = { showLogoutDialog = true })
                 }
             }
         }
+    }
+
+    if (showLogoutDialog) {
+        LooketConfirmDialog(
+            message = stringResource(R.string.mypage_logout_confirm_message),
+            onConfirm = {
+                showLogoutDialog = false
+                onLogoutClick()
+            },
+            onDismiss = { showLogoutDialog = false },
+        )
     }
 }
 

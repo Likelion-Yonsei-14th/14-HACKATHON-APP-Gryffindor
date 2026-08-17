@@ -49,4 +49,7 @@
     <string name="shopping_result_interested_heading">아쉽게 못 산 제품이 있으신가요?\n관심 상품으로 등록해두세요</string>
     <string name="shopping_result_interested_caption">관심 상품을 기반으로 OO님께 딱 맞는 제품을 추천해드려요</string>
     <string name="common_done">완료</string>
+    <string name="common_yes">예</string>
+    <string name="common_no">아니오</string>
+    <string name="mypage_logout_confirm_message">로그아웃하시겠습니까?</string>
 </resources>

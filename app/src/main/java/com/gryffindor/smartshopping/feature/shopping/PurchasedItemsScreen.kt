@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,6 +42,7 @@ import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
+import com.gryffindor.smartshopping.core.ui.component.LooketSmallButton
 import com.gryffindor.smartshopping.core.ui.component.LooketTopBar
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
@@ -298,13 +298,13 @@ private fun PurchasedItemRow(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
-                SmallPillButton(
+                LooketSmallButton(
                     text = stringResource(R.string.common_remove),
                     backgroundColor = LooketColors.BrandPrimarySubtle,
                     contentColor = LooketColors.BrandPrimary,
                     onClick = onRemoveClick,
                 )
-                SmallPillButton(
+                LooketSmallButton(
                     text = stringResource(R.string.shopping_result_wishlist_heart),
                     backgroundColor = LooketColors.RedLight,
                     contentColor = LooketColors.Red,
@@ -312,29 +312,6 @@ private fun PurchasedItemRow(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun SmallPillButton(
-    text: String,
-    backgroundColor: Color,
-    contentColor: Color,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(width = 100.dp, height = 36.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(backgroundColor)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = text, style = LooketTextStyles.bodyThree, color = contentColor)
     }
 }
 
