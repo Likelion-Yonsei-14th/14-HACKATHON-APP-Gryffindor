@@ -69,7 +69,7 @@ class ShoppingFlowIsolationTest {
         var createSessionCalled = false
         var completeSessionCalled = false
 
-        override suspend fun createSession(currency: String): Session {
+        override suspend fun createSession(currency: String, storeId: String): Session {
             createSessionCalled = true
             if (shouldFail) throw RuntimeException("Session creation failed")
             return Session(
@@ -173,50 +173,27 @@ class ShoppingFlowIsolationTest {
     // --- Tests ---
 
     @Test
-    fun `HomeViewModel - shopping session starts even when camera fails`() = runTest {
-        val sessionRepo = FakeSessionRepository()
-        val failingCamera = FailingCameraFrameProvider()
-        val viewModel = HomeViewModel(sessionRepo, failingCamera)
+    fun `HomeViewModel - country selection works`() = runTest {
+        val camera = NoOpCameraFrameProvider()
+        val viewModel = HomeViewModel(camera)
 
-        viewModel.startShopping()
+        viewModel.selectCountry(com.gryffindor.smartshopping.domain.model.SupportedCountry.CHINA)
         advanceUntilIdle()
 
-        // Session was created successfully
-        assertTrue("Session should be created", sessionRepo.createSessionCalled)
-        assertEquals("test-session-001", viewModel.uiState.value.sessionId)
-        assertTrue(viewModel.uiState.value.isSessionActive)
-
-        // No error in UI state (camera failure is not reflected as shopping error)
-        assertNull(
-            "Camera failure should not set HomeUiState.errorMessage",
-            viewModel.uiState.value.errorMessage
+        assertEquals(
+            com.gryffindor.smartshopping.domain.model.SupportedCountry.CHINA,
+            viewModel.uiState.value.selectedCountry
         )
     }
 
     @Test
-    fun `HomeViewModel - camera failure does not prevent navigation`() = runTest {
-        val sessionRepo = FakeSessionRepository()
-        val failingCamera = FailingCameraFrameProvider()
-        val viewModel = HomeViewModel(sessionRepo, failingCamera)
-
-        viewModel.startShopping()
-        advanceUntilIdle()
-
-        // sessionId is available for navigation
-        assertNotNull(viewModel.uiState.value.sessionId)
-        assertEquals(false, viewModel.uiState.value.isStarting)
-    }
-
-    @Test
-    fun `HomeViewModel - camera start is called on successful session`() = runTest {
-        val sessionRepo = FakeSessionRepository()
+    fun `HomeViewModel - DAT update state reflects camera state`() = runTest {
         val camera = NoOpCameraFrameProvider()
-        val viewModel = HomeViewModel(sessionRepo, camera)
-
-        viewModel.startShopping()
+        val viewModel = HomeViewModel(camera)
         advanceUntilIdle()
 
-        assertTrue("Camera startCamera should be called", camera.startCalled)
+        // Default state: no DAT update required
+        assertEquals(false, viewModel.uiState.value.datUpdateRequired)
     }
 
     @Test

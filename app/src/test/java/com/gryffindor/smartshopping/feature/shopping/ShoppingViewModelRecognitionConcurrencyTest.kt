@@ -266,7 +266,7 @@ class ShoppingViewModelRecognitionConcurrencyTest {
         var completeSessionCalled: Boolean = false
             private set
 
-        override suspend fun createSession(currency: String): Session = Session(
+        override suspend fun createSession(currency: String, storeId: String): Session = Session(
             sessionId = SESSION_ID,
             status = SessionStatus.ACTIVE,
             currency = currency,

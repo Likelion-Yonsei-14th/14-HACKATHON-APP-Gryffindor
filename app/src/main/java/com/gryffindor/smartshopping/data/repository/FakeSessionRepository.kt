@@ -7,7 +7,7 @@ import kotlinx.coroutines.delay
 
 class FakeSessionRepository : SessionRepository {
 
-    override suspend fun createSession(currency: String): Session {
+    override suspend fun createSession(currency: String, storeId: String): Session {
         delay(300)
         return Session(
             sessionId = "fake-session-001",

@@ -129,6 +129,16 @@ class ShoppingViewModel(
                         convertedAvailable = products.all { hasConvertedPricing(it) }
                     )
                 )
+
+                // Start camera pipeline — failure does NOT block product display.
+                // Camera errors are observable through CameraState.
+                launch {
+                    try {
+                        cameraFrameProvider.startCamera()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Camera start failed (shopping session unaffected)", e)
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "상품 목록을 불러올 수 없습니다.")
             }

@@ -15,9 +15,9 @@ class RemoteSessionRepository(
     private val apiService: ShoppingApiService
 ) : SessionRepository {
 
-    override suspend fun createSession(currency: String): Session {
-        Log.d(TAG, "createSession: POST /api/v1/sessions currency=$currency")
-        val response = apiService.createSession(SessionCreateRequestDto(currency = currency))
+    override suspend fun createSession(currency: String, storeId: String): Session {
+        Log.d(TAG, "createSession: POST /api/v1/sessions currency=$currency storeId=$storeId")
+        val response = apiService.createSession(SessionCreateRequestDto(currency = currency, storeId = storeId))
         Log.d(TAG, "createSession: response sessionId=${response.sessionId}, status=${response.status}")
         return Session(
             sessionId = response.sessionId,
