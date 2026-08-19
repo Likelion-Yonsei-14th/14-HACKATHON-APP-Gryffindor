@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.app
 
 import android.content.Context
+import com.gryffindor.smartshopping.core.location.LocationProvider
 import com.gryffindor.smartshopping.core.network.NetworkConfig
 import com.gryffindor.smartshopping.data.attention.AttentionPipeline
 import com.gryffindor.smartshopping.data.detection.DetectionPipeline
@@ -57,6 +58,9 @@ class AppContainer(private val applicationContext: Context) {
     val tripRepository: TripRepository by lazy {
         RemoteTripRepository(personalizationApiService)
     }
+
+    // A8: One-shot location provider for Feed API (not stored long-term).
+    val locationProvider: LocationProvider by lazy { LocationProvider(applicationContext) }
 
     // A1: Camera input — SDK-independent boundary exposed to ViewModels.
     val metaCameraSource: MetaCameraSource by lazy { MetaCameraSource() }
