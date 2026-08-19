@@ -5,8 +5,10 @@ import com.gryffindor.smartshopping.data.remote.dto.FlightPatchRequestDto
 import com.gryffindor.smartshopping.data.remote.dto.HotelStayRequestDto
 import com.gryffindor.smartshopping.data.remote.dto.HotelStayResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.MyPageResponseDto
+import com.gryffindor.smartshopping.data.remote.dto.PurchaseRefundMethodPatchRequestDto
 import com.gryffindor.smartshopping.data.remote.dto.PurchaseResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.ReceiptResponseDto
+import com.gryffindor.smartshopping.data.remote.dto.RefundChecklistDto
 import com.gryffindor.smartshopping.data.remote.dto.StoreWishlistProductResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.TripCreateRequestDto
 import com.gryffindor.smartshopping.data.remote.dto.TripDetailResponseDto
@@ -60,11 +62,18 @@ interface PersonalizationApiService {
     @Multipart
     @POST("me/receipts/analyze")
     suspend fun analyzeReceipt(
-        @Part image: MultipartBody.Part
+        @Part image: MultipartBody.Part,
+        @Part("tripId") tripId: RequestBody? = null
     ): ReceiptResponseDto
 
     @GET("me/purchases")
     suspend fun getPurchases(): List<PurchaseResponseDto>
+
+    @PATCH("me/purchases/{purchaseId}")
+    suspend fun updatePurchaseRefundMethod(
+        @Path("purchaseId") purchaseId: String,
+        @Body request: PurchaseRefundMethodPatchRequestDto
+    ): PurchaseResponseDto
 
     // --- Flight ---
 
@@ -114,6 +123,13 @@ interface PersonalizationApiService {
     suspend fun getHotel(
         @Path("tripId") tripId: String
     ): HotelStayResponseDto
+
+    // --- Refund Checklist ---
+
+    @GET("me/trips/{tripId}/refund-checklist")
+    suspend fun getTripRefundChecklist(
+        @Path("tripId") tripId: String
+    ): RefundChecklistDto
 
     // --- Feed ---
 

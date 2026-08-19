@@ -59,6 +59,8 @@ data class ReceiptItemResponseDto(
 @Serializable
 data class ReceiptResponseDto(
     val id: String,
+    val tripId: String? = null,
+    val refundMethod: String? = null,
     val storeName: String? = null,
     val purchasedAt: String? = null,
     val totalAmount: Int? = null,
@@ -79,12 +81,19 @@ data class PurchaseItemResponseDto(
 @Serializable
 data class PurchaseResponseDto(
     val id: String,
+    val tripId: String? = null,
+    val refundMethod: String? = null,
     val storeName: String? = null,
     val purchasedAt: String? = null,
     val totalAmount: Int? = null,
     val currency: String? = null,
     val items: List<PurchaseItemResponseDto>,
     val createdAt: String
+)
+
+@Serializable
+data class PurchaseRefundMethodPatchRequestDto(
+    val refundMethod: String
 )
 
 // --- Flight ---
