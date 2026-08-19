@@ -16,6 +16,9 @@ object Routes {
     const val FLIGHT_EDIT = "flight_edit/{tripId}/{flightId}"
     const val HOTEL_EDIT = "hotel_edit/{tripId}"
 
+    // MyPage
+    const val MY_PAGE = "my_page"
+
     // Visit reservation flow
     const val VISIT_RESERVATION = "visit_reservation/{tripId}/{storeId}/{storeName}"
     const val RESERVATION_LIST = "reservation_list/{tripId}"

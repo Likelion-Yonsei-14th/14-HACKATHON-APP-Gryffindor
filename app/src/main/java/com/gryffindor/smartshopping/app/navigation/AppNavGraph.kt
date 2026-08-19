@@ -28,6 +28,8 @@ import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionScreen
 import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionViewModel
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
 import com.gryffindor.smartshopping.feature.travel.TravelViewModel
+import com.gryffindor.smartshopping.feature.mypage.MyPageScreen
+import com.gryffindor.smartshopping.feature.mypage.MyPageViewModel
 import com.gryffindor.smartshopping.feature.trip.FlightEditScreen
 import com.gryffindor.smartshopping.feature.trip.HotelEditScreen
 import com.gryffindor.smartshopping.feature.trip.TripCreateScreen
@@ -75,6 +77,9 @@ fun AppNavGraph(
                 },
                 onNavigateToTripList = {
                     navController.navigate(Routes.TRIP_LIST)
+                },
+                onNavigateToMyPage = {
+                    navController.navigate(Routes.MY_PAGE)
                 },
                 onNavigateToStore = { _ ->
                     // Store detail navigation — reserved for future use
@@ -225,6 +230,25 @@ fun AppNavGraph(
             RecommendationScreen(
                 viewModel = viewModel,
                 sessionId = sessionId
+            )
+        }
+
+        // ===== MyPage =====
+
+        composable(Routes.MY_PAGE) {
+            val viewModel: MyPageViewModel = viewModel(
+                factory = MyPageViewModel.Factory(
+                    appContainer.personalizationRepository
+                )
+            )
+            MyPageScreen(
+                viewModel = viewModel,
+                onNavigateToTripDetail = { tripId ->
+                    navController.navigate(Routes.tripDetail(tripId))
+                },
+                onNavigateToReservationList = { tripId ->
+                    navController.navigate(Routes.reservationList(tripId))
+                }
             )
         }
 

@@ -34,6 +34,7 @@ fun HomeScreen(
     feedViewModel: FeedViewModel,
     onNavigateToStoreSelection: (currency: String) -> Unit,
     onNavigateToTripList: () -> Unit = {},
+    onNavigateToMyPage: () -> Unit = {},
     onNavigateToStore: (storeId: String) -> Unit = {},
     onNavigateToVisitReservation: (storeId: String, storeName: String) -> Unit = { _, _ -> },
     wishlistIds: Set<String> = emptySet(),
@@ -119,6 +120,14 @@ fun HomeScreen(
                 onClick = onNavigateToTripList
             ) {
                 Text("내 여행")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onNavigateToMyPage
+            ) {
+                Text("마이페이지")
             }
         }
 
