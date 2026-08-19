@@ -198,6 +198,7 @@ data class FeedStoreResponseDto(
     val storeId: String,
     val name: String,
     val type: String,
+    val distanceFromCurrentLocationKm: Double? = null,
     val distanceFromHotelKm: Double? = null,
     val airportCode: String? = null,
     val terminal: String? = null,

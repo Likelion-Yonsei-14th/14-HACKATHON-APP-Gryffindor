@@ -119,7 +119,9 @@ interface PersonalizationApiService {
 
     @GET("me/trips/{tripId}/feed")
     suspend fun getTripFeed(
-        @Path("tripId") tripId: String
+        @Path("tripId") tripId: String,
+        @retrofit2.http.Query("latitude") latitude: Double? = null,
+        @retrofit2.http.Query("longitude") longitude: Double? = null
     ): TripFeedResponseDto
 
     // --- Store Wishlist ---

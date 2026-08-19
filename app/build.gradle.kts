@@ -98,6 +98,9 @@ dependencies {
     // Core
     implementation("androidx.core:core-ktx:1.16.0")
 
+    // Location (one-shot for Feed)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     // Meta Wearables DAT — coordinates from validated Stage 0 CameraAccess project
     implementation("com.meta.wearable:mwdat-core:0.9.0")
     implementation("com.meta.wearable:mwdat-camera:0.9.0")

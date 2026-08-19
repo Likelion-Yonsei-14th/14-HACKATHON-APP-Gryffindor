@@ -96,9 +96,13 @@ class RemoteTripRepository(
         return apiService.getHotel(tripId).toDomain()
     }
 
-    override suspend fun getTripFeed(tripId: String): TripFeed {
-        Log.d(TAG, "getTripFeed: GET /api/v1/me/trips/$tripId/feed")
-        return apiService.getTripFeed(tripId).toDomain()
+    override suspend fun getTripFeed(
+        tripId: String,
+        latitude: Double?,
+        longitude: Double?
+    ): TripFeed {
+        Log.d(TAG, "getTripFeed: GET /api/v1/me/trips/$tripId/feed lat=$latitude lng=$longitude")
+        return apiService.getTripFeed(tripId, latitude, longitude).toDomain()
     }
 
     override suspend fun getStoreWishlistProducts(storeId: String): List<StoreWishlistProduct> {

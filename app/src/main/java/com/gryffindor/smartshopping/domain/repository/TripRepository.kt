@@ -42,7 +42,11 @@ interface TripRepository {
 
     suspend fun getHotel(tripId: String): HotelStay
 
-    suspend fun getTripFeed(tripId: String): TripFeed
+    suspend fun getTripFeed(
+        tripId: String,
+        latitude: Double? = null,
+        longitude: Double? = null
+    ): TripFeed
 
     suspend fun getStoreWishlistProducts(storeId: String): List<StoreWishlistProduct>
 

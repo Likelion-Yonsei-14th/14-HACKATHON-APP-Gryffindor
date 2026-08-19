@@ -16,6 +16,7 @@ data class RecommendedStore(
     val storeId: String,
     val name: String,
     val type: String,
+    val distanceFromCurrentLocationKm: Double?,
     val distanceFromHotelKm: Double?,
     val airportCode: String?,
     val terminal: String?,

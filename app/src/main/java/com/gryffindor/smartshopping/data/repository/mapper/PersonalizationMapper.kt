@@ -183,6 +183,7 @@ fun FeedStoreResponseDto.toDomain(): RecommendedStore = RecommendedStore(
     storeId = storeId,
     name = name,
     type = type,
+    distanceFromCurrentLocationKm = distanceFromCurrentLocationKm,
     distanceFromHotelKm = distanceFromHotelKm,
     airportCode = airportCode,
     terminal = terminal,
