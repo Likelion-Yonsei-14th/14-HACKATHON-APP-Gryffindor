@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +29,8 @@ fun ProductCard(
     sessionProduct: SessionProduct,
     displayCurrency: DisplayCurrency = DisplayCurrency.KRW,
     sessionCurrency: String = "KRW",
+    isWishlisted: Boolean = false,
+    onWishlistToggle: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val product = sessionProduct.product
@@ -63,11 +66,29 @@ fun ProductCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = product.brand,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = product.brand,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (onWishlistToggle != null) {
+                        IconButton(
+                            onClick = { onWishlistToggle(product.productId) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Text(
+                                text = if (isWishlisted) "\u2665" else "\u2661",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (isWishlisted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
 
                 Text(
                     text = product.name,

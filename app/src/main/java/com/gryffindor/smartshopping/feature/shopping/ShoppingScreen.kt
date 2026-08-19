@@ -34,6 +34,8 @@ fun ShoppingScreen(
     viewModel: ShoppingViewModel,
     sessionId: String,
     currency: String,
+    wishlistIds: Set<String> = emptySet(),
+    onWishlistToggle: (String) -> Unit = {},
     onNavigateToReview: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -136,7 +138,9 @@ fun ShoppingScreen(
                         ProductCard(
                             sessionProduct = product,
                             displayCurrency = data.displayCurrency,
-                            sessionCurrency = data.sessionCurrency
+                            sessionCurrency = data.sessionCurrency,
+                            isWishlisted = wishlistIds.contains(product.product.productId),
+                            onWishlistToggle = onWishlistToggle
                         )
                     }
                 }
