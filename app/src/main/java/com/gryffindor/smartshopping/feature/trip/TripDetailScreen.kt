@@ -623,11 +623,8 @@ private fun RefundChecklistSection(
         }
 
         else -> {
-            Text(
-                text = "체크리스트 정보를 불러오는 중...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Initial state before loading starts — show loading indicator
+            CircularProgressIndicator(modifier = Modifier.padding(8.dp))
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.gryffindor.smartshopping.feature.trip
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -393,6 +394,7 @@ class TripViewModel(
             _detailState.update { it.copy(isLoadingRefundChecklist = true, refundChecklistError = null) }
             try {
                 val checklist = tripRepository.getRefundChecklist(tripId)
+                Log.d("TripViewModel", "refundChecklist loaded status=${checklist.status} items=${checklist.items.size}")
                 _detailState.update {
                     // Remove checked IDs that no longer exist in the response
                     val validIds = checklist.items.map { item -> item.id }.toSet()
@@ -403,10 +405,11 @@ class TripViewModel(
                     )
                 }
             } catch (e: Exception) {
+                Log.e("TripViewModel", "loadRefundChecklist failed tripId=$tripId", e)
                 _detailState.update {
                     it.copy(
                         isLoadingRefundChecklist = false,
-                        refundChecklistError = "체크리스트를 불러오지 못했습니다."
+                        refundChecklistError = e.message ?: "체크리스트를 불러오지 못했습니다."
                     )
                 }
             }

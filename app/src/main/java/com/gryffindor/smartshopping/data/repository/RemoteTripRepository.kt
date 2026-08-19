@@ -138,7 +138,9 @@ class RemoteTripRepository(
 
     override suspend fun getRefundChecklist(tripId: String): RefundChecklist {
         Log.d(TAG, "getRefundChecklist: GET /api/v1/me/trips/$tripId/refund-checklist")
-        return apiService.getTripRefundChecklist(tripId).toDomain(tripId)
+        val result = apiService.getTripRefundChecklist(tripId).toDomain(tripId)
+        Log.d(TAG, "getRefundChecklist success tripId=${result.tripId} status=${result.status} items=${result.items.size} notice=${result.notice}")
+        return result
     }
 
     companion object {
