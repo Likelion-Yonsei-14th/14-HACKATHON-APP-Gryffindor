@@ -32,13 +32,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.domain.model.Flight
 import com.gryffindor.smartshopping.domain.model.HotelStay
+import com.gryffindor.smartshopping.feature.reservation.ReservationListSection
 
 @Composable
 fun TripDetailScreen(
     viewModel: TripViewModel,
     tripId: String,
     onNavigateToFlightEdit: (flightId: String) -> Unit,
-    onNavigateToHotelEdit: () -> Unit
+    onNavigateToHotelEdit: () -> Unit,
+    onNavigateToVisitReservation: (storeId: String, storeName: String) -> Unit = { _, _ -> }
 ) {
     val state by viewModel.detailState.collectAsState()
     val context = LocalContext.current
@@ -220,6 +222,19 @@ fun TripDetailScreen(
                 ) {
                     Text(if (detail.hotel == null) "숙소 등록" else "숙소 수정")
                 }
+
+                // ===== Reservation section =====
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ReservationListSection(
+                    reservations = detail.visitReservations,
+                    cancellingIds = emptySet(),
+                    onCancelReservation = { reservationId ->
+                        viewModel.cancelReservation(reservationId, tripId)
+                    }
+                )
 
                 Spacer(modifier = Modifier.height(32.dp))
             }

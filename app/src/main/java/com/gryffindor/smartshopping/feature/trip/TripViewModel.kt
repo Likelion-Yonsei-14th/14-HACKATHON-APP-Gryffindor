@@ -255,6 +255,23 @@ class TripViewModel(
         _detailState.update { it.copy(hotelSaved = false) }
     }
 
+    // ========== Visit Reservation ==========
+
+    fun cancelReservation(reservationId: String, tripId: String) {
+        viewModelScope.launch {
+            try {
+                tripRepository.cancelVisitReservation(reservationId)
+                // Refresh detail to get updated reservation statuses
+                val detail = tripRepository.getTrip(tripId)
+                _detailState.update { it.copy(tripDetail = detail) }
+            } catch (e: Exception) {
+                _detailState.update {
+                    it.copy(error = e.message ?: "예약 취소에 실패했습니다.")
+                }
+            }
+        }
+    }
+
     fun resetDetailState() {
         _detailState.value = TripDetailUiState()
     }
