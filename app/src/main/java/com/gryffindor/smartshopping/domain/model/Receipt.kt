@@ -2,6 +2,8 @@ package com.gryffindor.smartshopping.domain.model
 
 data class Receipt(
     val id: String,
+    val tripId: String?,
+    val refundMethod: RefundMethod,
     val storeName: String?,
     val purchasedAt: String?,
     val totalAmount: Int?,
