@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.domain.model.Flight
 import com.gryffindor.smartshopping.domain.model.HotelStay
+import com.gryffindor.smartshopping.domain.model.Purchase
+import com.gryffindor.smartshopping.domain.model.RefundChecklist
+import com.gryffindor.smartshopping.domain.model.RefundMethod
 import com.gryffindor.smartshopping.domain.model.Trip
 import com.gryffindor.smartshopping.domain.model.TripDetail
 import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
@@ -44,7 +47,17 @@ data class TripDetailUiState(
     val flightError: String? = null,
     val hotelError: String? = null,
     val flightSaved: Boolean = false,
-    val hotelSaved: Boolean = false
+    val hotelSaved: Boolean = false,
+    // B7 Refund Flow
+    val purchases: List<Purchase> = emptyList(),
+    val isLoadingPurchases: Boolean = false,
+    val isAnalyzingReceipt: Boolean = false,
+    val receiptMessage: String? = null,
+    val updatingRefundMethodIds: Set<String> = emptySet(),
+    val refundChecklist: RefundChecklist? = null,
+    val isLoadingRefundChecklist: Boolean = false,
+    val refundChecklistError: String? = null,
+    val checkedChecklistIds: Set<String> = emptySet()
 )
 
 // --- ViewModel ---
@@ -144,6 +157,9 @@ class TripViewModel(
                 }
             }
         }
+        // Load B7 data in parallel
+        loadPurchases(tripId)
+        loadRefundChecklist(tripId)
     }
 
     // ========== Flight - Analyze (OCR) ==========
@@ -274,6 +290,105 @@ class TripViewModel(
 
     fun resetDetailState() {
         _detailState.value = TripDetailUiState()
+    }
+
+    // ========== B7: Purchases ==========
+
+    private fun loadPurchases(tripId: String) {
+        viewModelScope.launch {
+            _detailState.update { it.copy(isLoadingPurchases = true) }
+            try {
+                val allPurchases = personalizationRepository.getPurchases()
+                val tripPurchases = allPurchases.filter { it.tripId == tripId }
+                _detailState.update { it.copy(purchases = tripPurchases, isLoadingPurchases = false) }
+            } catch (e: Exception) {
+                _detailState.update { it.copy(isLoadingPurchases = false) }
+            }
+        }
+    }
+
+    // ========== B7: Receipt OCR ==========
+
+    fun analyzeReceipt(imageBytes: ByteArray, tripId: String) {
+        if (_detailState.value.isAnalyzingReceipt) return
+        viewModelScope.launch {
+            _detailState.update { it.copy(isAnalyzingReceipt = true, receiptMessage = null) }
+            try {
+                personalizationRepository.analyzeReceipt(imageBytes, tripId)
+                _detailState.update { it.copy(isAnalyzingReceipt = false, receiptMessage = "영수증이 등록되었습니다.") }
+                // Refresh purchases and checklist
+                loadPurchases(tripId)
+                loadRefundChecklist(tripId)
+            } catch (e: Exception) {
+                _detailState.update {
+                    it.copy(
+                        isAnalyzingReceipt = false,
+                        receiptMessage = "영수증 분석에 실패했습니다."
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearReceiptMessage() {
+        _detailState.update { it.copy(receiptMessage = null) }
+    }
+
+    // ========== B7: Refund Method ==========
+
+    fun updateRefundMethod(purchaseId: String, tripId: String, refundMethod: RefundMethod) {
+        if (purchaseId in _detailState.value.updatingRefundMethodIds) return
+        viewModelScope.launch {
+            _detailState.update { it.copy(updatingRefundMethodIds = it.updatingRefundMethodIds + purchaseId) }
+            try {
+                personalizationRepository.updatePurchaseRefundMethod(purchaseId, refundMethod)
+                // Refresh purchases and checklist
+                loadPurchases(tripId)
+                loadRefundChecklist(tripId)
+            } catch (_: Exception) {
+                // Silent fail — UI will remain with old value
+            } finally {
+                _detailState.update { it.copy(updatingRefundMethodIds = it.updatingRefundMethodIds - purchaseId) }
+            }
+        }
+    }
+
+    // ========== B7: Refund Checklist ==========
+
+    private fun loadRefundChecklist(tripId: String) {
+        viewModelScope.launch {
+            _detailState.update { it.copy(isLoadingRefundChecklist = true, refundChecklistError = null) }
+            try {
+                val checklist = tripRepository.getRefundChecklist(tripId)
+                _detailState.update {
+                    // Remove checked IDs that no longer exist in the response
+                    val validIds = checklist.items.map { item -> item.id }.toSet()
+                    it.copy(
+                        refundChecklist = checklist,
+                        isLoadingRefundChecklist = false,
+                        checkedChecklistIds = it.checkedChecklistIds.intersect(validIds)
+                    )
+                }
+            } catch (e: Exception) {
+                _detailState.update {
+                    it.copy(
+                        isLoadingRefundChecklist = false,
+                        refundChecklistError = "체크리스트를 불러오지 못했습니다."
+                    )
+                }
+            }
+        }
+    }
+
+    fun toggleChecklistItem(itemId: String) {
+        _detailState.update {
+            val newChecked = if (itemId in it.checkedChecklistIds) {
+                it.checkedChecklistIds - itemId
+            } else {
+                it.checkedChecklistIds + itemId
+            }
+            it.copy(checkedChecklistIds = newChecked)
+        }
     }
 
     // ========== Factory ==========
