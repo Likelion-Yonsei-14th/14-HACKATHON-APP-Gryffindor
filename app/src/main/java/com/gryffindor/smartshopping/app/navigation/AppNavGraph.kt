@@ -22,6 +22,12 @@ import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionScreen
 import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionViewModel
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
 import com.gryffindor.smartshopping.feature.travel.TravelViewModel
+import com.gryffindor.smartshopping.feature.trip.FlightEditScreen
+import com.gryffindor.smartshopping.feature.trip.HotelEditScreen
+import com.gryffindor.smartshopping.feature.trip.TripCreateScreen
+import com.gryffindor.smartshopping.feature.trip.TripDetailScreen
+import com.gryffindor.smartshopping.feature.trip.TripListScreen
+import com.gryffindor.smartshopping.feature.trip.TripViewModel
 
 @Composable
 fun AppNavGraph(
@@ -40,6 +46,9 @@ fun AppNavGraph(
                 viewModel = viewModel,
                 onNavigateToStoreSelection = { currency ->
                     navController.navigate(Routes.storeSelection(currency))
+                },
+                onNavigateToTripList = {
+                    navController.navigate(Routes.TRIP_LIST)
                 }
             )
         }
@@ -161,6 +170,108 @@ fun AppNavGraph(
             RecommendationScreen(
                 viewModel = viewModel,
                 sessionId = sessionId
+            )
+        }
+
+        // ===== Trip flow =====
+
+        composable(Routes.TRIP_LIST) {
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(
+                    appContainer.tripRepository,
+                    appContainer.personalizationRepository
+                )
+            )
+            TripListScreen(
+                viewModel = viewModel,
+                onNavigateToCreate = {
+                    navController.navigate(Routes.TRIP_CREATE)
+                },
+                onNavigateToDetail = { tripId ->
+                    navController.navigate(Routes.tripDetail(tripId))
+                }
+            )
+        }
+
+        composable(Routes.TRIP_CREATE) {
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(
+                    appContainer.tripRepository,
+                    appContainer.personalizationRepository
+                )
+            )
+            TripCreateScreen(
+                viewModel = viewModel,
+                onTripCreated = { tripId ->
+                    navController.navigate(Routes.tripDetail(tripId)) {
+                        popUpTo(Routes.TRIP_LIST) { inclusive = false }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.TRIP_DETAIL,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(
+                    appContainer.tripRepository,
+                    appContainer.personalizationRepository
+                )
+            )
+            TripDetailScreen(
+                viewModel = viewModel,
+                tripId = tripId,
+                onNavigateToFlightEdit = { flightId ->
+                    navController.navigate(Routes.flightEdit(tripId, flightId))
+                },
+                onNavigateToHotelEdit = {
+                    navController.navigate(Routes.hotelEdit(tripId))
+                }
+            )
+        }
+
+        composable(
+            route = Routes.FLIGHT_EDIT,
+            arguments = listOf(
+                navArgument("tripId") { type = NavType.StringType },
+                navArgument("flightId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val flightId = backStackEntry.arguments?.getString("flightId") ?: return@composable
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(
+                    appContainer.tripRepository,
+                    appContainer.personalizationRepository
+                )
+            )
+            // Ensure detail is loaded so FlightEditScreen can find the flight
+            FlightEditScreen(
+                viewModel = viewModel,
+                flightId = flightId,
+                tripId = tripId,
+                onSaved = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.HOTEL_EDIT,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(
+                    appContainer.tripRepository,
+                    appContainer.personalizationRepository
+                )
+            )
+            HotelEditScreen(
+                viewModel = viewModel,
+                tripId = tripId,
+                onSaved = { navController.popBackStack() }
             )
         }
     }

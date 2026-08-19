@@ -9,10 +9,21 @@ object Routes {
     const val CHECKLIST = "checklist/{sessionId}"
     const val RECOMMENDATION = "recommendation/{sessionId}"
 
+    // Trip flow
+    const val TRIP_LIST = "trip_list"
+    const val TRIP_CREATE = "trip_create"
+    const val TRIP_DETAIL = "trip_detail/{tripId}"
+    const val FLIGHT_EDIT = "flight_edit/{tripId}/{flightId}"
+    const val HOTEL_EDIT = "hotel_edit/{tripId}"
+
     fun storeSelection(currency: String) = "store_selection/$currency"
     fun shopping(sessionId: String, currency: String) = "shopping/$sessionId/$currency"
     fun review(sessionId: String) = "review/$sessionId"
     fun travel(sessionId: String) = "travel/$sessionId"
     fun checklist(sessionId: String) = "checklist/$sessionId"
     fun recommendation(sessionId: String) = "recommendation/$sessionId"
+
+    fun tripDetail(tripId: String) = "trip_detail/$tripId"
+    fun flightEdit(tripId: String, flightId: String) = "flight_edit/$tripId/$flightId"
+    fun hotelEdit(tripId: String) = "hotel_edit/$tripId"
 }
