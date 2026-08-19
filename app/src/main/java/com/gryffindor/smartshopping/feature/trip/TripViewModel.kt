@@ -120,15 +120,48 @@ class TripViewModel(
             _createState.update { it.copy(error = "여행 이름을 입력해주세요.") }
             return
         }
+
+        // Validate and normalize country
+        val countryResult = TripInputValidator.normalizeCountry(state.country)
+        if (countryResult.isFailure) {
+            _createState.update { it.copy(error = countryResult.exceptionOrNull()?.message) }
+            return
+        }
+
+        // Validate and convert startsAt
+        val startsAtResult = TripInputValidator.toIso8601Start(state.startsAt)
+        if (startsAtResult.isFailure) {
+            _createState.update { it.copy(error = startsAtResult.exceptionOrNull()?.message) }
+            return
+        }
+
+        // Validate and convert endsAt
+        val endsAtResult = TripInputValidator.toIso8601End(state.endsAt)
+        if (endsAtResult.isFailure) {
+            _createState.update { it.copy(error = endsAtResult.exceptionOrNull()?.message) }
+            return
+        }
+
+        // Validate date range (using raw YYYY-MM-DD before conversion)
+        val rangeResult = TripInputValidator.validateDateRange(state.startsAt, state.endsAt)
+        if (rangeResult.isFailure) {
+            _createState.update { it.copy(error = rangeResult.exceptionOrNull()?.message) }
+            return
+        }
+
+        val normalizedCountry = countryResult.getOrNull()!!
+        val normalizedStartsAt = startsAtResult.getOrNull()!!
+        val normalizedEndsAt = endsAtResult.getOrNull()!!
+
         viewModelScope.launch {
             _createState.update { it.copy(isCreating = true, error = null) }
             try {
                 val trip = tripRepository.createTrip(
                     title = state.title,
                     destinationCity = state.city.ifBlank { null },
-                    destinationCountry = state.country.ifBlank { null },
-                    startsAt = state.startsAt.ifBlank { null },
-                    endsAt = state.endsAt.ifBlank { null }
+                    destinationCountry = normalizedCountry.ifBlank { null },
+                    startsAt = normalizedStartsAt.ifBlank { null },
+                    endsAt = normalizedEndsAt.ifBlank { null }
                 )
                 _createState.update { it.copy(isCreating = false, createdTripId = trip.id) }
             } catch (e: Exception) {

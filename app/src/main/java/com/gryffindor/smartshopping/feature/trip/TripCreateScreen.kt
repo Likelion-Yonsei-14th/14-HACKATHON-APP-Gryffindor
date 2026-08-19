@@ -70,7 +70,7 @@ fun TripCreateScreen(
             value = state.country,
             onValueChange = { viewModel.updateCreateCountry(it) },
             label = { Text("국가") },
-            placeholder = { Text("예: 한국") },
+            placeholder = { Text("예: KR") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )

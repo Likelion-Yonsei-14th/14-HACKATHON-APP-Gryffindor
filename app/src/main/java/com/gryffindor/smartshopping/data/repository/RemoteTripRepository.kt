@@ -31,7 +31,7 @@ class RemoteTripRepository(
         startsAt: String?,
         endsAt: String?
     ): Trip {
-        Log.d(TAG, "createTrip: POST /api/v1/me/trips title=$title")
+        Log.d(TAG, "createTrip: POST /api/v1/me/trips title=$title city=$destinationCity country=$destinationCountry startsAt=$startsAt endsAt=$endsAt")
         val request = TripCreateRequestDto(
             title = title,
             destinationCity = destinationCity,
