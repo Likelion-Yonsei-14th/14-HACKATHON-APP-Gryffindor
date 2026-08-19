@@ -1,6 +1,9 @@
 package com.gryffindor.smartshopping.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -15,6 +18,8 @@ import com.gryffindor.smartshopping.feature.home.HomeScreen
 import com.gryffindor.smartshopping.feature.home.HomeViewModel
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewModel
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationScreen
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel
 import com.gryffindor.smartshopping.feature.review.ReviewScreen
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
 import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
@@ -29,6 +34,7 @@ import com.gryffindor.smartshopping.feature.trip.TripCreateScreen
 import com.gryffindor.smartshopping.feature.trip.TripDetailScreen
 import com.gryffindor.smartshopping.feature.trip.TripListScreen
 import com.gryffindor.smartshopping.feature.trip.TripViewModel
+import com.gryffindor.smartshopping.feature.wishlist.WishlistViewModel
 
 @Composable
 fun AppNavGraph(
@@ -49,6 +55,18 @@ fun AppNavGraph(
                     appContainer.locationProvider
                 )
             )
+            val wishlistViewModel: WishlistViewModel = viewModel(
+                factory = WishlistViewModel.Factory(
+                    appContainer.personalizationRepository
+                )
+            )
+            val wishlistIds by wishlistViewModel.wishlistIds.collectAsState()
+            val feedUiState by feedViewModel.uiState.collectAsState()
+
+            LaunchedEffect(Unit) {
+                wishlistViewModel.loadWishlist()
+            }
+
             HomeScreen(
                 viewModel = viewModel,
                 feedViewModel = feedViewModel,
@@ -59,7 +77,17 @@ fun AppNavGraph(
                     navController.navigate(Routes.TRIP_LIST)
                 },
                 onNavigateToStore = { _ ->
-                    // Store detail / reservation navigation — to be connected in future work
+                    // Store detail navigation — reserved for future use
+                },
+                onNavigateToVisitReservation = { storeId, storeName ->
+                    val tripId = feedUiState.selectedTrip?.id
+                    if (tripId != null) {
+                        navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
+                    }
+                },
+                wishlistIds = wishlistIds,
+                onWishlistToggle = { productId ->
+                    wishlistViewModel.toggleWishlist(productId)
                 }
             )
         }
@@ -107,10 +135,26 @@ fun AppNavGraph(
                     appContainer.attentionCandidateProvider
                 )
             )
+            val wishlistViewModel: WishlistViewModel = viewModel(
+                key = "shopping_wishlist",
+                factory = WishlistViewModel.Factory(
+                    appContainer.personalizationRepository
+                )
+            )
+            val wishlistIds by wishlistViewModel.wishlistIds.collectAsState()
+
+            LaunchedEffect(Unit) {
+                wishlistViewModel.loadWishlist()
+            }
+
             ShoppingScreen(
                 viewModel = viewModel,
                 sessionId = sessionId,
                 currency = currency,
+                wishlistIds = wishlistIds,
+                onWishlistToggle = { productId ->
+                    wishlistViewModel.toggleWishlist(productId)
+                },
                 onNavigateToReview = {
                     navController.navigate(Routes.review(sessionId)) {
                         popUpTo(Routes.HOME) { inclusive = false }
@@ -240,6 +284,9 @@ fun AppNavGraph(
                 },
                 onNavigateToHotelEdit = {
                     navController.navigate(Routes.hotelEdit(tripId))
+                },
+                onNavigateToVisitReservation = { storeId, storeName ->
+                    navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
                 }
             )
         }
@@ -283,6 +330,67 @@ fun AppNavGraph(
                 viewModel = viewModel,
                 tripId = tripId,
                 onSaved = { navController.popBackStack() }
+            )
+        }
+
+        // ===== Visit Reservation flow =====
+
+        composable(
+            route = Routes.VISIT_RESERVATION,
+            arguments = listOf(
+                navArgument("tripId") { type = NavType.StringType },
+                navArgument("storeId") { type = NavType.StringType },
+                navArgument("storeName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
+            val storeName = java.net.URLDecoder.decode(
+                backStackEntry.arguments?.getString("storeName") ?: "", "UTF-8"
+            )
+            val viewModel: VisitReservationViewModel = viewModel(
+                factory = VisitReservationViewModel.Factory(appContainer.tripRepository)
+            )
+            VisitReservationScreen(
+                viewModel = viewModel,
+                tripId = tripId,
+                storeId = storeId,
+                storeName = storeName,
+                onReservationCreated = {
+                    navController.popBackStack()
+                },
+                onNavigateToReservationList = {
+                    navController.navigate(Routes.reservationList(tripId)) {
+                        popUpTo(Routes.VISIT_RESERVATION) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.RESERVATION_LIST,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val viewModel: VisitReservationViewModel = viewModel(
+                factory = VisitReservationViewModel.Factory(appContainer.tripRepository)
+            )
+
+            LaunchedEffect(tripId) {
+                viewModel.loadReservations(tripId)
+            }
+
+            val listState by viewModel.listState.collectAsState()
+
+            com.gryffindor.smartshopping.feature.reservation.ReservationListScreen(
+                reservations = listState.reservations,
+                isLoading = listState.isLoading,
+                error = listState.error,
+                cancellingIds = listState.cancellingIds,
+                onCancelReservation = { reservationId ->
+                    viewModel.cancelReservation(reservationId, tripId)
+                },
+                onRetry = { viewModel.loadReservations(tripId) }
             )
         }
     }

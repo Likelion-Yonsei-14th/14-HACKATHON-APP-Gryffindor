@@ -34,7 +34,10 @@ fun HomeScreen(
     feedViewModel: FeedViewModel,
     onNavigateToStoreSelection: (currency: String) -> Unit,
     onNavigateToTripList: () -> Unit = {},
-    onNavigateToStore: (storeId: String) -> Unit = {}
+    onNavigateToStore: (storeId: String) -> Unit = {},
+    onNavigateToVisitReservation: (storeId: String, storeName: String) -> Unit = { _, _ -> },
+    wishlistIds: Set<String> = emptySet(),
+    onWishlistToggle: (productId: String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val feedUiState by feedViewModel.uiState.collectAsState()
@@ -139,6 +142,9 @@ fun HomeScreen(
                 uiState = feedUiState,
                 onRetry = { feedViewModel.retry() },
                 onStoreClick = onNavigateToStore,
+                onWishlistToggle = onWishlistToggle,
+                onVisitReservation = onNavigateToVisitReservation,
+                wishlistIds = wishlistIds,
                 modifier = Modifier.fillMaxWidth()
             )
         }
