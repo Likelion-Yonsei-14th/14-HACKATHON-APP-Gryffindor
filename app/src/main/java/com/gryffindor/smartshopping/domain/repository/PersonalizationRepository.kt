@@ -33,6 +33,7 @@ interface PersonalizationRepository {
         flightNumber: String? = null,
         departureAt: String? = null,
         arrivalAt: String? = null,
-        airportArrivalAt: String? = null
+        airportArrivalAt: String? = null,
+        tripId: String? = null
     ): Flight
 }

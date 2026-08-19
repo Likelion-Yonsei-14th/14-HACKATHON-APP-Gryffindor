@@ -363,3 +363,4 @@ obj/
 
 # Python virtual environment
 .venv/
+.kiro/settings/mcp.json

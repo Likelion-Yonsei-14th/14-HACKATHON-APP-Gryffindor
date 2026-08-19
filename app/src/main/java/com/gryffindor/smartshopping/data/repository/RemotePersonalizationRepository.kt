@@ -87,9 +87,10 @@ class RemotePersonalizationRepository(
         flightNumber: String?,
         departureAt: String?,
         arrivalAt: String?,
-        airportArrivalAt: String?
+        airportArrivalAt: String?,
+        tripId: String?
     ): Flight {
-        Log.d(TAG, "updateFlight: PATCH /api/v1/me/flights/$flightId")
+        Log.d(TAG, "updateFlight: PATCH /api/v1/me/flights/$flightId tripId=$tripId")
         val request = FlightPatchRequestDto(
             departureAirport = departureAirport,
             arrivalAirport = arrivalAirport,
@@ -97,7 +98,8 @@ class RemotePersonalizationRepository(
             flightNumber = flightNumber,
             departureAt = departureAt,
             arrivalAt = arrivalAt,
-            airportArrivalAt = airportArrivalAt
+            airportArrivalAt = airportArrivalAt,
+            tripId = tripId
         )
         return apiService.updateFlight(flightId, request).toDomain()
     }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Person icon based on Figma icon/mypage -->
+    <path
+        android:pathData="M12,11C13.66,11 15,9.66 15,8C15,6.34 13.66,5 12,5C10.34,5 9,6.34 9,8C9,9.66 10.34,11 12,11Z"
+        android:strokeWidth="2"
+        android:strokeColor="#1B1A22"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M6,21V19C6,16.79 7.79,15 10,15H14C16.21,15 18,16.79 18,19V21"
+        android:strokeWidth="2"
+        android:strokeColor="#1B1A22"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

@@ -120,7 +120,8 @@ data class FlightPatchRequestDto(
     val flightNumber: String? = null,
     val departureAt: String? = null,
     val arrivalAt: String? = null,
-    val airportArrivalAt: String? = null
+    val airportArrivalAt: String? = null,
+    val tripId: String? = null
 )
 
 // --- Trip ---
