@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -39,6 +40,9 @@ fun FeedSection(
     uiState: FeedUiState,
     onRetry: () -> Unit,
     onStoreClick: (storeId: String) -> Unit = {},
+    onWishlistToggle: (productId: String) -> Unit = {},
+    onVisitReservation: (storeId: String, storeName: String) -> Unit = { _, _ -> },
+    wishlistIds: Set<String> = emptySet(),
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -55,7 +59,10 @@ fun FeedSection(
             uiState.isSuccess -> {
                 FeedSuccessContent(
                     feed = uiState.feed!!,
-                    onStoreClick = onStoreClick
+                    onStoreClick = onStoreClick,
+                    onWishlistToggle = onWishlistToggle,
+                    onVisitReservation = onVisitReservation,
+                    wishlistIds = wishlistIds
                 )
             }
             // No trips at all — don't show feed section
@@ -129,7 +136,10 @@ private fun FeedEmptyContent() {
 @Composable
 private fun FeedSuccessContent(
     feed: TripFeed,
-    onStoreClick: (storeId: String) -> Unit
+    onStoreClick: (storeId: String) -> Unit,
+    onWishlistToggle: (productId: String) -> Unit,
+    onVisitReservation: (storeId: String, storeName: String) -> Unit,
+    wishlistIds: Set<String>
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Section header
@@ -144,7 +154,10 @@ private fun FeedSuccessContent(
         feed.recommendations.forEach { recommendation ->
             FeedRecommendationCard(
                 recommendation = recommendation,
-                onStoreClick = onStoreClick
+                onStoreClick = onStoreClick,
+                onWishlistToggle = onWishlistToggle,
+                onVisitReservation = onVisitReservation,
+                isWishlisted = wishlistIds.contains(recommendation.product.productId)
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -154,7 +167,10 @@ private fun FeedSuccessContent(
 @Composable
 private fun FeedRecommendationCard(
     recommendation: FeedRecommendation,
-    onStoreClick: (storeId: String) -> Unit
+    onStoreClick: (storeId: String) -> Unit,
+    onWishlistToggle: (productId: String) -> Unit,
+    onVisitReservation: (storeId: String, storeName: String) -> Unit,
+    isWishlisted: Boolean
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -180,12 +196,28 @@ private fun FeedRecommendationCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Brand
-            Text(
-                text = recommendation.product.brand,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Brand + Wishlist toggle row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = recommendation.product.brand,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                IconButton(
+                    onClick = { onWishlistToggle(recommendation.product.productId) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text(
+                        text = if (isWishlisted) "\u2665" else "\u2661",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (isWishlisted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             // Product name
             Text(
@@ -218,7 +250,11 @@ private fun FeedRecommendationCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 recommendation.stores.forEach { store ->
-                    FeedStoreRow(store = store, onStoreClick = onStoreClick)
+                    FeedStoreRow(
+                        store = store,
+                        onStoreClick = onStoreClick,
+                        onVisitReservation = onVisitReservation
+                    )
                     Spacer(modifier = Modifier.height(6.dp))
                 }
             }
@@ -229,7 +265,8 @@ private fun FeedRecommendationCard(
 @Composable
 private fun FeedStoreRow(
     store: RecommendedStore,
-    onStoreClick: (storeId: String) -> Unit
+    onStoreClick: (storeId: String) -> Unit,
+    onVisitReservation: (storeId: String, storeName: String) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -276,12 +313,12 @@ private fun FeedStoreRow(
             }
         }
 
-        // Store detail / reservation button (action hook for future use)
-        OutlinedButton(
-            onClick = { onStoreClick(store.storeId) },
+        // Visit reservation button
+        Button(
+            onClick = { onVisitReservation(store.storeId, store.name) },
             modifier = Modifier.padding(start = 8.dp)
         ) {
-            Text("매장 보기", style = MaterialTheme.typography.labelSmall)
+            Text("방문 예약", style = MaterialTheme.typography.labelSmall)
         }
     }
 }
