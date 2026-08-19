@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.app.AppContainer
 import com.gryffindor.smartshopping.feature.checklist.ChecklistScreen
 import com.gryffindor.smartshopping.feature.checklist.ChecklistViewModel
+import com.gryffindor.smartshopping.feature.feed.FeedViewModel
 import com.gryffindor.smartshopping.feature.home.HomeScreen
 import com.gryffindor.smartshopping.feature.home.HomeViewModel
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
@@ -42,13 +43,23 @@ fun AppNavGraph(
                     appContainer.cameraFrameProvider
                 )
             )
+            val feedViewModel: FeedViewModel = viewModel(
+                factory = FeedViewModel.Factory(
+                    appContainer.tripRepository,
+                    appContainer.locationProvider
+                )
+            )
             HomeScreen(
                 viewModel = viewModel,
+                feedViewModel = feedViewModel,
                 onNavigateToStoreSelection = { currency ->
                     navController.navigate(Routes.storeSelection(currency))
                 },
                 onNavigateToTripList = {
                     navController.navigate(Routes.TRIP_LIST)
+                },
+                onNavigateToStore = { _ ->
+                    // Store detail / reservation navigation — to be connected in future work
                 }
             )
         }
