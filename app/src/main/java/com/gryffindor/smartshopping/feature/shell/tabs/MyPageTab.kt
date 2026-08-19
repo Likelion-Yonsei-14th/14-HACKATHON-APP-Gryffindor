@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.gryffindor.smartshopping.app.AppContainer
-import com.gryffindor.smartshopping.app.navigation.Routes
+import com.gryffindor.smartshopping.app.navigation.ProductionRoutes
 import com.gryffindor.smartshopping.core.ui.component.ConfirmDialog
 import com.gryffindor.smartshopping.core.ui.theme.AppColors
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
@@ -59,8 +59,7 @@ fun MyPageTab(
             title = "로그아웃하시겠습니까?",
             onConfirm = {
                 showLogoutDialog = false
-                // Demo: Navigate back to login
-                navController.navigate("production_login") {
+                navController.navigate(ProductionRoutes.LOGIN) {
                     popUpTo(0) { inclusive = true }
                 }
             },
@@ -103,7 +102,6 @@ fun MyPageTab(
                     style = MaterialTheme.typography.titleMedium,
                     color = colors.textPrimary
                 )
-                // Language/currency dropdowns placeholder
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "ENGLISH",
@@ -121,12 +119,12 @@ fun MyPageTab(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Menu items
-        MyPageMenuItem(label = "TRAVEL", colors = colors) {
-            navController.navigate(Routes.TRIP_LIST)
+        // Menu items per Frame 46: Wishlist, Recent Viewed, Logout
+        MyPageMenuItem(label = "WISHLIST", colors = colors) {
+            navController.navigate(ProductionRoutes.MY_PAGE_WISHLIST)
         }
-        MyPageMenuItem(label = "RECEIPT", colors = colors) {
-            navController.navigate(Routes.MY_PAGE)
+        MyPageMenuItem(label = "RECENT VIEWED", colors = colors) {
+            navController.navigate(ProductionRoutes.MY_PAGE_RECENT)
         }
         MyPageMenuItem(label = "LOGOUT", colors = colors) {
             showLogoutDialog = true

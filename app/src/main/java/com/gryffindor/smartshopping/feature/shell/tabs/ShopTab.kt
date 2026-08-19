@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.gryffindor.smartshopping.app.AppContainer
-import com.gryffindor.smartshopping.app.navigation.Routes
+import com.gryffindor.smartshopping.app.navigation.ProductionRoutes
 import com.gryffindor.smartshopping.core.ui.component.PrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
 import com.gryffindor.smartshopping.domain.model.Store
@@ -40,18 +40,6 @@ fun ShopTab(
     appContainer: AppContainer
 ) {
     val colors = LocalAppColors.current
-    val viewModel: StoreSelectionViewModel = viewModel(
-        factory = StoreSelectionViewModel.Factory(
-            appContainer.storeRepository,
-            appContainer.sessionRepository,
-            "KRW"
-        )
-    )
-    val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.loadStores()
-    }
 
     Column(
         modifier = modifier
@@ -75,96 +63,40 @@ fun ShopTab(
             color = colors.textPrimary
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
+
+        PrimaryButton(
+            text = "매장 선택하기",
+            onClick = {
+                navController.navigate(ProductionRoutes.SHOP_STORE_SELECTION)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "매장 선택하기",
+            text = "쇼핑 흐름",
             style = MaterialTheme.typography.titleMedium,
             color = colors.textPrimary
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Store list
-        val stores = uiState.stores
-        if (stores.isEmpty() && uiState.isLoading) {
-            CircularProgressIndicator(color = colors.brandPrimary)
-        } else {
-            stores.forEach { store ->
-                StoreCard(
-                    store = store,
-                    isSelected = store.id == uiState.selectedStoreId,
-                    onClick = { viewModel.selectStore(store.id) }
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        PrimaryButton(
-            text = "확인",
-            onClick = {
-                viewModel.confirmSelection()
-            },
-            enabled = uiState.selectedStoreId != null && !uiState.isCreatingSession
+        // Flow description
+        val steps = listOf(
+            "1. 매장 선택",
+            "2. 기기 연결 확인",
+            "3. 쇼핑 시작",
+            "4. 제품 자동 인식",
+            "5. 쇼핑 리스트 확인"
         )
-
-        // Navigate when session created
-        uiState.sessionCreated?.let { event ->
-            LaunchedEffect(event.sessionId) {
-                navController.navigate(Routes.shopping(event.sessionId, event.currency))
-                viewModel.consumeSessionCreatedEvent()
-            }
-        }
-    }
-}
-
-@Composable
-private fun StoreCard(
-    store: Store,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val colors = LocalAppColors.current
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = colors.backgroundSurface
-        ),
-        border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(2.dp, colors.brandPrimary)
-        } else {
-            androidx.compose.foundation.BorderStroke(1.dp, colors.borderDisabled)
-        }
-    ) {
-        Column {
-            // Store image placeholder
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                    .background(colors.backgroundEmphasized)
+        steps.forEach { step ->
+            Text(
+                text = step,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.textSecondary,
+                modifier = Modifier.padding(vertical = 4.dp)
             )
-            // Store info
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = store.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${store.city} · ${store.brand}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.textSecondary
-                )
-            }
         }
     }
 }

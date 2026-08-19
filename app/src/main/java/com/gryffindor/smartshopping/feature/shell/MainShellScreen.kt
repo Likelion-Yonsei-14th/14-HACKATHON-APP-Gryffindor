@@ -16,6 +16,11 @@ import com.gryffindor.smartshopping.feature.shell.tabs.HomeTab
 import com.gryffindor.smartshopping.feature.shell.tabs.MyPageTab
 import com.gryffindor.smartshopping.feature.shell.tabs.ShopTab
 
+/**
+ * Main shell with bottom navigation.
+ * Hosts HOME / SHOP / MY_PAGE tabs.
+ * Uses parent navController for navigating to full-screen flows.
+ */
 @Composable
 fun MainShellScreen(
     navController: NavHostController,
