@@ -5,6 +5,7 @@ import com.gryffindor.smartshopping.domain.model.MyPage
 import com.gryffindor.smartshopping.domain.model.Product
 import com.gryffindor.smartshopping.domain.model.Purchase
 import com.gryffindor.smartshopping.domain.model.Receipt
+import com.gryffindor.smartshopping.domain.model.RefundMethod
 
 interface PersonalizationRepository {
 
@@ -16,9 +17,11 @@ interface PersonalizationRepository {
 
     suspend fun deleteWishlist(productId: String)
 
-    suspend fun analyzeReceipt(imageBytes: ByteArray): Receipt
+    suspend fun analyzeReceipt(imageBytes: ByteArray, tripId: String? = null): Receipt
 
     suspend fun getPurchases(): List<Purchase>
+
+    suspend fun updatePurchaseRefundMethod(purchaseId: String, refundMethod: RefundMethod): Purchase
 
     suspend fun analyzeFlight(imageBytes: ByteArray, tripId: String? = null): Flight
 

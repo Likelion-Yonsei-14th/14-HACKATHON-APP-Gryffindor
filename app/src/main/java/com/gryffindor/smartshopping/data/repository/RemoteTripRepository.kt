@@ -8,6 +8,7 @@ import com.gryffindor.smartshopping.data.remote.dto.TripPatchRequestDto
 import com.gryffindor.smartshopping.data.remote.dto.VisitReservationCreateRequestDto
 import com.gryffindor.smartshopping.data.repository.mapper.toDomain
 import com.gryffindor.smartshopping.domain.model.HotelStay
+import com.gryffindor.smartshopping.domain.model.RefundChecklist
 import com.gryffindor.smartshopping.domain.model.StoreWishlistProduct
 import com.gryffindor.smartshopping.domain.model.Trip
 import com.gryffindor.smartshopping.domain.model.TripDetail
@@ -133,6 +134,11 @@ class RemoteTripRepository(
     override suspend fun cancelVisitReservation(reservationId: String) {
         Log.d(TAG, "cancelVisitReservation: DELETE /api/v1/me/visit-reservations/$reservationId")
         apiService.cancelVisitReservation(reservationId)
+    }
+
+    override suspend fun getRefundChecklist(tripId: String): RefundChecklist {
+        Log.d(TAG, "getRefundChecklist: GET /api/v1/me/trips/$tripId/refund-checklist")
+        return apiService.getTripRefundChecklist(tripId).toDomain(tripId)
     }
 
     companion object {

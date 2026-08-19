@@ -3,6 +3,7 @@ package com.gryffindor.smartshopping.data.repository
 import android.util.Log
 import com.gryffindor.smartshopping.data.remote.api.PersonalizationApiService
 import com.gryffindor.smartshopping.data.remote.dto.FlightPatchRequestDto
+import com.gryffindor.smartshopping.data.remote.dto.PurchaseRefundMethodPatchRequestDto
 import com.gryffindor.smartshopping.data.repository.mapper.toDomain
 import com.gryffindor.smartshopping.data.repository.mapper.toProduct
 import com.gryffindor.smartshopping.domain.model.Flight
@@ -10,6 +11,7 @@ import com.gryffindor.smartshopping.domain.model.MyPage
 import com.gryffindor.smartshopping.domain.model.Product
 import com.gryffindor.smartshopping.domain.model.Purchase
 import com.gryffindor.smartshopping.domain.model.Receipt
+import com.gryffindor.smartshopping.domain.model.RefundMethod
 import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -44,19 +46,26 @@ class RemotePersonalizationRepository(
         apiService.deleteWishlist(productId)
     }
 
-    override suspend fun analyzeReceipt(imageBytes: ByteArray): Receipt {
-        Log.d(TAG, "analyzeReceipt: POST /api/v1/me/receipts/analyze imageBytes=${imageBytes.size}")
+    override suspend fun analyzeReceipt(imageBytes: ByteArray, tripId: String?): Receipt {
+        Log.d(TAG, "analyzeReceipt: POST /api/v1/me/receipts/analyze imageBytes=${imageBytes.size} tripId=$tripId")
         val imagePart = MultipartBody.Part.createFormData(
             "image",
             "receipt.jpg",
             imageBytes.toRequestBody("image/jpeg".toMediaType())
         )
-        return apiService.analyzeReceipt(imagePart).toDomain()
+        val tripIdPart = tripId?.toRequestBody("text/plain".toMediaType())
+        return apiService.analyzeReceipt(imagePart, tripIdPart).toDomain()
     }
 
     override suspend fun getPurchases(): List<Purchase> {
         Log.d(TAG, "getPurchases: GET /api/v1/me/purchases")
         return apiService.getPurchases().map { it.toDomain() }
+    }
+
+    override suspend fun updatePurchaseRefundMethod(purchaseId: String, refundMethod: RefundMethod): Purchase {
+        Log.d(TAG, "updatePurchaseRefundMethod: PATCH /api/v1/me/purchases/$purchaseId refundMethod=$refundMethod")
+        val request = PurchaseRefundMethodPatchRequestDto(refundMethod = refundMethod.name)
+        return apiService.updatePurchaseRefundMethod(purchaseId, request).toDomain()
     }
 
     override suspend fun analyzeFlight(imageBytes: ByteArray, tripId: String?): Flight {

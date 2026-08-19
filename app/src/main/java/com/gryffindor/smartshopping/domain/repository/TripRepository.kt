@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.domain.repository
 
 import com.gryffindor.smartshopping.domain.model.HotelStay
+import com.gryffindor.smartshopping.domain.model.RefundChecklist
 import com.gryffindor.smartshopping.domain.model.StoreWishlistProduct
 import com.gryffindor.smartshopping.domain.model.Trip
 import com.gryffindor.smartshopping.domain.model.TripDetail
@@ -60,4 +61,6 @@ interface TripRepository {
     suspend fun getVisitReservations(tripId: String): List<VisitReservation>
 
     suspend fun cancelVisitReservation(reservationId: String)
+
+    suspend fun getRefundChecklist(tripId: String): RefundChecklist
 }

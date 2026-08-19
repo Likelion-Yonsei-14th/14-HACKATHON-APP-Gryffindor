@@ -1,5 +1,6 @@
 package com.gryffindor.smartshopping.data.repository.mapper
 
+import com.gryffindor.smartshopping.data.remote.dto.ChecklistItemDto
 import com.gryffindor.smartshopping.data.remote.dto.FeedRecommendationResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.FeedStoreResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.FlightResponseDto
@@ -11,12 +12,14 @@ import com.gryffindor.smartshopping.data.remote.dto.PurchaseResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.PurchasedProductResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.ReceiptItemResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.ReceiptResponseDto
+import com.gryffindor.smartshopping.data.remote.dto.RefundChecklistDto
 import com.gryffindor.smartshopping.data.remote.dto.StoreWishlistProductResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.TripDetailResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.TripFeedResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.TripResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.TripSummaryResponseDto
 import com.gryffindor.smartshopping.data.remote.dto.VisitReservationResponseDto
+import com.gryffindor.smartshopping.domain.model.ChecklistItem
 import com.gryffindor.smartshopping.domain.model.DemoUser
 import com.gryffindor.smartshopping.domain.model.FeedRecommendation
 import com.gryffindor.smartshopping.domain.model.Flight
@@ -29,6 +32,9 @@ import com.gryffindor.smartshopping.domain.model.PurchasedProduct
 import com.gryffindor.smartshopping.domain.model.Receipt
 import com.gryffindor.smartshopping.domain.model.ReceiptItem
 import com.gryffindor.smartshopping.domain.model.RecommendedStore
+import com.gryffindor.smartshopping.domain.model.RefundChecklist
+import com.gryffindor.smartshopping.domain.model.RefundChecklistStatus
+import com.gryffindor.smartshopping.domain.model.RefundMethod
 import com.gryffindor.smartshopping.domain.model.ReservationStatus
 import com.gryffindor.smartshopping.domain.model.StoreWishlistProduct
 import com.gryffindor.smartshopping.domain.model.Trip
@@ -95,6 +101,8 @@ fun FlightResponseDto.toDomain(): Flight = Flight(
 
 fun ReceiptResponseDto.toDomain(): Receipt = Receipt(
     id = id,
+    tripId = tripId,
+    refundMethod = refundMethod.toRefundMethod(),
     storeName = storeName,
     purchasedAt = purchasedAt,
     totalAmount = totalAmount,
@@ -114,6 +122,8 @@ fun ReceiptItemResponseDto.toDomain(): ReceiptItem = ReceiptItem(
 
 fun PurchaseResponseDto.toDomain(): Purchase = Purchase(
     id = id,
+    tripId = tripId,
+    refundMethod = refundMethod.toRefundMethod(),
     storeName = storeName,
     purchasedAt = purchasedAt,
     totalAmount = totalAmount,
@@ -209,4 +219,24 @@ fun VisitReservationResponseDto.toDomain(): VisitReservation = VisitReservation(
     products = products.map { it.toProduct() },
     status = ReservationStatus.valueOf(status),
     createdAt = createdAt
+)
+
+// --- Refund ---
+
+fun String?.toRefundMethod(): RefundMethod = when (this?.uppercase()) {
+    "IMMEDIATE" -> RefundMethod.IMMEDIATE
+    "DOWNTOWN" -> RefundMethod.DOWNTOWN
+    "AIRPORT" -> RefundMethod.AIRPORT
+    else -> RefundMethod.UNKNOWN
+}
+
+fun RefundChecklistDto.toDomain(tripId: String): RefundChecklist = RefundChecklist(
+    tripId = this.tripId ?: tripId,
+    status = when (status?.uppercase()) {
+        "IMMEDIATE_REFUND_ONLY" -> RefundChecklistStatus.IMMEDIATE_REFUND_ONLY
+        "ACTION_REQUIRED" -> RefundChecklistStatus.ACTION_REQUIRED
+        else -> RefundChecklistStatus.NO_ELIGIBLE_PURCHASES
+    },
+    items = items.map { it.toDomain() },
+    notice = notice
 )
