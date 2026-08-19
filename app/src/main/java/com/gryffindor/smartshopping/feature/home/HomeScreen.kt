@@ -24,7 +24,8 @@ import com.gryffindor.smartshopping.domain.model.SupportedCountry
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToStoreSelection: (currency: String) -> Unit
+    onNavigateToStoreSelection: (currency: String) -> Unit,
+    onNavigateToTripList: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -82,6 +83,14 @@ fun HomeScreen(
                 }
             ) {
                 Text("쇼핑 시작")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onNavigateToTripList
+            ) {
+                Text("내 여행")
             }
         }
 
