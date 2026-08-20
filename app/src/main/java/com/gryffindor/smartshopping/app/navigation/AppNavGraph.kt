@@ -48,7 +48,9 @@ import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingSessionNavHost
 import com.gryffindor.smartshopping.feature.shopping.ShoppingStoreSelectionScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingViewModel
+import com.gryffindor.smartshopping.feature.shopping.toLooketStore
 import com.gryffindor.smartshopping.feature.splash.SplashScreen
+import com.gryffindor.smartshopping.feature.storeselection.StoreSelectionViewModel
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
 import com.gryffindor.smartshopping.feature.travel.TravelViewModel
 import com.gryffindor.smartshopping.feature.trip.FlightEditScreen
@@ -263,14 +265,26 @@ fun AppNavGraph(
         }
 
         // --- 하단 네비게이션 SHOP/MY PAGE 탭 ---
-        // 화면 우선 제작 단계라 더미 데이터 기반. 실제 매장/세션 데이터 연결은 다음 단계.
 
         composable(Routes.SHOP_TAB) {
-            var selectedStoreId by remember { mutableStateOf<String?>(null) }
+            // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 KRW 고정(HOME의 쇼핑 이동과 동일한
+            // 이유). StoreSelectionViewModel은 매장 목록 로딩뿐 아니라 confirmSelection()으로
+            // 실제 세션 생성까지 지원하지만, 아직 이 화면의 "확인"은 카메라 기반 실제 세션이
+            // 아니라 목업 실시간 쇼핑 플로우(SHOPPING_SESSION)로 이어진다 — 두 플로우를
+            // 합칠지는 별도 결정 필요.
+            val viewModel: StoreSelectionViewModel = viewModel(
+                factory = StoreSelectionViewModel.Factory(
+                    appContainer.storeRepository,
+                    appContainer.sessionRepository,
+                    "KRW",
+                )
+            )
+            val uiState by viewModel.uiState.collectAsState()
 
             ShoppingStoreSelectionScreen(
-                selectedStoreId = selectedStoreId,
-                onStoreSelected = { selectedStoreId = it },
+                stores = uiState.stores.map { it.toLooketStore() },
+                selectedStoreId = uiState.selectedStoreId,
+                onStoreSelected = { viewModel.selectStore(it) },
                 onConfirmClick = { navController.navigate(Routes.SHOPPING_SESSION) },
                 onBackClick = { navController.popBackStack() },
                 selectedTab = BottomNavTab.SHOP,
