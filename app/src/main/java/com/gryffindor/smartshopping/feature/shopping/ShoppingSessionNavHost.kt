@@ -23,13 +23,17 @@ private object ShoppingSessionRoutes {
 /**
  * 쇼핑-실시간 세션 전체 흐름: 실시간 쇼핑(재생/일시정지/종료) -> 종료(문 버튼) 누르면
  * 쇼핑 결과 기록(영수증 등록 -> 구매 상품 확인)으로 이어진다. 세 화면이 하나의 연속된
- * 세션이라 NavController를 공유하는 NavHost 하나로 묶었다. 아직 AppNavGraph에는
- * 연결하지 않음 — 매장 선택 확인 후 이 NavHost로 들어오는 배선은 다음 단계.
+ * 세션이라 NavController를 공유하는 NavHost 하나로 묶었다.
+ *
+ * 이 안의 모든 화면의 뒤로가기(<)는 직전 화면이 아니라 항상 [onBackToStoreSelection]으로
+ * 보낸다 — 매장 선택 -> 쇼핑 세션은 하나의 연속된 플로우라서, 세션 중 어느 화면에 있든
+ * "뒤로"는 그 플로우의 진입점인 매장 선택 화면으로 돌아가는 것이 자연스럽다는 사용자 요청.
  */
 @Composable
 fun ShoppingSessionNavHost(
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
+    onBackToStoreSelection: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -45,7 +49,7 @@ fun ShoppingSessionNavHost(
                 onPlayClick = { isSessionActive = true },
                 onPauseClick = { isSessionActive = false },
                 onFinishClick = { navController.navigate(ShoppingSessionRoutes.RESULT_RECEIPT) },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBackToStoreSelection,
                 totalPurchaseAmount = "₩ 3,400,000",
                 refundAmount = "₩ 230,000",
                 items = liveItems,
@@ -57,7 +61,7 @@ fun ShoppingSessionNavHost(
 
         composable(ShoppingSessionRoutes.RESULT_RECEIPT) {
             ShoppingResultReceiptScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBackToStoreSelection,
                 onRegisterClick = { navController.navigate(ShoppingSessionRoutes.RESULT_PURCHASED_ITEMS) },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
@@ -80,7 +84,7 @@ fun ShoppingSessionNavHost(
                     }
                 },
                 onConfirmClick = { navController.navigate(ShoppingSessionRoutes.RESULT_INTERESTED_PRODUCTS) },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBackToStoreSelection,
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )
@@ -102,7 +106,7 @@ fun ShoppingSessionNavHost(
                 // 세션 종료 후 진짜 이동해야 할 화면(쇼핑 홈 등)이 아직 없어서, 임시로
                 // 이 NavHost의 시작 지점(LIVE)까지 스택을 정리한다.
                 onCompleteClick = { navController.popBackStack(ShoppingSessionRoutes.LIVE, inclusive = false) },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBackToStoreSelection,
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )
@@ -115,6 +119,10 @@ fun ShoppingSessionNavHost(
 private fun ShoppingSessionNavHostPreview() {
     var selectedTab by remember { mutableStateOf(BottomNavTab.SHOP) }
     LooketTheme {
-        ShoppingSessionNavHost(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
+        ShoppingSessionNavHost(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            onBackToStoreSelection = {},
+        )
     }
 }

@@ -254,6 +254,7 @@ fun AppNavGraph(
             ShoppingSessionNavHost(
                 selectedTab = BottomNavTab.SHOP,
                 onTabSelected = onBottomTabSelected,
+                onBackToStoreSelection = { navController.popBackStack() },
             )
         }
 
