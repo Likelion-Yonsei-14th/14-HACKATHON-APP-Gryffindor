@@ -29,6 +29,7 @@ fun LooketReceiptPhotoScreen(
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
+    onSkipClick: (() -> Unit)? = null,
 ) {
     Scaffold(
         modifier = modifier,
@@ -42,7 +43,7 @@ fun LooketReceiptPhotoScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             Spacer(Modifier.height(52.dp))
-            LooketSectionHeader(title = title, onBackClick = onBackClick)
+            LooketSectionHeader(title = title, onBackClick = onBackClick, onSkipClick = onSkipClick)
             Spacer(Modifier.height(28.dp))
 
             Column(

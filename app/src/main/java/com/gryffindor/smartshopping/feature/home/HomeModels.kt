@@ -6,7 +6,6 @@ import com.gryffindor.smartshopping.domain.model.ChecklistItem
 data class RefundSummary(
     val totalPurchaseAmountKrw: Long,
     val totalRefundAmountKrw: Long,
-    val totalRefundAmountForeign: String, // 예: "¥1,095" — TODO: 실제 환율 연동
     val completedCount: Int,
     val completedAmountKrw: Long,
     val inProgressCount: Int,
@@ -22,6 +21,7 @@ data class PurchasedItem(
     val priceKrw: Long,
     val refundAmountKrw: Long,
     val status: RefundStatus,
+    val imageUrl: String? = null,
 )
 
 data class BrandFilter(
@@ -37,6 +37,7 @@ data class LooketProduct(
     val priceKrw: Long,
     val brandId: String,
     val statusLabel: String, // "구매" 또는 "관심"
+    val imageUrl: String? = null,
 )
 
 data class RecommendedProduct(
@@ -45,14 +46,18 @@ data class RecommendedProduct(
     val title: String,
     val productName: String,
     val location: String,
+    val imageUrl: String? = null,
 )
 
-// TODO: 전부 실제 API/ViewModel 데이터로 교체
-object HomeMockData {
+/**
+ * Production Demo Data — Backend seed catalog 기반 실제 상품 데이터.
+ * Backend products.seed.json과 동일한 productId / brand / name / priceKrw / imageUrl 사용.
+ * 이 데이터는 Home에서 API 없이 "실제 카탈로그" 느낌을 주기 위한 로컬 데이터이다.
+ */
+object HomeProductionData {
     val refundSummary = RefundSummary(
         totalPurchaseAmountKrw = 3_400_000,
         totalRefundAmountKrw = 230_000,
-        totalRefundAmountForeign = "¥1,095",
         completedCount = 1,
         completedAmountKrw = 150_000,
         inProgressCount = 1,
@@ -60,9 +65,33 @@ object HomeMockData {
     )
 
     val purchasedItems = listOf(
-        PurchasedItem("1", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, 76_000, RefundStatus.COMPLETED),
-        PurchasedItem("2", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, 76_000, RefundStatus.COMPLETED),
-        PurchasedItem("3", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, 76_000, RefundStatus.IN_PROGRESS),
+        PurchasedItem(
+            id = "mcm_aren_ew_shoulder_s_001",
+            name = "Aren 비세토스 E/W 숄더백 S",
+            store = "MCM 롯데면세점 명동본점",
+            priceKrw = 1_090_000,
+            refundAmountKrw = 76_000,
+            status = RefundStatus.COMPLETED,
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWSGSTA02CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        PurchasedItem(
+            id = "mcm_new_liz_shopper_m_001",
+            name = "New Liz 비세토스 숄더백 M",
+            store = "MCM 현대면세점 인천공항 T1",
+            priceKrw = 1_490_000,
+            refundAmountKrw = 104_000,
+            status = RefundStatus.COMPLETED,
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWPFSLR03CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        PurchasedItem(
+            id = "mcm_eau_de_parfum_50_001",
+            name = "MCM 오 드 퍼퓸 50ml",
+            store = "MCM 롯데면세점 명동본점",
+            priceKrw = 118_000,
+            refundAmountKrw = 8_000,
+            status = RefundStatus.IN_PROGRESS,
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MPFBSMM02CO001_02/mcm-cognac-50ml?\$w1000\$&fmt=auto&qlt=default",
+        ),
     )
 
     val checklistItems = listOf(
@@ -72,9 +101,30 @@ object HomeMockData {
     val checklistCheckedIds = setOf<String>()
 
     val recommendedProducts = listOf(
-        RecommendedProduct("1", "MCM", "당신만을 위한 오늘의 셀렉션", "Aren 비세토스 E/W 숄더백", "Terminal1 3F Gate 130-150"),
-        RecommendedProduct("2", "MCM", "당신만을 위한 오늘의 셀렉션", "Aren 비세토스 E/W 숄더백", "Terminal1 3F Gate 130-150"),
-        RecommendedProduct("3", "MCM", "당신만을 위한 오늘의 셀렉션", "Aren 비세토스 E/W 숄더백", "Terminal1 3F Gate 130-150"),
+        RecommendedProduct(
+            id = "mcm_diamond_shoulder_mini_001",
+            brandName = "MCM",
+            title = "당신만을 위한 오늘의 셀렉션",
+            productName = "Diamond 비세토스 레더 믹스 숄더백 Mini",
+            location = "Terminal1 3F Gate 28-30",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWRGAAK01BK001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        RecommendedProduct(
+            id = "mcm_pina_studded_tote_m_001",
+            brandName = "MCM",
+            title = "당신만을 위한 오늘의 셀렉션",
+            productName = "Pina 스터디드 토트백 M",
+            location = "Terminal1 3F Gate 28-30",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWPFAPA03CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        RecommendedProduct(
+            id = "mcm_cozy_cat_100_001",
+            brandName = "MCM",
+            title = "당신만을 위한 오늘의 셀렉션",
+            productName = "Cozy Cat 오 드 퍼퓸 100ml",
+            location = "Terminal1 3F Gate 28-30",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MPFGAMM02CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
     )
 
     val brandFilters = listOf(
@@ -83,9 +133,41 @@ object HomeMockData {
     )
 
     val looketProducts = listOf(
-        LooketProduct("1", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, "mcm", "구매"),
-        LooketProduct("2", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, "mcm", "구매"),
-        LooketProduct("3", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, "mcm2", "관심"),
-        LooketProduct("4", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", 1_090_000, "mcm2", "관심"),
+        LooketProduct(
+            id = "mcm_aren_ew_shoulder_s_001",
+            name = "Aren 비세토스 E/W 숄더백 S",
+            store = "MCM 롯데면세점 명동본점",
+            priceKrw = 1_090_000,
+            brandId = "mcm",
+            statusLabel = "구매",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWSGSTA02CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        LooketProduct(
+            id = "mcm_new_liz_shopper_m_001",
+            name = "New Liz 비세토스 숄더백 M",
+            store = "MCM 현대면세점 인천공항 T1",
+            priceKrw = 1_490_000,
+            brandId = "mcm",
+            statusLabel = "구매",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWPFSLR03CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        LooketProduct(
+            id = "mcm_mighty_bear_100_001",
+            name = "Mighty Bear 오 드 퍼퓸 100ml",
+            store = "MCM 롯데면세점 명동본점",
+            priceKrw = 210_000,
+            brandId = "mcm2",
+            statusLabel = "관심",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MPFFSMM04CO001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
+        LooketProduct(
+            id = "mcm_diamond_shoulder_mini_001",
+            name = "Diamond 비세토스 레더 믹스 숄더백 Mini",
+            store = "MCM 현대면세점 인천공항 T1",
+            priceKrw = 930_000,
+            brandId = "mcm2",
+            statusLabel = "관심",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWRGAAK01BK001_01?\$w1000\$&fmt=auto&qlt=default",
+        ),
     )
 }

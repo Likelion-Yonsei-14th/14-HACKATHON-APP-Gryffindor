@@ -20,11 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import coil3.compose.AsyncImage
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
@@ -172,11 +174,22 @@ private fun WishlistItemRow(product: Product, onRemoveClick: () -> Unit) {
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(width = 80.dp, height = 80.dp)
-                .background(LooketColors.SurfaceEmphasized),
-        )
+        if (product.imageUrl != null) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = product.name,
+                modifier = Modifier
+                    .size(width = 80.dp, height = 80.dp)
+                    .background(LooketColors.SurfaceEmphasized),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(width = 80.dp, height = 80.dp)
+                    .background(LooketColors.SurfaceEmphasized),
+            )
+        }
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),

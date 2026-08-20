@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -31,10 +33,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
@@ -44,6 +48,7 @@ import com.gryffindor.smartshopping.core.ui.component.LooketTopBar
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
+import com.gryffindor.smartshopping.domain.model.PurchasedProduct
 
 private val languageOptions = listOf("ENGLISH", "한국어", "中國語")
 private val currencyOptions = listOf("$", "₩", "(CN)¥")
@@ -51,6 +56,7 @@ private val currencyOptions = listOf("$", "₩", "(CN)¥")
 @Composable
 fun MyPageScreen(
     nickname: String,
+    purchasedProducts: List<PurchasedProduct>,
     selectedLanguage: String?,
     selectedCurrency: String?,
     onLanguageSelected: (String) -> Unit,
@@ -99,6 +105,11 @@ fun MyPageScreen(
                     MyPageMenuRow(text = stringResource(R.string.mypage_receipt), onClick = onReceiptClick)
                     MyPageMenuRow(text = stringResource(R.string.mypage_wishlist), onClick = onWishlistClick)
                     MyPageMenuRow(text = stringResource(R.string.mypage_logout), onClick = { showLogoutDialog = true })
+                }
+
+                if (purchasedProducts.isNotEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    PurchasedProductsSection(purchasedProducts = purchasedProducts)
                 }
             }
         }
@@ -197,6 +208,70 @@ private fun MyPageMenuRow(text: String, onClick: () -> Unit) {
     }
 }
 
+@Composable
+private fun PurchasedProductsSection(purchasedProducts: List<PurchasedProduct>) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "구매 상품",
+            style = LooketTextStyles.titleTwo,
+            color = LooketColors.TextPrimary,
+        )
+        purchasedProducts.forEach { item ->
+            PurchasedProductRow(item)
+        }
+    }
+}
+
+@Composable
+private fun PurchasedProductRow(item: PurchasedProduct) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(LooketColors.SurfaceEmphasized, RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val imageUrl = item.product?.imageUrl
+        if (imageUrl != null) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = item.product?.name,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(LooketColors.BorderDefault),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.product?.brand ?: item.storeName ?: "",
+                style = LooketTextStyles.bodyThree,
+                color = LooketColors.TextSecondary,
+            )
+            Text(
+                text = item.product?.name ?: item.fallbackProductName ?: "",
+                style = LooketTextStyles.bodyTwo,
+                color = LooketColors.TextPrimary,
+            )
+            if (item.price != null) {
+                Text(
+                    text = "${item.currency ?: "₩"}${"%,d".format(item.price)}",
+                    style = LooketTextStyles.bodyThree,
+                    color = LooketColors.TextSecondary,
+                )
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true, heightDp = 917, widthDp = 412)
 @Composable
 private fun MyPageScreenPreview() {
@@ -206,6 +281,7 @@ private fun MyPageScreenPreview() {
     LooketTheme {
         MyPageScreen(
             nickname = "gryffindor0825",
+            purchasedProducts = emptyList(),
             selectedLanguage = language,
             selectedCurrency = currency,
             onLanguageSelected = { language = it },

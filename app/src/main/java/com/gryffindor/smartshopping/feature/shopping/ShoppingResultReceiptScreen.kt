@@ -31,6 +31,7 @@ fun ShoppingResultReceiptScreen(
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
+    onSkipClick: (() -> Unit)? = null,
 ) {
     LooketReceiptPhotoScreen(
         title = stringResource(R.string.shopping_result_receipt_guide),
@@ -40,6 +41,7 @@ fun ShoppingResultReceiptScreen(
         selectedTab = selectedTab,
         onTabSelected = onTabSelected,
         modifier = modifier,
+        onSkipClick = onSkipClick,
     )
 }
 

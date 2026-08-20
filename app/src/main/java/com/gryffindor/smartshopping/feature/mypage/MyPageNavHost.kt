@@ -1,12 +1,15 @@
 package com.gryffindor.smartshopping.feature.mypage
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
+import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
 
 private object MyPageRoutes {
     const val HOME = "mypage/home"
@@ -40,6 +44,7 @@ fun MyPageNavHost(
     onNavigateToTripList: () -> Unit,
     onNavigateToWishlist: () -> Unit,
     modifier: Modifier = Modifier,
+    personalizationRepository: PersonalizationRepository? = null,
 ) {
     val navController = rememberNavController()
 
@@ -48,8 +53,18 @@ fun MyPageNavHost(
             var selectedLanguage by remember { mutableStateOf<String?>(null) }
             var selectedCurrency by remember { mutableStateOf<String?>(null) }
 
+            val myPageViewModel: MyPageViewModel? = personalizationRepository?.let {
+                viewModel(factory = MyPageViewModel.Factory(it))
+            }
+            val myPageUiState = myPageViewModel?.uiState?.collectAsState()?.value
+
+            LaunchedEffect(myPageViewModel) {
+                myPageViewModel?.loadMyPage()
+            }
+
             MyPageScreen(
-                nickname = "gryffindor0825",
+                nickname = myPageUiState?.myPage?.user?.name ?: "gryffindor0825",
+                purchasedProducts = myPageUiState?.myPage?.purchasedProducts ?: emptyList(),
                 selectedLanguage = selectedLanguage,
                 selectedCurrency = selectedCurrency,
                 onLanguageSelected = { selectedLanguage = it },

@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.HomeTopBar
 import com.gryffindor.smartshopping.core.ui.component.HomeTopBarTab
@@ -99,16 +100,16 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 when (selectedTopTab) {
                     HomeTopBarTab.REFUND -> RefundTabContent(
-                        summary = HomeMockData.refundSummary,
-                        purchasedItems = HomeMockData.purchasedItems,
-                        checklistItems = HomeMockData.checklistItems,
-                        checklistCheckedIds = HomeMockData.checklistCheckedIds,
+                        summary = HomeProductionData.refundSummary,
+                        purchasedItems = HomeProductionData.purchasedItems,
+                        checklistItems = HomeProductionData.checklistItems,
+                        checklistCheckedIds = HomeProductionData.checklistCheckedIds,
                         onChecklistClick = onNavigateToChecklist,
                     )
                     HomeTopBarTab.LOOKET -> LooketTabContent(
-                        recommended = HomeMockData.recommendedProducts,
-                        brands = HomeMockData.brandFilters,
-                        myLooket = HomeMockData.looketProducts,
+                        recommended = HomeProductionData.recommendedProducts,
+                        brands = HomeProductionData.brandFilters,
+                        myLooket = HomeProductionData.looketProducts,
                     )
                 }
             }
@@ -149,10 +150,9 @@ private fun RefundSummaryCard(summary: RefundSummary, modifier: Modifier = Modif
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("OO님의 환급 금액", color = LooketColors.TextInverse, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Text("총 구매 금액 ₩ ${formatKrw(summary.totalPurchaseAmountKrw)} 중", color = LooketColors.TextInverse, fontSize = 14.sp)
+        Text("총 구매 금액 ₩${formatKrw(summary.totalPurchaseAmountKrw)} 중", color = LooketColors.TextInverse, fontSize = 14.sp)
         Column {
-            Text("₩ ${formatKrw(summary.totalRefundAmountKrw)}", color = LooketColors.TextInverse, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-            Text(summary.totalRefundAmountForeign, color = LooketColors.TextInverse, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("₩${formatKrw(summary.totalRefundAmountKrw)}", color = LooketColors.TextInverse, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -179,15 +179,13 @@ private fun RefundStatusChip(label: String, amountKrw: Long, dotColor: Color) {
             }
         }
         Box(modifier = Modifier.padding(10.dp)) {
-            Text("₩ ${formatKrw(amountKrw)}", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text("₩${formatKrw(amountKrw)}", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
 @Composable
 private fun PurchasedItemsSection(items: List<PurchasedItem>) {
-    var showKrw by remember { mutableStateOf(true) }
-
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -195,47 +193,40 @@ private fun PurchasedItemsSection(items: List<PurchasedItem>) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("구매물품별 금액", color = LooketColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            CurrencyToggle(checked = showKrw, onCheckedChange = { showKrw = it })
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Column {
-            items.forEach { item -> PurchasedItemRow(item, showKrw = showKrw) }
+            items.forEach { item -> PurchasedItemRow(item) }
         }
     }
 }
 
 @Composable
-private fun CurrencyToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(width = 52.dp, height = 32.dp)
-            .clip(RoundedCornerShape(100.dp))
-            .background(LooketColors.BrandPrimary)
-            .clickable { onCheckedChange(!checked) }
-            .padding(4.dp),
-        contentAlignment = if (checked) Alignment.CenterStart else Alignment.CenterEnd,
-    ) {
-        Box(
-            modifier = Modifier.size(24.dp).clip(CircleShape).background(Color(0xFFF6F6F9)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(if (checked) "₩" else "¥", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-        }
-    }
-}
-
-@Composable
-private fun PurchasedItemRow(item: PurchasedItem, showKrw: Boolean) {
+private fun PurchasedItemRow(item: PurchasedItem) {
     Column {
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LooketColors.BorderDefault))
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            // TODO: 실제 상품 이미지로 교체
-            Box(modifier = Modifier.size(width = 80.dp, height = 126.dp).background(LooketColors.BorderDefault))
+            // 상품 이미지: imageUrl이 있으면 실제 이미지, 없으면 placeholder
+            Box(
+                modifier = Modifier
+                    .size(width = 80.dp, height = 126.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(LooketColors.BorderDefault),
+            ) {
+                if (item.imageUrl != null) {
+                    AsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+            }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -244,8 +235,8 @@ private fun PurchasedItemRow(item: PurchasedItem, showKrw: Boolean) {
                         Text(item.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(formatAmount(item.priceKrw, showKrw), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-                        Text("환급액: ${formatAmount(item.refundAmountKrw, showKrw)}", fontSize = 12.sp, color = Color.Black)
+                        Text("₩${formatKrw(item.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                        Text("환급액: ₩${formatKrw(item.refundAmountKrw)}", fontSize = 12.sp, color = Color.Black)
                     }
                 }
                 RefundStatusBadge(item.status)
@@ -302,7 +293,6 @@ private fun ChecklistPreviewRow(item: ChecklistItem) {
             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(item.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
             }
-            // TODO: 실제로는 "시간:~15:00 / 장소:T1 3층" 두 줄일 수 있음 — description 포맷 확인되면 분리
             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(item.description, fontSize = 12.sp, color = Color.Black)
             }
@@ -311,7 +301,7 @@ private fun ChecklistPreviewRow(item: ChecklistItem) {
             modifier = Modifier.size(56.dp).clip(CircleShape).background(LooketColors.BorderDisabled),
             contentAlignment = Alignment.Center,
         ) {
-            Text("✓", color = TextSecondaryOnDisabled, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("\u2713", color = TextSecondaryOnDisabled, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -420,8 +410,22 @@ private fun RecommendedProductCard(product: RecommendedProduct) {
         )
         Text(product.productName, modifier = Modifier.padding(horizontal = 16.dp), fontSize = 14.sp, color = Color.Black)
         Spacer(modifier = Modifier.height(8.dp))
-        // TODO: 실제 상품 이미지로 교체
-        Box(modifier = Modifier.fillMaxWidth().height(120.dp).background(LooketColors.BorderDefault))
+        // 상품 이미지: imageUrl이 있으면 실제 이미지, 없으면 placeholder
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .background(LooketColors.BorderDefault),
+        ) {
+            if (product.imageUrl != null) {
+                AsyncImage(
+                    model = product.imageUrl,
+                    contentDescription = product.productName,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+        }
         Text(
             product.location,
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -465,8 +469,23 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // TODO: 실제 상품 이미지로 교체
-            Box(modifier = Modifier.fillMaxWidth().height(170.dp).background(LooketColors.BorderDefault))
+            // 상품 이미지: imageUrl이 있으면 실제 이미지, 없으면 placeholder
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(170.dp)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    .background(LooketColors.BorderDefault),
+            ) {
+                if (product.imageUrl != null) {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+            }
             Column(modifier = Modifier.fillMaxWidth().background(LooketColors.Surface).padding(10.dp)) {
                 Text(product.name, fontSize = 14.sp, color = Color.Black)
                 Text(product.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
@@ -475,7 +494,7 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("₩ ${formatKrw(product.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                    Text("₩${formatKrw(product.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(statusColor))
                         Text(product.statusLabel, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = LooketColors.TextPrimary)
@@ -496,18 +515,6 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
 }
 
 private fun formatKrw(amount: Long): String = "%,d".format(amount)
-
-// TODO: 실제 환율 API 연동 필요 (지금은 대략적인 원-엔 환율로 고정값 사용)
-private const val KRW_TO_JPY_RATE = 210.0
-
-private fun formatAmount(amountKrw: Long, showKrw: Boolean): String {
-    return if (showKrw) {
-        "₩ ${formatKrw(amountKrw)}"
-    } else {
-        val jpy = (amountKrw / KRW_TO_JPY_RATE).toLong()
-        "¥ ${formatKrw(jpy)}"
-    }
-}
 
 @Preview(showBackground = true, widthDp = 412, heightDp = 917)
 @Composable
@@ -535,16 +542,16 @@ private fun HomeScreenPreview() {
                 Spacer(modifier = Modifier.height(32.dp))
                 when (selectedTab) {
                     HomeTopBarTab.REFUND -> RefundTabContent(
-                        summary = HomeMockData.refundSummary,
-                        purchasedItems = HomeMockData.purchasedItems,
-                        checklistItems = HomeMockData.checklistItems,
-                        checklistCheckedIds = HomeMockData.checklistCheckedIds,
+                        summary = HomeProductionData.refundSummary,
+                        purchasedItems = HomeProductionData.purchasedItems,
+                        checklistItems = HomeProductionData.checklistItems,
+                        checklistCheckedIds = HomeProductionData.checklistCheckedIds,
                         onChecklistClick = {},
                     )
                     HomeTopBarTab.LOOKET -> LooketTabContent(
-                        recommended = HomeMockData.recommendedProducts,
-                        brands = HomeMockData.brandFilters,
-                        myLooket = HomeMockData.looketProducts,
+                        recommended = HomeProductionData.recommendedProducts,
+                        brands = HomeProductionData.brandFilters,
+                        myLooket = HomeProductionData.looketProducts,
                     )
                 }
             }

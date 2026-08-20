@@ -11,7 +11,6 @@ import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.HttpException
 
 /**
  * Real ShoppingRepository implementation that communicates with the Backend API.
@@ -33,22 +32,13 @@ class RemoteShoppingRepository(
         interestedProductIds: List<String>
     ) {
         Log.d(TAG, "submitReview: PUT /sessions/$sessionId/review")
-        try {
-            apiService.submitReview(
-                sessionId = sessionId,
-                request = ReviewRequestDto(
-                    purchasedProductIds = purchasedProductIds,
-                    interestedProductIds = interestedProductIds
-                )
+        apiService.submitReview(
+            sessionId = sessionId,
+            request = ReviewRequestDto(
+                purchasedProductIds = purchasedProductIds,
+                interestedProductIds = interestedProductIds
             )
-        } catch (e: HttpException) {
-            if (e.code() == 404) {
-                // Backend review endpoint not yet deployed — skip silently to preserve UI flow.
-                Log.w(TAG, "submitReview: 404 — endpoint not available, skipping (review data not persisted)")
-            } else {
-                throw e
-            }
-        }
+        )
     }
 
     override suspend fun recognize(

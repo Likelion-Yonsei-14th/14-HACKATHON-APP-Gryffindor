@@ -6,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.core.common.UiState
 import com.gryffindor.smartshopping.domain.model.SessionProduct
 import com.gryffindor.smartshopping.domain.repository.ShoppingRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -24,6 +27,9 @@ class ReviewViewModel(
 
     private val _uiState = MutableStateFlow<UiState<ReviewUiState>>(UiState.Loading)
     val uiState: StateFlow<UiState<ReviewUiState>> = _uiState.asStateFlow()
+
+    private val _submitSuccess = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val submitSuccess: SharedFlow<Unit> = _submitSuccess.asSharedFlow()
 
     private var currentSessionId: String? = null
 
@@ -70,6 +76,7 @@ class ReviewViewModel(
 
     fun submitReview(sessionId: String) {
         val current = (_uiState.value as? UiState.Success)?.data ?: return
+        if (current.isSubmitting) return
         viewModelScope.launch {
             _uiState.value = UiState.Success(current.copy(isSubmitting = true))
             try {
@@ -81,6 +88,7 @@ class ReviewViewModel(
                     interestedProductIds = finalInterestedIds.toList()
                 )
                 _uiState.value = UiState.Success(current.copy(isSubmitting = false))
+                _submitSuccess.tryEmit(Unit)
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "리뷰 제출에 실패했습니다.")
             }

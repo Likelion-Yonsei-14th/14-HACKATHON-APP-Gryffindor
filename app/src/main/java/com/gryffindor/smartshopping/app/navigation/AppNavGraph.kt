@@ -378,6 +378,7 @@ fun AppNavGraph(
                 onTabSelected = onBottomTabSelected,
                 onNavigateToTripList = { navController.navigate(Routes.TRIP_LIST) },
                 onNavigateToWishlist = { navController.navigate(Routes.WISHLIST) },
+                personalizationRepository = appContainer.personalizationRepository,
             )
         }
 
@@ -667,6 +668,11 @@ fun AppNavGraph(
                 },
                 selectedTab = BottomNavTab.SHOP,
                 onTabSelected = onBottomTabSelected,
+                onSkipClick = {
+                    navController.navigate(Routes.review(sessionId)) {
+                        popUpTo(Routes.HOME) { inclusive = false }
+                    }
+                },
             )
         }
 
@@ -708,6 +714,13 @@ fun AppNavGraph(
                 }
                 is UiState.Success -> {
                     val data = (uiState as UiState.Success<ReviewUiState>).data
+
+                    LaunchedEffect(Unit) {
+                        viewModel.submitSuccess.collect {
+                            navController.navigate(Routes.travel(sessionId))
+                        }
+                    }
+
                     ShoppingReviewScreen(
                         products = data.products,
                         purchasedIds = data.purchasedIds,
@@ -716,7 +729,6 @@ fun AppNavGraph(
                         onToggleInterested = { viewModel.toggleInterested(it) },
                         onConfirmClick = {
                             viewModel.submitReview(sessionId)
-                            navController.navigate(Routes.travel(sessionId))
                         },
                     )
                 }
