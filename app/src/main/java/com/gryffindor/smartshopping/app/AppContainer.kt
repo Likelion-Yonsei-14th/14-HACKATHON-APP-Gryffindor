@@ -6,6 +6,7 @@ import com.gryffindor.smartshopping.core.network.NetworkConfig
 import com.gryffindor.smartshopping.data.attention.AttentionPipeline
 import com.gryffindor.smartshopping.data.detection.DetectionPipeline
 import com.gryffindor.smartshopping.data.meta.MetaCameraSource
+import com.gryffindor.smartshopping.data.recording.GlassesVideoRecorder
 import com.gryffindor.smartshopping.data.remote.api.PersonalizationApiService
 import com.gryffindor.smartshopping.data.remote.api.ShoppingApiService
 import com.gryffindor.smartshopping.data.repository.FakeChecklistRepository
@@ -66,6 +67,13 @@ class AppContainer(private val applicationContext: Context) {
     // A1: Camera input — SDK-independent boundary exposed to ViewModels.
     val metaCameraSource: MetaCameraSource by lazy { MetaCameraSource() }
     val cameraFrameProvider: CameraFrameProvider get() = metaCameraSource
+
+    // Recording: Glasses POV session recorder (non-blocking, auxiliary feature).
+    val glassesVideoRecorder: GlassesVideoRecorder by lazy {
+        GlassesVideoRecorder(applicationContext).also { recorder ->
+            metaCameraSource.videoRecorder = recorder
+        }
+    }
 
     // A2: Detection pipeline — auto-starts/stops with camera streaming state.
     private val detectionPipeline: DetectionPipeline by lazy {
