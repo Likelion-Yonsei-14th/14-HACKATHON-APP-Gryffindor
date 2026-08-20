@@ -14,11 +14,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.app.AppContainer
+import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.feature.checklist.ChecklistScreen
 import com.gryffindor.smartshopping.feature.checklist.ChecklistViewModel
 import com.gryffindor.smartshopping.feature.home.HomeScreen
 import com.gryffindor.smartshopping.feature.home.HomeViewModel
 import com.gryffindor.smartshopping.feature.login.LoginScreen
+import com.gryffindor.smartshopping.feature.mypage.MyPageNavHost
 import com.gryffindor.smartshopping.feature.onboarding.FlightInfoConfirmScreen
 import com.gryffindor.smartshopping.feature.onboarding.FlightInfoField
 import com.gryffindor.smartshopping.feature.onboarding.FlightRegisterScreen
@@ -32,6 +34,8 @@ import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewMod
 import com.gryffindor.smartshopping.feature.review.ReviewScreen
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
 import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
+import com.gryffindor.smartshopping.feature.shopping.ShoppingSessionNavHost
+import com.gryffindor.smartshopping.feature.shopping.ShoppingStoreSelectionScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingViewModel
 import com.gryffindor.smartshopping.feature.splash.SplashScreen
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
@@ -47,6 +51,21 @@ fun AppNavGraph(
     navController: NavHostController,
     appContainer: AppContainer
 ) {
+    // 하단 네비게이션 바(HOME/SHOP/MY PAGE) 공용 탭 전환 핸들러. 각 탭의 시작 목적지로
+    // 이동하되, 뒤로가기 스택이 계속 쌓이지 않도록 popUpTo/launchSingleTop/restoreState를 쓴다.
+    val onBottomTabSelected: (BottomNavTab) -> Unit = { tab ->
+        val route = when (tab) {
+            BottomNavTab.HOME -> Routes.HOME
+            BottomNavTab.SHOP -> Routes.SHOP_TAB
+            BottomNavTab.MY_PAGE -> Routes.MY_PAGE
+        }
+        navController.navigate(route) {
+            popUpTo(Routes.HOME) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
 
         // 1. 스플래시 (2초 후 로그인으로 이동)
@@ -209,7 +228,39 @@ fun AppNavGraph(
                     uiState.lastSessionId?.let { sessionId ->
                         navController.navigate(Routes.checklist(sessionId))
                     }
-                }
+                },
+                selectedTab = BottomNavTab.HOME,
+                onTabSelected = onBottomTabSelected,
+            )
+        }
+
+        // --- 하단 네비게이션 SHOP/MY PAGE 탭 ---
+        // 화면 우선 제작 단계라 더미 데이터 기반. 실제 매장/세션 데이터 연결은 다음 단계.
+
+        composable(Routes.SHOP_TAB) {
+            var selectedStoreId by remember { mutableStateOf<String?>(null) }
+
+            ShoppingStoreSelectionScreen(
+                selectedStoreId = selectedStoreId,
+                onStoreSelected = { selectedStoreId = it },
+                onConfirmClick = { navController.navigate(Routes.SHOPPING_SESSION) },
+                onBackClick = { navController.popBackStack() },
+                selectedTab = BottomNavTab.SHOP,
+                onTabSelected = onBottomTabSelected,
+            )
+        }
+
+        composable(Routes.SHOPPING_SESSION) {
+            ShoppingSessionNavHost(
+                selectedTab = BottomNavTab.SHOP,
+                onTabSelected = onBottomTabSelected,
+            )
+        }
+
+        composable(Routes.MY_PAGE) {
+            MyPageNavHost(
+                selectedTab = BottomNavTab.MY_PAGE,
+                onTabSelected = onBottomTabSelected,
             )
         }
 

@@ -64,6 +64,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToShopping: (sessionId: String) -> Unit,
     onNavigateToChecklist: () -> Unit,
+    selectedTab: BottomNavTab,
+    onTabSelected: (BottomNavTab) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -74,31 +76,41 @@ fun HomeScreen(
         }
     }
 
-    var selectedTab by remember { mutableStateOf(HomeTopBarTab.REFUND) }
+    var selectedTopTab by remember { mutableStateOf(HomeTopBarTab.REFUND) }
 
-    Column(modifier = Modifier.fillMaxSize().background(LooketColors.Surface)) {
-        HomeTopBar(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
-
+    Scaffold(
+        bottomBar = { BottomNavBar(selectedTab = selectedTab, onTabSelected = onTabSelected) },
+        containerColor = LooketColors.Surface,
+    ) { innerPadding ->
         Column(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 32.dp),
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(LooketColors.Surface),
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
-            when (selectedTab) {
-                HomeTopBarTab.REFUND -> RefundTabContent(
-                    summary = HomeMockData.refundSummary,
-                    purchasedItems = HomeMockData.purchasedItems,
-                    checklistItems = HomeMockData.checklistItems,
-                    checklistCheckedIds = HomeMockData.checklistCheckedIds,
-                    onChecklistClick = onNavigateToChecklist,
-                )
-                HomeTopBarTab.LOOKET -> LooketTabContent(
-                    recommended = HomeMockData.recommendedProducts,
-                    brands = HomeMockData.brandFilters,
-                    myLooket = HomeMockData.looketProducts,
-                )
+            HomeTopBar(selectedTab = selectedTopTab, onTabSelected = { selectedTopTab = it })
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 32.dp),
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                when (selectedTopTab) {
+                    HomeTopBarTab.REFUND -> RefundTabContent(
+                        summary = HomeMockData.refundSummary,
+                        purchasedItems = HomeMockData.purchasedItems,
+                        checklistItems = HomeMockData.checklistItems,
+                        checklistCheckedIds = HomeMockData.checklistCheckedIds,
+                        onChecklistClick = onNavigateToChecklist,
+                    )
+                    HomeTopBarTab.LOOKET -> LooketTabContent(
+                        recommended = HomeMockData.recommendedProducts,
+                        brands = HomeMockData.brandFilters,
+                        myLooket = HomeMockData.looketProducts,
+                    )
+                }
             }
         }
     }
