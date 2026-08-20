@@ -44,6 +44,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,6 +59,7 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
 import com.gryffindor.smartshopping.domain.model.FeedRecommendation
 import com.gryffindor.smartshopping.domain.model.PurchasedProduct
+import com.gryffindor.smartshopping.domain.model.RefundChecklist
 
 // LooketColors에 아직 없는 상태/배지 색상만 로컬로 유지 (팀 팔레트에 추가되면 교체)
 private val StatusGreen = Color(0xFF00D96C)
@@ -107,30 +111,36 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 when (selectedTopTab) {
                     HomeTopBarTab.REFUND -> {
-                        // Use actual purchased products from Backend; fallback summary computed
-                        val actualPurchasedItems = if (uiState.purchasedProducts.isNotEmpty()) {
-                            uiState.purchasedProducts.map { it.toPurchasedItem() }
-                        } else if (uiState.homeDataLoaded) {
-                            emptyList() // No purchases yet — show empty
+                        // Loading state — show progress indicator, no fake data
+                        if (uiState.isHomeDataLoading && !uiState.homeDataLoaded) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator(color = LooketColors.BrandPrimary)
+                            }
                         } else {
-                            HomeProductionData.purchasedItems // Still loading, show placeholder
-                        }
+                            // Use actual purchased products from Backend
+                            val actualPurchasedItems = if (uiState.purchasedProducts.isNotEmpty()) {
+                                uiState.purchasedProducts.map { it.toPurchasedItem() }
+                            } else {
+                                emptyList()
+                            }
 
-                        val summary = if (uiState.purchasedProducts.isNotEmpty()) {
-                            computeRefundSummary(uiState.purchasedProducts)
-                        } else if (uiState.homeDataLoaded) {
-                            RefundSummary(0, 0, 0, 0, 0, 0)
-                        } else {
-                            HomeProductionData.refundSummary
-                        }
+                            val summary = if (uiState.purchasedProducts.isNotEmpty()) {
+                                computeRefundSummary(uiState.purchasedProducts)
+                            } else {
+                                RefundSummary(0, 0, 0, 0, 0, 0)
+                            }
 
-                        RefundTabContent(
-                            summary = summary,
-                            purchasedItems = actualPurchasedItems,
-                            checklistItems = HomeProductionData.checklistItems,
-                            checklistCheckedIds = HomeProductionData.checklistCheckedIds,
-                            onChecklistClick = onNavigateToChecklist,
-                        )
+                            RefundTabContent(
+                                summary = summary,
+                                purchasedItems = actualPurchasedItems,
+                                refundChecklist = uiState.refundChecklist,
+                                isChecklistLoading = uiState.isChecklistLoading,
+                                onChecklistClick = onNavigateToChecklist,
+                            )
+                        }
                     }
                     HomeTopBarTab.LOOKET -> {
                         // Use actual recommendations from Backend; fallback to static data
@@ -158,18 +168,36 @@ fun HomeScreen(
 private fun RefundTabContent(
     summary: RefundSummary,
     purchasedItems: List<PurchasedItem>,
-    checklistItems: List<ChecklistItem>,
-    checklistCheckedIds: Set<String>,
+    refundChecklist: RefundChecklist?,
+    isChecklistLoading: Boolean,
     onChecklistClick: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(32.dp)) {
         RefundSummaryCard(summary, modifier = Modifier.padding(horizontal = 16.dp))
         PurchasedItemsSection(purchasedItems)
 
-        // 요구사항: 오늘 체크리스트 중 미완료(체크 안 된) 항목만 홈에 표시
-        val incompleteChecklist = checklistItems.filter { it.id !in checklistCheckedIds }
-        if (incompleteChecklist.isNotEmpty()) {
-            ChecklistPreviewSection(items = incompleteChecklist, onSeeAllClick = onChecklistClick)
+        // Real Backend checklist — show loading or actual items
+        if (isChecklistLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    color = LooketColors.BrandPrimary,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
+        } else if (refundChecklist != null && refundChecklist.items.isNotEmpty()) {
+            ChecklistPreviewSection(items = refundChecklist.items, onSeeAllClick = onChecklistClick)
+            if (refundChecklist.notice != null) {
+                Text(
+                    refundChecklist.notice,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    fontSize = 12.sp,
+                    color = LooketColors.TextPrimary,
+                )
+            }
         }
     }
 }
@@ -265,13 +293,41 @@ private fun PurchasedItemRow(item: PurchasedItem) {
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text(item.name, fontSize = 14.sp, color = Color.Black)
-                        Text(item.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text(
+                            item.name,
+                            fontSize = 14.sp,
+                            color = Color.Black,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            item.store,
+                            fontSize = 12.sp,
+                            color = LooketColors.TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("₩${formatKrw(item.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-                        Text("환급액: ₩${formatKrw(item.refundAmountKrw)}", fontSize = 12.sp, color = Color.Black)
+                    Column(
+                        modifier = Modifier.widthIn(min = 90.dp),
+                        horizontalAlignment = Alignment.End,
+                    ) {
+                        Text(
+                            "₩${formatKrw(item.priceKrw)}",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.Black,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                        Text(
+                            "환급액: ₩${formatKrw(item.refundAmountKrw)}",
+                            fontSize = 12.sp,
+                            color = Color.Black,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
                 RefundStatusBadge(item.status)
@@ -625,8 +681,13 @@ private fun HomeScreenPreview() {
                     HomeTopBarTab.REFUND -> RefundTabContent(
                         summary = HomeProductionData.refundSummary,
                         purchasedItems = HomeProductionData.purchasedItems,
-                        checklistItems = HomeProductionData.checklistItems,
-                        checklistCheckedIds = HomeProductionData.checklistCheckedIds,
+                        refundChecklist = RefundChecklist(
+                            tripId = "preview",
+                            status = com.gryffindor.smartshopping.domain.model.RefundChecklistStatus.ACTION_REQUIRED,
+                            items = HomeProductionData.checklistItems,
+                            notice = null,
+                        ),
+                        isChecklistLoading = false,
                         onChecklistClick = {},
                     )
                     HomeTopBarTab.LOOKET -> LooketTabContent(

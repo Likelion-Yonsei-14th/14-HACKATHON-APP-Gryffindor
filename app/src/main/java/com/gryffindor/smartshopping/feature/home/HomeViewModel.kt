@@ -9,6 +9,7 @@ import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.gryffindor.smartshopping.domain.model.CameraState
 import com.gryffindor.smartshopping.domain.model.FeedRecommendation
 import com.gryffindor.smartshopping.domain.model.PurchasedProduct
+import com.gryffindor.smartshopping.domain.model.RefundChecklist
 import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
 import com.gryffindor.smartshopping.domain.repository.TripRepository
@@ -31,6 +32,8 @@ data class HomeUiState(
     // Backend-driven home data
     val purchasedProducts: List<PurchasedProduct> = emptyList(),
     val recommendations: List<FeedRecommendation> = emptyList(),
+    val refundChecklist: RefundChecklist? = null,
+    val isChecklistLoading: Boolean = false,
     val isHomeDataLoading: Boolean = false,
     val homeDataLoaded: Boolean = false,
 )
@@ -82,7 +85,7 @@ class HomeViewModel(
      */
     fun loadHomeData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isHomeDataLoading = true) }
+            _uiState.update { it.copy(isHomeDataLoading = true, isChecklistLoading = true) }
 
             // Fetch MyPage (purchased products + trips list)
             var purchasedProducts: List<PurchasedProduct> = emptyList()
@@ -107,10 +110,22 @@ class HomeViewModel(
                 }
             }
 
+            // Fetch refund checklist if we have a tripId
+            var refundChecklist: RefundChecklist? = null
+            if (tripId != null) {
+                try {
+                    refundChecklist = tripRepository.getRefundChecklist(tripId)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to load refund checklist", e)
+                }
+            }
+
             _uiState.update {
                 it.copy(
                     purchasedProducts = purchasedProducts,
                     recommendations = recommendations,
+                    refundChecklist = refundChecklist,
+                    isChecklistLoading = false,
                     isHomeDataLoading = false,
                     homeDataLoaded = true,
                 )
