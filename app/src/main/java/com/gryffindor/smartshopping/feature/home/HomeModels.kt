@@ -47,6 +47,9 @@ data class RecommendedProduct(
     val productName: String,
     val location: String,
     val imageUrl: String? = null,
+    // 방문예약 폼으로 바로 진입할 때 쓸 추천 매장. 목업 데이터(HomeProductionData)엔 없어서 null.
+    val storeId: String? = null,
+    val storeName: String = "",
 )
 
 /**

@@ -71,7 +71,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToShopping: (sessionId: String) -> Unit,
     onNavigateToChecklist: () -> Unit,
-    onNavigateToVisitReservation: () -> Unit,
+    onNavigateToVisitReservation: (storeId: String, storeName: String) -> Unit,
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
 ) {
@@ -155,7 +155,14 @@ fun HomeScreen(
                             recommended = actualRecommended,
                             brands = HomeProductionData.brandFilters,
                             myLooket = HomeProductionData.looketProducts,
-                            onProductClick = { onNavigateToVisitReservation() },
+                            onProductClick = { product ->
+                                // 추천 상품 목록의 첫번째 매장으로 바로 방문예약 폼을 연다.
+                                // 목업 데이터(HomeProductionData)로 표시된 상품은 storeId가 없어
+                                // 매장 없이는 예약을 만들 수 없으므로 클릭을 무시한다.
+                                product.storeId?.let { storeId ->
+                                    onNavigateToVisitReservation(storeId, product.storeName)
+                                }
+                            },
                         )
                     }
                 }
@@ -406,7 +413,7 @@ private fun LooketTabContent(
     recommended: List<RecommendedProduct>,
     brands: List<BrandFilter>,
     myLooket: List<LooketProduct>,
-    onProductClick: () -> Unit,
+    onProductClick: (RecommendedProduct) -> Unit,
 ) {
     var selectedBrandIds by remember { mutableStateOf(setOf<String>()) }
 
@@ -424,7 +431,7 @@ private fun LooketTabContent(
                 contentPadding = PaddingValues(horizontal = 16.dp),
             ) {
                 items(recommended, key = { it.id }) { product ->
-                    RecommendedProductCard(product, onClick = onProductClick)
+                    RecommendedProductCard(product, onClick = { onProductClick(product) })
                 }
             }
         }
@@ -642,6 +649,8 @@ private fun FeedRecommendation.toRecommendedProduct(): RecommendedProduct = Reco
         if (terminal.isNotEmpty()) "$terminal · $name" else name
     } ?: "",
     imageUrl = product.imageUrl,
+    storeId = stores.firstOrNull()?.storeId,
+    storeName = stores.firstOrNull()?.name ?: "",
 )
 
 /**

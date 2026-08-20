@@ -64,8 +64,6 @@ import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewModel
 import com.gryffindor.smartshopping.feature.reservation.ReservationListScreen
 import com.gryffindor.smartshopping.feature.reservation.VisitReservationFormScreen
-import com.gryffindor.smartshopping.feature.reservation.VisitReservationStoreSelectionScreen
-import com.gryffindor.smartshopping.feature.reservation.VisitReservationStoreSelectionViewModel
 import com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel
 import com.gryffindor.smartshopping.feature.review.ReviewUiState
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
@@ -327,12 +325,13 @@ fun AppNavGraph(
                         navController.navigate(Routes.checklist(sessionId))
                     }
                 },
-                onNavigateToVisitReservation = {
-                    // FOR YOU 추천 상품을 눌렀을 때 진입 — 방문 예약은 여행(Trip)에 묶이므로
-                    // 등록된 여행이 하나도 없으면 안내만 하고 진행하지 않는다.
+                onNavigateToVisitReservation = { storeId, storeName ->
+                    // FOR YOU 추천 상품을 눌렀을 때 진입 — 상품에 이미 추천 매장이 달려있어
+                    // 별도 매장 선택 없이 바로 정보입력 폼으로 이동한다. 방문 예약은 여행(Trip)에
+                    // 묶이므로 등록된 여행이 하나도 없으면 안내만 하고 진행하지 않는다.
                     val tripId = uiState.currentTripId
                     if (tripId != null) {
-                        navController.navigate(Routes.visitReservationStoreSelect(tripId))
+                        navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
                     } else {
                         Toast.makeText(context, "먼저 여행을 등록해주세요.", Toast.LENGTH_SHORT).show()
                     }
@@ -507,38 +506,8 @@ fun AppNavGraph(
             )
         }
 
-        // --- 방문예약 플로우. 홈 FOR YOU 추천 상품을 눌러서 진입한다. ---
-
-        composable(
-            route = Routes.VISIT_RESERVATION_STORE_SELECT,
-            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
-            val context = LocalContext.current
-            val viewModel: VisitReservationStoreSelectionViewModel = viewModel(
-                factory = VisitReservationStoreSelectionViewModel.Factory(appContainer.storeRepository)
-            )
-            val uiState by viewModel.uiState.collectAsState()
-            LaunchedEffect(Unit) { viewModel.loadStores() }
-            LaunchedEffect(uiState.error) {
-                uiState.error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
-            }
-
-            VisitReservationStoreSelectionScreen(
-                stores = uiState.stores.map { it.toLooketStore() },
-                selectedStoreId = uiState.selectedStoreId,
-                onStoreSelected = { viewModel.selectStore(it) },
-                onConfirmClick = {
-                    uiState.selectedStoreId?.let { storeId ->
-                        val storeName = uiState.stores.find { it.id == storeId }?.name ?: ""
-                        navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
-                    }
-                },
-                onBackClick = { navController.popBackStack() },
-                selectedTab = BottomNavTab.HOME,
-                onTabSelected = onBottomTabSelected,
-            )
-        }
+        // --- 방문예약 플로우. 홈 FOR YOU 추천 상품 카드가 매장을 이미 들고 있어서
+        // 매장 선택 화면 없이 바로 정보입력 폼으로 진입한다. ---
 
         composable(
             route = Routes.VISIT_RESERVATION,
