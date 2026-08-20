@@ -43,6 +43,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.LooketIconButton
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
@@ -56,6 +58,7 @@ data class LiveReceiptItem(
     val storeName: String,
     val price: String,
     val refundAmount: String,
+    val imageUrl: String? = null,
     val priceUsd: String? = null,
     val refundAmountUsd: String? = null,
 )
@@ -223,7 +226,7 @@ fun LiveShoppingScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     items.forEach { item ->
-                        LiveReceiptRow(item = item, onRemoveClick = { onRemoveItem(item.id) })
+                        LiveReceiptRow(item = item, isExchangeRateOn = isExchangeRateOn, onRemoveClick = { onRemoveItem(item.id) })
                     }
                 }
             }
@@ -259,6 +262,13 @@ private fun RefundSummary(
     totalPurchaseAmountUsd: String? = null,
     refundAmountUsd: String? = null,
 ) {
+    // Toggle ON = KRW, OFF = USD (per UX requirement).
+    val showUsd = !isExchangeRateOn && totalPurchaseAmountUsd != null
+    val primaryTotal = if (showUsd) "$${totalPurchaseAmountUsd}" else totalPurchaseAmount
+    val primaryRefund = if (showUsd && refundAmountUsd != null) "$${refundAmountUsd}" else refundAmount
+    val secondaryTotal: String? = if (showUsd) totalPurchaseAmount else totalPurchaseAmountUsd?.let { "$$it" }
+    val secondaryRefund: String? = if (showUsd) refundAmount else refundAmountUsd?.let { "$$it" }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -275,25 +285,25 @@ private fun RefundSummary(
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.shopping_live_refund_of_total, totalPurchaseAmount),
+            text = stringResource(R.string.shopping_live_refund_of_total, primaryTotal),
             style = LooketTextStyles.bodyTwo,
             color = LooketColors.TextPrimary,
         )
-        if (totalPurchaseAmountUsd != null) {
+        if (secondaryTotal != null) {
             Text(
-                text = "($${totalPurchaseAmountUsd})",
+                text = "($secondaryTotal)",
                 style = LooketTextStyles.bodyThree,
                 color = LooketColors.TextSecondary,
             )
         }
         Text(
-            text = refundAmount,
+            text = primaryRefund,
             style = LooketTextStyles.titleOne,
             color = LooketColors.TextPrimary,
         )
-        if (refundAmountUsd != null) {
+        if (secondaryRefund != null) {
             Text(
-                text = "$${refundAmountUsd}",
+                text = secondaryRefund,
                 style = LooketTextStyles.bodyTwo,
                 color = LooketColors.TextSecondary,
             )
@@ -316,40 +326,67 @@ private fun RefundSummary(
     }
 }
 
-/** Figma "환율" 토글(351:3141). 다른 환급 관련 화면에서도 재등장하면 core/ui로 옮길 예정. */
+/** 통화 전환 세그먼트 토글. 왼쪽 ₩ / 오른쪽 $. 선택된 쪽이 하이라이트. */
 @Composable
 private fun ExchangeRateToggle(isOn: Boolean, onToggle: () -> Unit) {
-    Box(
+    // isOn = true → KRW 선택 (왼쪽 활성), isOn = false → USD 선택 (오른쪽 활성)
+    val krwSelected = isOn
+    Row(
         modifier = Modifier
-            .size(width = 52.dp, height = 32.dp)
             .clip(RoundedCornerShape(100.dp))
-            .background(LooketColors.BrandPrimary)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onToggle,
-            ),
+            .background(LooketColors.SurfaceEmphasized)
+            .padding(2.dp),
     ) {
+        // KRW 버튼
         Box(
             modifier = Modifier
-                .align(if (isOn) Alignment.CenterEnd else Alignment.CenterStart)
-                .padding(4.dp)
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(LooketColors.SurfaceSubtle),
+                .clip(RoundedCornerShape(100.dp))
+                .background(if (krwSelected) LooketColors.BrandPrimary else Color.Transparent)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { if (!krwSelected) onToggle() },
+                )
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = stringResource(R.string.shopping_live_currency_symbol),
-                style = LooketTextStyles.bodyThree,
-                color = LooketColors.TextPrimary,
+                text = "₩",
+                style = LooketTextStyles.bodyTwo,
+                color = if (krwSelected) Color.White else LooketColors.TextSecondary,
+            )
+        }
+        // USD 버튼
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(100.dp))
+                .background(if (!krwSelected) LooketColors.BrandPrimary else Color.Transparent)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { if (krwSelected) onToggle() },
+                )
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "$",
+                style = LooketTextStyles.bodyTwo,
+                color = if (!krwSelected) Color.White else LooketColors.TextSecondary,
             )
         }
     }
 }
 
 @Composable
-private fun LiveReceiptRow(item: LiveReceiptItem, onRemoveClick: () -> Unit) {
+private fun LiveReceiptRow(item: LiveReceiptItem, isExchangeRateOn: Boolean, onRemoveClick: () -> Unit) {
+    // Toggle ON = KRW, OFF = USD (per UX requirement).
+    val showUsd = !isExchangeRateOn && item.priceUsd != null
+    val primaryPrice = if (showUsd) "$${item.priceUsd}" else item.price
+    val primaryRefund = if (showUsd && item.refundAmountUsd != null) "$${item.refundAmountUsd}" else item.refundAmount
+    val secondaryPrice: String? = if (showUsd) item.price else item.priceUsd?.let { "$$it" }
+    val secondaryRefund: String? = if (showUsd) item.refundAmount else item.refundAmountUsd?.let { "$$it" }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(16.dp))
         Row(
@@ -358,11 +395,23 @@ private fun LiveReceiptRow(item: LiveReceiptItem, onRemoveClick: () -> Unit) {
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(width = 80.dp, height = 126.dp)
-                    .background(LooketColors.SurfaceEmphasized),
-            )
+            if (item.imageUrl != null) {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(width = 80.dp, height = 126.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(width = 80.dp, height = 126.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(LooketColors.SurfaceEmphasized),
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = item.name, style = LooketTextStyles.bodyTwo, color = LooketColors.TextPrimary)
                 Text(text = item.storeName, style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
@@ -372,15 +421,15 @@ private fun LiveReceiptRow(item: LiveReceiptItem, onRemoveClick: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column {
-                        Text(text = item.price, style = LooketTextStyles.bodyOne, color = LooketColors.TextPrimary)
-                        if (item.priceUsd != null) {
-                            Text(text = "$${item.priceUsd}", style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                        Text(text = primaryPrice, style = LooketTextStyles.bodyOne, color = LooketColors.TextPrimary)
+                        if (secondaryPrice != null) {
+                            Text(text = secondaryPrice, style = LooketTextStyles.bodyThree, color = LooketColors.TextSecondary)
                         }
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(text = stringResource(R.string.shopping_live_refund_amount, item.refundAmount), style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
-                        if (item.refundAmountUsd != null) {
-                            Text(text = "$${item.refundAmountUsd}", style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                        Text(text = stringResource(R.string.shopping_live_refund_amount, primaryRefund), style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                        if (secondaryRefund != null) {
+                            Text(text = secondaryRefund, style = LooketTextStyles.bodyThree, color = LooketColors.TextSecondary)
                         }
                     }
                 }

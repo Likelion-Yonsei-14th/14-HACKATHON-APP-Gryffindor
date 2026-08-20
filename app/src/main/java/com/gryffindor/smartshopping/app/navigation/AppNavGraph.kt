@@ -693,6 +693,7 @@ fun AppNavGraph(
                                 storeName = sessionProduct.product.brand,
                                 price = formatKrw(sessionProduct.pricing.retailPriceKrw),
                                 refundAmount = formatKrw(sessionProduct.pricing.estimatedRefundKrw),
+                                imageUrl = sessionProduct.product.imageUrl,
                                 priceUsd = sessionProduct.pricing.convertedRetailPrice,
                                 refundAmountUsd = sessionProduct.pricing.convertedEstimatedRefund,
                             )
