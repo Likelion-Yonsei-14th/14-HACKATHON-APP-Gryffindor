@@ -1,5 +1,8 @@
 package com.gryffindor.smartshopping.feature.shell.tabs
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,30 +22,40 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.app.AppContainer
 import com.gryffindor.smartshopping.app.navigation.ProductionRoutes
+import com.gryffindor.smartshopping.app.navigation.Routes
 import com.gryffindor.smartshopping.core.ui.component.PrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.GradientEnd
 import com.gryffindor.smartshopping.core.ui.theme.GradientStart
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
+import com.gryffindor.smartshopping.feature.feed.FeedSection
+import com.gryffindor.smartshopping.feature.feed.FeedViewModel
 import com.gryffindor.smartshopping.feature.trip.TripViewModel
 import com.gryffindor.smartshopping.feature.wishlist.WishlistViewModel
 
@@ -67,9 +80,53 @@ fun HomeTab(
     )
     val wishlistIds by wishlistViewModel.wishlistIds.collectAsState()
 
+    // Feed ViewModel — loads trips + AI recommendations with store cards
+    val feedViewModel: FeedViewModel = viewModel(
+        factory = FeedViewModel.Factory(
+            appContainer.tripRepository,
+            appContainer.locationProvider
+        )
+    )
+    val feedUiState by feedViewModel.uiState.collectAsState()
+
+    // Snackbar state for "trip required" message
+    var showTripRequiredMessage by remember { mutableStateOf(false) }
+
+    // Location permission request — needed for Feed distance calculation
+    val context = LocalContext.current
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            // Re-trigger feed load with location now available
+            feedViewModel.retry()
+        }
+    }
+
     LaunchedEffect(Unit) {
         tripViewModel.loadTrips()
         wishlistViewModel.loadWishlist()
+
+        // Request location permission if not yet granted
+        val fineGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val coarseGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (!fineGranted && !coarseGranted) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+
+        feedViewModel.loadTripsAndFeed()
     }
 
     Column(
@@ -209,6 +266,59 @@ fun HomeTab(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+
+        // --- AI Feed Section: 추천 Store + 방문 예약 CTA ---
+        if (feedUiState.trips.isNotEmpty() || feedUiState.isLoadingTrips || feedUiState.isLoadingFeed) {
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text(
+                    text = "추천 매장",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.textPrimary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            FeedSection(
+                uiState = feedUiState,
+                onRetry = { feedViewModel.retry() },
+                onStoreClick = { storeId ->
+                    // Navigate to store detail if available, otherwise no-op
+                },
+                onWishlistToggle = { productId -> wishlistViewModel.toggleWishlist(productId) },
+                onVisitReservation = { storeId, storeName ->
+                    val tripId = feedUiState.selectedTrip?.id
+                    if (tripId != null) {
+                        navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
+                    } else {
+                        // No trip — prompt user to register a trip first
+                        showTripRequiredMessage = true
+                        navController.navigate(ProductionRoutes.TRIP_FLIGHT_REGISTER)
+                    }
+                },
+                wishlistIds = wishlistIds,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        // Trip required snackbar
+        if (showTripRequiredMessage) {
+            Snackbar(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text("방문 예약을 위해 여행을 먼저 등록해주세요.")
+            }
+            LaunchedEffect(showTripRequiredMessage) {
+                kotlinx.coroutines.delay(3000)
+                showTripRequiredMessage = false
+            }
+        }
     }
 }
 
