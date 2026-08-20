@@ -35,6 +35,7 @@ import com.gryffindor.smartshopping.feature.onboarding.OnboardingPurchaseConfirm
 import com.gryffindor.smartshopping.feature.onboarding.OnboardingReceiptRegisterScreen
 import com.gryffindor.smartshopping.feature.onboarding.PermissionScreen
 import com.gryffindor.smartshopping.feature.onboarding.PurchaseConfirmItem
+import com.gryffindor.smartshopping.feature.onboarding.TermsScreen
 import com.gryffindor.smartshopping.feature.onboarding.UserInfoScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewModel
@@ -116,6 +117,15 @@ fun AppNavGraph(
         // 3. 권한 허용 화면
         composable(Routes.ONBOARDING_PERMISSION) {
             PermissionScreen(
+                onNext = {
+                    navController.navigate(Routes.ONBOARDING_TERMS)
+                }
+            )
+        }
+
+        // 3-1. 이용약관 동의 화면
+        composable(Routes.ONBOARDING_TERMS) {
+            TermsScreen(
                 onNext = {
                     navController.navigate(Routes.ONBOARDING_USER_INFO)
                 }
