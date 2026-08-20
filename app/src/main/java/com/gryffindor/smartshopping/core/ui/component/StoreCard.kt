@@ -13,7 +13,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil3.compose.SubcomposeAsyncImage
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 
@@ -21,11 +23,12 @@ data class LooketStore(
     val id: String,
     val name: String,
     val address: String,
+    val imageUrl: String? = null,
 )
 
 /**
  * Figma "매장 찾기" 카드. 마이페이지 영수증 매장 선택과 쇼핑-실시간 매장 선택 화면에서 공용으로 쓴다.
- * 실제 매장 사진 대신 회색 자리표시자를 쓴다 — 사진 에셋이 준비되면 image 파라미터를 추가해 교체한다.
+ * Backend imageUrl이 존재하면 실제 이미지를 표시하고, null이거나 로딩 실패 시 회색 자리표시자를 보여준다.
  */
 @Composable
 fun LooketStoreCard(
@@ -44,12 +47,40 @@ fun LooketStoreCard(
             .background(LooketColors.Surface)
             .clickable(onClick = onClick),
     ) {
-        Spacer(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(152.dp)
-                .background(LooketColors.BorderDisabled),
-        )
+        val imageModifier = Modifier
+            .fillMaxWidth()
+            .height(152.dp)
+            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+
+        if (store.imageUrl != null) {
+            SubcomposeAsyncImage(
+                model = store.imageUrl,
+                contentDescription = store.name,
+                contentScale = ContentScale.Crop,
+                modifier = imageModifier,
+                loading = {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(152.dp)
+                            .background(LooketColors.BorderDisabled),
+                    )
+                },
+                error = {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(152.dp)
+                            .background(LooketColors.BorderDisabled),
+                    )
+                },
+            )
+        } else {
+            Spacer(
+                modifier = imageModifier.background(LooketColors.BorderDisabled),
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()

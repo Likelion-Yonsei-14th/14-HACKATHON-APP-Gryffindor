@@ -53,6 +53,7 @@ fun Store.toLooketStore(): LooketStore = LooketStore(
     id = id,
     name = name,
     address = address ?: listOfNotNull(city, country).joinToString(", "),
+    imageUrl = imageUrl,
 )
 
 @Preview(showBackground = true, heightDp = 917, widthDp = 412)

@@ -25,9 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,6 +96,16 @@ fun LiveShoppingScreen(
     val maxDragDp = (SheetCollapsedTop - SheetExpandedTop).value
     var dragDp by remember { mutableFloatStateOf(0f) }
     val expanded = dragDp > maxDragDp / 2f
+
+    // Auto-expand sheet when a NEW item arrives via recognition (not on initial load).
+    var previousItemCount by remember { mutableIntStateOf(items.size) }
+    LaunchedEffect(items.size) {
+        if (items.size > previousItemCount) {
+            Log.d("LiveShoppingScreen", "items updated count=${items.size} — auto-expanding sheet")
+            dragDp = maxDragDp
+        }
+        previousItemCount = items.size
+    }
 
     val draggableState = rememberDraggableState { deltaPx ->
         val deltaDp = with(density) { -deltaPx.toDp().value }
