@@ -119,7 +119,7 @@ object HomeProductionData {
             title = "당신만을 위한 오늘의 셀렉션",
             productName = "Pina 스터디드 토트백 M",
             location = "Terminal1 3F Gate 28-30",
-            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWPFAPA03CO001_01?\$w1000\$&fmt=auto&qlt=default",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWTGATA02CO001_01?\$w1000\$&fmt=auto&qlt=default",
         ),
         RecommendedProduct(
             id = "mcm_cozy_cat_100_001",
@@ -147,13 +147,13 @@ object HomeProductionData {
             imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWSGSTA02CO001_01?\$w1000\$&fmt=auto&qlt=default",
         ),
         LooketProduct(
-            id = "mcm_new_liz_shopper_m_001",
-            name = "New Liz 비세토스 숄더백 M",
+            id = "mcm_aren_ew_lotus_pink_s_001",
+            name = "Aren E/W 숄더백 Lotus Pink S",
             store = "MCM 현대면세점 인천공항 T1",
             priceKrw = 1_490_000,
             brandId = "mcm",
             statusLabel = "구매",
-            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWPFSLR03CO001_01?\$w1000\$&fmt=auto&qlt=default",
+            imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWSGSTA01QA001_01?\$w1000\$&fmt=auto&qlt=default",
         ),
         LooketProduct(
             id = "mcm_mighty_bear_100_001",

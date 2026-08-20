@@ -10,9 +10,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -480,9 +482,12 @@ private fun LooketTabContent(
             }
 
             filteredProducts.chunked(2).forEach { rowItems ->
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                ) {
                     rowItems.forEach { product ->
-                        LooketProductCard(product, modifier = Modifier.weight(1f))
+                        LooketProductCard(product, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                     if (rowItems.size < 2) {
                         Spacer(modifier = Modifier.weight(1f))
@@ -585,7 +590,7 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
             // 상품 이미지: imageUrl이 있으면 실제 이미지, 없으면 placeholder
             Box(
                 modifier = Modifier
@@ -623,7 +628,7 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
             onClick = { /* TODO: 관심리스트에서 제거 로직 연결 */ },
             colors = ButtonDefaults.buttonColors(containerColor = LooketColors.BrandPrimary),
             shape = RoundedCornerShape(8.dp),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
             modifier = Modifier.fillMaxWidth().height(56.dp),
         ) {
             Text("관심리스트에서 제거", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
