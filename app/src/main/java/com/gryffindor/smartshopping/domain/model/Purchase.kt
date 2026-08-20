@@ -28,5 +28,12 @@ data class PurchasedProduct(
     val price: Int?,
     val currency: String?,
     val storeName: String?,
-    val purchasedAt: String?
+    val purchasedAt: String?,
+    // Pricing fields from Backend
+    val estimatedRefundKrw: Long? = null,
+    val estimatedRefundPriceKrw: Long? = null,
+    val convertedPrice: String? = null,
+    val convertedEstimatedRefund: String? = null,
+    val convertedEstimatedRefundPrice: String? = null,
+    val convertedCurrency: String? = null
 )

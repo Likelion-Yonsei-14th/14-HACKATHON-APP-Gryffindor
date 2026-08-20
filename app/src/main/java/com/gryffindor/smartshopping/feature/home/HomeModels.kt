@@ -10,6 +10,8 @@ data class RefundSummary(
     val completedAmountKrw: Long,
     val inProgressCount: Int,
     val inProgressAmountKrw: Long,
+    val totalPurchaseAmountUsd: String? = null,
+    val totalRefundAmountUsd: String? = null,
 )
 
 enum class RefundStatus { COMPLETED, IN_PROGRESS }
@@ -22,6 +24,8 @@ data class PurchasedItem(
     val refundAmountKrw: Long,
     val status: RefundStatus,
     val imageUrl: String? = null,
+    val priceUsd: String? = null,
+    val refundAmountUsd: String? = null,
 )
 
 data class BrandFilter(

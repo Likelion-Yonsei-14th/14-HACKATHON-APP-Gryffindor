@@ -693,11 +693,15 @@ fun AppNavGraph(
                                 storeName = sessionProduct.product.brand,
                                 price = formatKrw(sessionProduct.pricing.retailPriceKrw),
                                 refundAmount = formatKrw(sessionProduct.pricing.estimatedRefundKrw),
+                                priceUsd = sessionProduct.pricing.convertedRetailPrice,
+                                refundAmountUsd = sessionProduct.pricing.convertedEstimatedRefund,
                             )
                         },
                         onRemoveItem = {},
                         isExchangeRateOn = data.displayCurrency == DisplayCurrency.CONVERTED,
                         onExchangeRateToggle = { viewModel.toggleCurrency() },
+                        totalPurchaseAmountUsd = data.summary.totalConvertedRetail,
+                        refundAmountUsd = data.summary.totalConvertedRefund,
                     )
                 }
             }

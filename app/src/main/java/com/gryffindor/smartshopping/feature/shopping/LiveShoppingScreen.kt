@@ -56,6 +56,8 @@ data class LiveReceiptItem(
     val storeName: String,
     val price: String,
     val refundAmount: String,
+    val priceUsd: String? = null,
+    val refundAmountUsd: String? = null,
 )
 
 // Figma 좌표 기준(376:5236/5240/5246) 근사값. 리스트 시트는 795dp(접힘, button_L 위치)에서
@@ -90,6 +92,8 @@ fun LiveShoppingScreen(
     onRemoveItem: (String) -> Unit,
     isExchangeRateOn: Boolean,
     onExchangeRateToggle: () -> Unit,
+    totalPurchaseAmountUsd: String? = null,
+    refundAmountUsd: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
@@ -214,6 +218,8 @@ fun LiveShoppingScreen(
                         refundAmount = refundAmount,
                         isExchangeRateOn = isExchangeRateOn,
                         onExchangeRateToggle = onExchangeRateToggle,
+                        totalPurchaseAmountUsd = totalPurchaseAmountUsd,
+                        refundAmountUsd = refundAmountUsd,
                     )
                     Spacer(Modifier.height(16.dp))
                     items.forEach { item ->
@@ -250,6 +256,8 @@ private fun RefundSummary(
     refundAmount: String,
     isExchangeRateOn: Boolean,
     onExchangeRateToggle: () -> Unit,
+    totalPurchaseAmountUsd: String? = null,
+    refundAmountUsd: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -271,11 +279,25 @@ private fun RefundSummary(
             style = LooketTextStyles.bodyTwo,
             color = LooketColors.TextPrimary,
         )
+        if (totalPurchaseAmountUsd != null) {
+            Text(
+                text = "($${totalPurchaseAmountUsd})",
+                style = LooketTextStyles.bodyThree,
+                color = LooketColors.TextSecondary,
+            )
+        }
         Text(
             text = refundAmount,
             style = LooketTextStyles.titleOne,
             color = LooketColors.TextPrimary,
         )
+        if (refundAmountUsd != null) {
+            Text(
+                text = "$${refundAmountUsd}",
+                style = LooketTextStyles.bodyTwo,
+                color = LooketColors.TextSecondary,
+            )
+        }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -349,8 +371,18 @@ private fun LiveReceiptRow(item: LiveReceiptItem, onRemoveClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(text = item.price, style = LooketTextStyles.bodyOne, color = LooketColors.TextPrimary)
-                    Text(text = stringResource(R.string.shopping_live_refund_amount, item.refundAmount), style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                    Column {
+                        Text(text = item.price, style = LooketTextStyles.bodyOne, color = LooketColors.TextPrimary)
+                        if (item.priceUsd != null) {
+                            Text(text = "$${item.priceUsd}", style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                        }
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(text = stringResource(R.string.shopping_live_refund_amount, item.refundAmount), style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                        if (item.refundAmountUsd != null) {
+                            Text(text = "$${item.refundAmountUsd}", style = LooketTextStyles.bodyThree, color = LooketColors.TextPrimary)
+                        }
+                    }
                 }
             }
         }

@@ -40,7 +40,9 @@ interface PersonalizationApiService {
     // --- MyPage ---
 
     @GET("me")
-    suspend fun getMyPage(): MyPageResponseDto
+    suspend fun getMyPage(
+        @retrofit2.http.Query("currency") currency: String? = "USD"
+    ): MyPageResponseDto
 
     // --- Wishlist ---
 

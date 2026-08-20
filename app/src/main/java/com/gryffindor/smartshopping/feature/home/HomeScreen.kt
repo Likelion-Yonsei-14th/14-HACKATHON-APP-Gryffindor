@@ -213,9 +213,17 @@ private fun RefundSummaryCard(summary: RefundSummary, modifier: Modifier = Modif
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("OO님의 환급 금액", color = LooketColors.TextInverse, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Text("총 구매 금액 ₩${formatKrw(summary.totalPurchaseAmountKrw)} 중", color = LooketColors.TextInverse, fontSize = 14.sp)
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("총 구매 금액 ₩${formatKrw(summary.totalPurchaseAmountKrw)}", color = LooketColors.TextInverse, fontSize = 14.sp)
+            if (summary.totalPurchaseAmountUsd != null) {
+                Text("($${summary.totalPurchaseAmountUsd})", color = LooketColors.TextInverse.copy(alpha = 0.8f), fontSize = 12.sp)
+            }
+        }
         Column {
             Text("₩${formatKrw(summary.totalRefundAmountKrw)}", color = LooketColors.TextInverse, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+            if (summary.totalRefundAmountUsd != null) {
+                Text("$${summary.totalRefundAmountUsd}", color = LooketColors.TextInverse.copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -321,6 +329,15 @@ private fun PurchasedItemRow(item: PurchasedItem) {
                             maxLines = 1,
                             softWrap = false,
                         )
+                        if (item.priceUsd != null) {
+                            Text(
+                                "$${item.priceUsd}",
+                                fontSize = 12.sp,
+                                color = LooketColors.TextPrimary,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
                         Text(
                             "환급액: ₩${formatKrw(item.refundAmountKrw)}",
                             fontSize = 12.sp,
@@ -328,6 +345,15 @@ private fun PurchasedItemRow(item: PurchasedItem) {
                             maxLines = 1,
                             softWrap = false,
                         )
+                        if (item.refundAmountUsd != null) {
+                            Text(
+                                "$${item.refundAmountUsd}",
+                                fontSize = 12.sp,
+                                color = LooketColors.TextPrimary,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
                     }
                 }
                 RefundStatusBadge(item.status)
@@ -617,9 +643,11 @@ private fun PurchasedProduct.toPurchasedItem(): PurchasedItem = PurchasedItem(
     name = product?.name ?: fallbackProductName ?: "상품",
     store = storeName ?: "",
     priceKrw = (price ?: 0).toLong(),
-    refundAmountKrw = 0L, // Refund amount not available from this endpoint
+    refundAmountKrw = estimatedRefundKrw ?: 0L,
     status = RefundStatus.COMPLETED,
     imageUrl = product?.imageUrl,
+    priceUsd = convertedPrice,
+    refundAmountUsd = convertedEstimatedRefund,
 )
 
 /**
@@ -643,14 +671,32 @@ private fun FeedRecommendation.toRecommendedProduct(): RecommendedProduct = Reco
  */
 private fun computeRefundSummary(products: List<PurchasedProduct>): RefundSummary {
     val totalAmount = products.sumOf { (it.price ?: 0).toLong() }
+    val totalRefund = products.sumOf { it.estimatedRefundKrw ?: 0L }
+
+    // Sum converted values — all non-null → valid total; any null → null total
+    val allConverted = products.all { it.convertedPrice != null }
+    val totalPurchaseUsd = if (allConverted && products.isNotEmpty()) {
+        sumDecimalStrings(products.mapNotNull { it.convertedPrice })
+    } else null
+    val totalRefundUsd = if (allConverted && products.isNotEmpty()) {
+        sumDecimalStrings(products.mapNotNull { it.convertedEstimatedRefund })
+    } else null
+
     return RefundSummary(
         totalPurchaseAmountKrw = totalAmount,
-        totalRefundAmountKrw = 0L, // Detailed refund breakdown not available from GET /me
+        totalRefundAmountKrw = totalRefund,
         completedCount = products.size,
         completedAmountKrw = 0L,
         inProgressCount = 0,
         inProgressAmountKrw = 0L,
+        totalPurchaseAmountUsd = totalPurchaseUsd,
+        totalRefundAmountUsd = totalRefundUsd,
     )
+}
+
+private fun sumDecimalStrings(values: List<String>): String {
+    val total = values.sumOf { it.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO }
+    return total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
 }
 
 @Preview(showBackground = true, widthDp = 412, heightDp = 917)

@@ -72,7 +72,13 @@ fun PurchasedProductResponseDto.toDomain(): PurchasedProduct = PurchasedProduct(
     price = price,
     currency = currency,
     storeName = storeName,
-    purchasedAt = purchasedAt
+    purchasedAt = purchasedAt,
+    estimatedRefundKrw = estimatedRefundKrw,
+    estimatedRefundPriceKrw = estimatedRefundPriceKrw,
+    convertedPrice = convertedPrice,
+    convertedEstimatedRefund = convertedEstimatedRefund,
+    convertedEstimatedRefundPrice = convertedEstimatedRefundPrice,
+    convertedCurrency = convertedCurrency
 )
 
 fun TripSummaryResponseDto.toDomain(): TripSummary = TripSummary(

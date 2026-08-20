@@ -27,7 +27,14 @@ data class PurchasedProductResponseDto(
     val price: Int? = null,
     val currency: String? = null,
     val storeName: String? = null,
-    val purchasedAt: String? = null
+    val purchasedAt: String? = null,
+    // Pricing fields from Backend (populated when currency query param is provided)
+    val estimatedRefundKrw: Long? = null,
+    val estimatedRefundPriceKrw: Long? = null,
+    val convertedPrice: String? = null,
+    val convertedEstimatedRefund: String? = null,
+    val convertedEstimatedRefundPrice: String? = null,
+    val convertedCurrency: String? = null
 )
 
 @Serializable
