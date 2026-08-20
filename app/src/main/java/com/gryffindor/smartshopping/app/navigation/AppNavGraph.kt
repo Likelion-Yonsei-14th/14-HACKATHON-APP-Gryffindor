@@ -148,6 +148,10 @@ fun AppNavGraph(
         composable(Routes.ONBOARDING_PERMISSION) {
             PermissionScreen(
                 onNext = {
+                    // 이 시점엔 블루투스/위치 권한이 실제로 허용된 상태 — 이제 Wearables SDK
+                    // 초기화/등록을 진행한다(로그인 전에 시스템 권한 다이얼로그가 뜨는 걸
+                    // 막으려고 MainActivity 시작 시점이 아니라 여기서 트리거).
+                    appContainer.onRequestWearablesSetup?.invoke()
                     navController.navigate(Routes.ONBOARDING_USER_INFO)
                 }
             )

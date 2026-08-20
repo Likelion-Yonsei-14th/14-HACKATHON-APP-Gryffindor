@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,7 +27,13 @@ fun FlightRegisterScreen(
     onCaptureClick: () -> Unit,
     onSkipClick: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize().background(LooketColors.Surface)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LooketColors.Surface)
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding(),
+    ) {
         Spacer(Modifier.height(52.dp))
         LooketSectionHeader(
             title = "이번 여행의 항공편 사진을\n등록해주세요.",
@@ -50,6 +59,7 @@ fun FlightRegisterScreen(
                 onClick = onCaptureClick,
             )
         }
+        Spacer(Modifier.height(32.dp))
     }
 }
 

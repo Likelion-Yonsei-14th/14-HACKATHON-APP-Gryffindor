@@ -88,4 +88,9 @@ class AppContainer(private val applicationContext: Context) {
     // 온보딩에서 확인한 여행 날짜 — 체크리스트 화면 날짜 네비게이터 초기값으로 쓴다.
     // TODO: 실제 세션/서버에 여행 정보가 영속화되면 이 임시 필드는 제거한다.
     var tripDates: TripDates = TripDates()
+
+    // MainActivity가 앱 시작 시 채워두는 콜백. 로그인 전에 시스템 권한 다이얼로그가 뜨는 문제를
+    // 피하려고, MainActivity.onCreate()에서 즉시 권한을 요청하는 대신 온보딩의 접근권한 화면이
+    // 실제로 권한을 받은 직후 이 콜백을 호출해서 Wearables SDK 초기화/등록을 진행한다.
+    var onRequestWearablesSetup: (() -> Unit)? = null
 }

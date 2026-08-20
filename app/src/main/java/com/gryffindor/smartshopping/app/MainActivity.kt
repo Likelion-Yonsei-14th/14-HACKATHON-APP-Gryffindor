@@ -113,8 +113,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Request runtime permissions once during Activity creation.
-        // BLUETOOTH_CONNECT is required for Wearables SDK; POST_NOTIFICATIONS for Android 13+.
+        // 여기서 바로 permissionLauncher.launch()를 부르면 로그인 화면보다 먼저 시스템 권한
+        // 다이얼로그가 떠버린다 — 온보딩의 접근권한 화면(로그인 다음 단계)이 이미 같은 권한을
+        // 실제로 요청하므로, 이미 허용돼 있는 경우에만 조용히 초기화하고 그렇지 않으면 온보딩
+        // 접근권한 화면이 허용을 받은 직후(AppContainer.onRequestWearablesSetup)까지 미룬다.
+        if (isPermissionGranted(Manifest.permission.BLUETOOTH_CONNECT)) {
+            setupWearables()
+        }
+        appContainer.onRequestWearablesSetup = { requestWearablesPermissionsAndSetup() }
+    }
+
+    private fun requestWearablesPermissionsAndSetup() {
         val permissionsToRequest = buildList {
             if (!isPermissionGranted(Manifest.permission.BLUETOOTH_CONNECT)) {
                 add(Manifest.permission.BLUETOOTH_CONNECT)
