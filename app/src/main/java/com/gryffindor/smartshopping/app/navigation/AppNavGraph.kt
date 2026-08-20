@@ -304,7 +304,9 @@ fun AppNavGraph(
             val viewModel: HomeViewModel = viewModel(
                 factory = HomeViewModel.Factory(
                     appContainer.sessionRepository,
-                    appContainer.cameraFrameProvider
+                    appContainer.cameraFrameProvider,
+                    appContainer.personalizationRepository,
+                    appContainer.tripRepository,
                 )
             )
             val uiState by viewModel.uiState.collectAsState()
@@ -717,7 +719,10 @@ fun AppNavGraph(
 
                     LaunchedEffect(Unit) {
                         viewModel.submitSuccess.collect {
-                            navController.navigate(Routes.travel(sessionId))
+                            navController.navigate(Routes.HOME) {
+                                popUpTo(Routes.HOME) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     }
 

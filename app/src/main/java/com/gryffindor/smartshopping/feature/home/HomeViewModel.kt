@@ -7,7 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.gryffindor.smartshopping.domain.model.CameraState
+import com.gryffindor.smartshopping.domain.model.FeedRecommendation
+import com.gryffindor.smartshopping.domain.model.PurchasedProduct
+import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
+import com.gryffindor.smartshopping.domain.repository.TripRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,12 +27,19 @@ data class HomeUiState(
     val isStarting: Boolean = false,
     val errorMessage: String? = null,
     val datUpdateRequired: Boolean = false,
-    val datUpdateError: String? = null
+    val datUpdateError: String? = null,
+    // Backend-driven home data
+    val purchasedProducts: List<PurchasedProduct> = emptyList(),
+    val recommendations: List<FeedRecommendation> = emptyList(),
+    val isHomeDataLoading: Boolean = false,
+    val homeDataLoaded: Boolean = false,
 )
 
 class HomeViewModel(
     private val sessionRepository: SessionRepository,
-    private val cameraFrameProvider: CameraFrameProvider
+    private val cameraFrameProvider: CameraFrameProvider,
+    private val personalizationRepository: PersonalizationRepository,
+    private val tripRepository: TripRepository,
 ) : ViewModel() {
 
     companion object {
@@ -58,6 +69,51 @@ class HomeViewModel(
                         }
                     }
                 }
+            }
+        }
+
+        // Load real Backend data on creation
+        loadHomeData()
+    }
+
+    /**
+     * Fetches user's purchased products and trip feed recommendations from Backend.
+     * Called on init and can be re-called to refresh (e.g. after returning from Review).
+     */
+    fun loadHomeData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isHomeDataLoading = true) }
+
+            // Fetch MyPage (purchased products + trips list)
+            var purchasedProducts: List<PurchasedProduct> = emptyList()
+            var tripId: String? = null
+            try {
+                val myPage = personalizationRepository.getMyPage()
+                purchasedProducts = myPage.purchasedProducts
+                // Use the first available trip for feed recommendations
+                tripId = myPage.trips.firstOrNull()?.id
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load MyPage data", e)
+            }
+
+            // Fetch trip feed recommendations if we have a tripId
+            var recommendations: List<FeedRecommendation> = emptyList()
+            if (tripId != null) {
+                try {
+                    val feed = tripRepository.getTripFeed(tripId)
+                    recommendations = feed.recommendations
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to load trip feed", e)
+                }
+            }
+
+            _uiState.update {
+                it.copy(
+                    purchasedProducts = purchasedProducts,
+                    recommendations = recommendations,
+                    isHomeDataLoading = false,
+                    homeDataLoaded = true,
+                )
             }
         }
     }
@@ -140,11 +196,13 @@ class HomeViewModel(
 
     class Factory(
         private val sessionRepository: SessionRepository,
-        private val cameraFrameProvider: CameraFrameProvider
+        private val cameraFrameProvider: CameraFrameProvider,
+        private val personalizationRepository: PersonalizationRepository,
+        private val tripRepository: TripRepository,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return HomeViewModel(sessionRepository, cameraFrameProvider) as T
+            return HomeViewModel(sessionRepository, cameraFrameProvider, personalizationRepository, tripRepository) as T
         }
     }
 }

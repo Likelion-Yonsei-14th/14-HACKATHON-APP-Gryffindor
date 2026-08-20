@@ -54,6 +54,8 @@ import com.gryffindor.smartshopping.core.ui.component.HomeTopBarTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
+import com.gryffindor.smartshopping.domain.model.FeedRecommendation
+import com.gryffindor.smartshopping.domain.model.PurchasedProduct
 
 // LooketColors에 아직 없는 상태/배지 색상만 로컬로 유지 (팀 팔레트에 추가되면 교체)
 private val StatusGreen = Color(0xFF00D96C)
@@ -69,6 +71,11 @@ fun HomeScreen(
     onTabSelected: (BottomNavTab) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Refresh Backend data every time Home becomes visible (e.g. after Review → Home)
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeData()
+    }
 
     LaunchedEffect(uiState.sessionId) {
         uiState.sessionId?.let { sessionId ->
@@ -99,18 +106,46 @@ fun HomeScreen(
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
                 when (selectedTopTab) {
-                    HomeTopBarTab.REFUND -> RefundTabContent(
-                        summary = HomeProductionData.refundSummary,
-                        purchasedItems = HomeProductionData.purchasedItems,
-                        checklistItems = HomeProductionData.checklistItems,
-                        checklistCheckedIds = HomeProductionData.checklistCheckedIds,
-                        onChecklistClick = onNavigateToChecklist,
-                    )
-                    HomeTopBarTab.LOOKET -> LooketTabContent(
-                        recommended = HomeProductionData.recommendedProducts,
-                        brands = HomeProductionData.brandFilters,
-                        myLooket = HomeProductionData.looketProducts,
-                    )
+                    HomeTopBarTab.REFUND -> {
+                        // Use actual purchased products from Backend; fallback summary computed
+                        val actualPurchasedItems = if (uiState.purchasedProducts.isNotEmpty()) {
+                            uiState.purchasedProducts.map { it.toPurchasedItem() }
+                        } else if (uiState.homeDataLoaded) {
+                            emptyList() // No purchases yet — show empty
+                        } else {
+                            HomeProductionData.purchasedItems // Still loading, show placeholder
+                        }
+
+                        val summary = if (uiState.purchasedProducts.isNotEmpty()) {
+                            computeRefundSummary(uiState.purchasedProducts)
+                        } else if (uiState.homeDataLoaded) {
+                            RefundSummary(0, 0, 0, 0, 0, 0)
+                        } else {
+                            HomeProductionData.refundSummary
+                        }
+
+                        RefundTabContent(
+                            summary = summary,
+                            purchasedItems = actualPurchasedItems,
+                            checklistItems = HomeProductionData.checklistItems,
+                            checklistCheckedIds = HomeProductionData.checklistCheckedIds,
+                            onChecklistClick = onNavigateToChecklist,
+                        )
+                    }
+                    HomeTopBarTab.LOOKET -> {
+                        // Use actual recommendations from Backend; fallback to static data
+                        val actualRecommended = if (uiState.recommendations.isNotEmpty()) {
+                            uiState.recommendations.map { it.toRecommendedProduct() }
+                        } else {
+                            HomeProductionData.recommendedProducts
+                        }
+
+                        LooketTabContent(
+                            recommended = actualRecommended,
+                            brands = HomeProductionData.brandFilters,
+                            myLooket = HomeProductionData.looketProducts,
+                        )
+                    }
                 }
             }
         }
@@ -515,6 +550,52 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
 }
 
 private fun formatKrw(amount: Long): String = "%,d".format(amount)
+
+// --- Domain → Home UI model mappers ---
+
+/**
+ * Maps a Backend PurchasedProduct to the Home UI's PurchasedItem model.
+ */
+private fun PurchasedProduct.toPurchasedItem(): PurchasedItem = PurchasedItem(
+    id = purchaseItemId,
+    name = product?.name ?: fallbackProductName ?: "상품",
+    store = storeName ?: "",
+    priceKrw = (price ?: 0).toLong(),
+    refundAmountKrw = 0L, // Refund amount not available from this endpoint
+    status = RefundStatus.COMPLETED,
+    imageUrl = product?.imageUrl,
+)
+
+/**
+ * Maps a Backend FeedRecommendation to the Home UI's RecommendedProduct model.
+ */
+private fun FeedRecommendation.toRecommendedProduct(): RecommendedProduct = RecommendedProduct(
+    id = product.productId,
+    brandName = product.brand,
+    title = "당신만을 위한 오늘의 셀렉션",
+    productName = product.name,
+    location = stores.firstOrNull()?.let { store ->
+        val terminal = store.terminal ?: ""
+        val name = store.name
+        if (terminal.isNotEmpty()) "$terminal · $name" else name
+    } ?: "",
+    imageUrl = product.imageUrl,
+)
+
+/**
+ * Computes a summary for the refund card from actual purchased products.
+ */
+private fun computeRefundSummary(products: List<PurchasedProduct>): RefundSummary {
+    val totalAmount = products.sumOf { (it.price ?: 0).toLong() }
+    return RefundSummary(
+        totalPurchaseAmountKrw = totalAmount,
+        totalRefundAmountKrw = 0L, // Detailed refund breakdown not available from GET /me
+        completedCount = products.size,
+        completedAmountKrw = 0L,
+        inProgressCount = 0,
+        inProgressAmountKrw = 0L,
+    )
+}
 
 @Preview(showBackground = true, widthDp = 412, heightDp = 917)
 @Composable

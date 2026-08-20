@@ -170,12 +170,54 @@ class ShoppingFlowIsolationTest {
         override val candidates: Flow<AttentionCandidate> = emptyFlow()
     }
 
+    private class NoOpPersonalizationRepository : com.gryffindor.smartshopping.domain.repository.PersonalizationRepository {
+        override suspend fun getMyPage() = com.gryffindor.smartshopping.domain.model.MyPage(
+            user = com.gryffindor.smartshopping.domain.model.DemoUser(id = 1, name = "Test"),
+            wishlist = emptyList(),
+            purchasedProducts = emptyList(),
+            flight = null,
+            trips = emptyList(),
+        )
+        override suspend fun getWishlist() = emptyList<Product>()
+        override suspend fun addWishlist(productId: String) = Product("", null, "", "", null, null)
+        override suspend fun deleteWishlist(productId: String) {}
+        override suspend fun analyzeReceipt(imageBytes: ByteArray, tripId: String?) = throw UnsupportedOperationException()
+        override suspend fun getPurchases() = emptyList<com.gryffindor.smartshopping.domain.model.Purchase>()
+        override suspend fun updatePurchaseRefundMethod(purchaseId: String, refundMethod: com.gryffindor.smartshopping.domain.model.RefundMethod) = throw UnsupportedOperationException()
+        override suspend fun analyzeFlight(imageBytes: ByteArray, tripId: String?) = throw UnsupportedOperationException()
+        override suspend fun updateFlight(
+            flightId: String, departureAirport: String?, arrivalAirport: String?,
+            terminal: String?, flightNumber: String?, departureAt: String?,
+            arrivalAt: String?, airportArrivalAt: String?, tripId: String?
+        ) = throw UnsupportedOperationException()
+    }
+
+    private class NoOpTripRepository : com.gryffindor.smartshopping.domain.repository.TripRepository {
+        override suspend fun createTrip(title: String, destinationCity: String?, destinationCountry: String?, startsAt: String?, endsAt: String?) = throw UnsupportedOperationException()
+        override suspend fun getTrips() = emptyList<com.gryffindor.smartshopping.domain.model.Trip>()
+        override suspend fun getTrip(tripId: String) = throw UnsupportedOperationException()
+        override suspend fun updateTrip(tripId: String, title: String?, destinationCity: String?, destinationCountry: String?, startsAt: String?, endsAt: String?) = throw UnsupportedOperationException()
+        override suspend fun upsertHotel(tripId: String, name: String, address: String?, latitude: Double?, longitude: Double?, checkInAt: String?, checkOutAt: String?) = throw UnsupportedOperationException()
+        override suspend fun getHotel(tripId: String) = throw UnsupportedOperationException()
+        override suspend fun getTripFeed(tripId: String, latitude: Double?, longitude: Double?) = com.gryffindor.smartshopping.domain.model.TripFeed(tripId, "", emptyList())
+        override suspend fun getStoreWishlistProducts(storeId: String) = emptyList<com.gryffindor.smartshopping.domain.model.StoreWishlistProduct>()
+        override suspend fun createVisitReservation(tripId: String, storeId: String, scheduledAt: String, productIds: List<String>) = throw UnsupportedOperationException()
+        override suspend fun getVisitReservations(tripId: String) = emptyList<com.gryffindor.smartshopping.domain.model.VisitReservation>()
+        override suspend fun cancelVisitReservation(reservationId: String) {}
+        override suspend fun getRefundChecklist(tripId: String) = throw UnsupportedOperationException()
+    }
+
     // --- Tests ---
 
     @Test
     fun `HomeViewModel - DAT update state reflects camera state`() = runTest {
         val camera = NoOpCameraFrameProvider()
-        val viewModel = HomeViewModel(FakeSessionRepository(), camera)
+        val viewModel = HomeViewModel(
+            FakeSessionRepository(),
+            camera,
+            NoOpPersonalizationRepository(),
+            NoOpTripRepository(),
+        )
         advanceUntilIdle()
 
         // Default state: no DAT update required
