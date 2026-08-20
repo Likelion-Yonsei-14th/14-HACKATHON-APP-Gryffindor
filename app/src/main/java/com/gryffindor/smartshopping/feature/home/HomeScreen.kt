@@ -513,11 +513,17 @@ private fun formatAmount(amountKrw: Long, showKrw: Boolean): String {
 @Composable
 private fun HomeScreenPreview() {
     var selectedTab by remember { mutableStateOf(HomeTopBarTab.REFUND) }
+    var selectedBottomTab by remember { mutableStateOf(BottomNavTab.HOME) }
 
     LooketTheme {
         Scaffold(
             topBar = { HomeTopBar(selectedTab = selectedTab, onTabSelected = { selectedTab = it }) },
-            bottomBar = { BottomNavBar(selectedTab = BottomNavTab.HOME, onTabSelected = {}) },
+            bottomBar = {
+                BottomNavBar(
+                    selectedTab = selectedBottomTab,
+                    onTabSelected = { selectedBottomTab = it },
+                )
+            },
             containerColor = LooketColors.Surface,
         ) { innerPadding ->
             Column(
