@@ -90,21 +90,21 @@ fun PermissionScreen(
 
         // Permission items
         PermissionItem(
-            icon = R.drawable.ic_nav_home,
+            icon = R.drawable.ic_permission_notification,
             title = "알림",
             description = "알림 메시지 발송",
             granted = notificationGranted
         )
         Spacer(modifier = Modifier.height(24.dp))
         PermissionItem(
-            icon = R.drawable.ic_nav_home,
-            title = "블루투스",
-            description = "스마트 글래스 연결",
+            icon = R.drawable.ic_permission_bluetooth,
+            title = "Meta 계정",
+            description = "글래스 시선 및 제품 인식 데이터 가져오기",
             granted = bluetoothGranted
         )
         Spacer(modifier = Modifier.height(24.dp))
         PermissionItem(
-            icon = R.drawable.ic_nav_home,
+            icon = R.drawable.ic_permission_location,
             title = "위치",
             description = "매장 위치 정보 인식",
             granted = locationGranted
