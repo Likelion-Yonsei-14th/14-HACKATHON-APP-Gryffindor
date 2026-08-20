@@ -56,6 +56,8 @@ import com.gryffindor.smartshopping.feature.onboarding.FlightRegisterScreen
 import com.gryffindor.smartshopping.feature.onboarding.OnboardingPurchaseConfirmScreen
 import com.gryffindor.smartshopping.feature.onboarding.OnboardingReceiptRegisterScreen
 import com.gryffindor.smartshopping.feature.onboarding.PermissionScreen
+import com.gryffindor.smartshopping.feature.onboarding.OnboardingUiState
+import com.gryffindor.smartshopping.feature.onboarding.OnboardingViewModel
 import com.gryffindor.smartshopping.feature.onboarding.PurchaseConfirmItem
 import com.gryffindor.smartshopping.feature.onboarding.UserInfoScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
@@ -166,21 +168,49 @@ fun AppNavGraph(
             )
         }
 
-        // 5. 항공편 사진 등록 화면
+        // 5. 항공편 사진 등록 화면 — PersonalizationRepository.analyzeFlight로 실제 OCR 후
+        // TripRepository.createTrip으로 여행을 자동 생성한다(OnboardingViewModel.createTripFromFlight).
         composable(Routes.ONBOARDING_FLIGHT_REGISTER) {
+            val context = LocalContext.current
+            val viewModel: OnboardingViewModel = viewModel(
+                factory = OnboardingViewModel.Factory(appContainer.personalizationRepository, appContainer.tripRepository)
+            )
+            val onboardingState by viewModel.uiState.collectAsState()
             var hasPhoto by remember { mutableStateOf(false) }
+
+            val flightPickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.PickVisualMedia()
+            ) { uri ->
+                uri?.let {
+                    val bytes = context.contentResolver.openInputStream(it)?.use { stream -> stream.readBytes() }
+                    if (bytes != null) {
+                        hasPhoto = true
+                        viewModel.createTripFromFlight(bytes)
+                    }
+                }
+            }
+
+            // 분석이 끝나면(성공) 확인 화면으로 자동 이동. 실패하면 Toast로 원인을 보여준다 —
+            // hasPhoto는 true로 유지(사진 자체는 골랐으니 "다시찍기"가 맞다).
+            LaunchedEffect(onboardingState) {
+                when (val state = onboardingState) {
+                    is OnboardingUiState.FlightAnalyzed -> {
+                        navController.navigate(Routes.ONBOARDING_FLIGHT_CONFIRM)
+                    }
+                    is OnboardingUiState.Error -> {
+                        Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                    }
+                    else -> Unit
+                }
+            }
 
             FlightRegisterScreen(
                 hasPhoto = hasPhoto,
                 onBackClick = { navController.popBackStack() },
                 onCaptureClick = {
-                    // TODO: 실제 사진 촬영/선택 로직 구현
-                    if (!hasPhoto) {
-                        hasPhoto = true // 사진 등록 상태로 변경 예시
-                    } else {
-                        // 사진 등록 완료 후 확인 화면으로 이동
-                        navController.navigate(Routes.ONBOARDING_FLIGHT_CONFIRM)
-                    }
+                    flightPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
                 },
                 onSkipClick = {
                     // 항공편 확인 단계를 건너뛰고 바로 영수증 등록으로 이동
@@ -189,15 +219,25 @@ fun AppNavGraph(
             )
         }
 
-        // 6. 항공편 정보 확인 화면 (온보딩 마지막)
-        composable(Routes.ONBOARDING_FLIGHT_CONFIRM) {
+        // 6. 항공편 정보 확인 화면 (온보딩 마지막) — 직전 화면(5번)과 같은 OnboardingViewModel
+        // 인스턴스를 그 백스택 엔트리에서 가져와 실제 분석된 항공편 값을 보여준다.
+        composable(Routes.ONBOARDING_FLIGHT_CONFIRM) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.ONBOARDING_FLIGHT_REGISTER)
+            }
+            val viewModel: OnboardingViewModel = viewModel(
+                viewModelStoreOwner = parentEntry,
+                factory = OnboardingViewModel.Factory(appContainer.personalizationRepository, appContainer.tripRepository)
+            )
+            val flight = viewModel.getAnalyzedFlight()
+
             val initialFields = listOf(
-                FlightInfoField("1", "출발지", "BEJ"),
-                FlightInfoField("2", "도착지", "ICN"),
-                FlightInfoField("3", "터미널", "인천공항 T2"),
-                FlightInfoField("4", "출발 시간", "2026.08.21 10:00"),
-                FlightInfoField("5", "도착 시간", "2026.08.25 19:00"),
-                FlightInfoField("6", "공항 도착 예정시간", "2026.08.25 15:00"),
+                FlightInfoField("1", "출발지", flight?.departureAirport ?: ""),
+                FlightInfoField("2", "도착지", flight?.arrivalAirport ?: ""),
+                FlightInfoField("3", "터미널", flight?.terminal ?: ""),
+                FlightInfoField("4", "출발 시간", flight?.departureAt ?: ""),
+                FlightInfoField("5", "도착 시간", flight?.arrivalAt ?: ""),
+                FlightInfoField("6", "공항 도착 예정시간", flight?.airportArrivalAt ?: ""),
             )
 
             FlightInfoConfirmScreen(
