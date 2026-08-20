@@ -193,3 +193,12 @@ private fun formatKrw(amount: Long): String {
     val formatter = NumberFormat.getNumberInstance(Locale.KOREA)
     return "\u20A9${formatter.format(amount)}"
 }
+
+private fun currencySymbol(currencyCode: String): String {
+    return when (currencyCode.uppercase()) {
+        "USD" -> "$"
+        "CNY" -> "\u00A5"
+        "KRW" -> "\u20A9"
+        else -> currencyCode
+    }
+}

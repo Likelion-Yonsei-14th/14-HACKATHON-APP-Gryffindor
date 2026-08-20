@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.app.AppContainer
+import com.gryffindor.smartshopping.core.common.UiState
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.feature.checklist.ChecklistScreen
@@ -42,11 +43,14 @@ import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewMod
 import com.gryffindor.smartshopping.feature.reservation.ReservationListScreen
 import com.gryffindor.smartshopping.feature.reservation.VisitReservationScreen
 import com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel
-import com.gryffindor.smartshopping.feature.review.ReviewScreen
+import com.gryffindor.smartshopping.feature.review.ReviewUiState
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
-import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
-import com.gryffindor.smartshopping.feature.shopping.ShoppingSessionNavHost
+import com.gryffindor.smartshopping.feature.shopping.DisplayCurrency
+import com.gryffindor.smartshopping.feature.shopping.LiveReceiptItem
+import com.gryffindor.smartshopping.feature.shopping.LiveShoppingScreen
+import com.gryffindor.smartshopping.feature.shopping.ShoppingReviewScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingStoreSelectionScreen
+import com.gryffindor.smartshopping.feature.shopping.ShoppingUiState
 import com.gryffindor.smartshopping.feature.shopping.ShoppingViewModel
 import com.gryffindor.smartshopping.feature.shopping.toLooketStore
 import com.gryffindor.smartshopping.feature.splash.SplashScreen
@@ -268,10 +272,7 @@ fun AppNavGraph(
 
         composable(Routes.SHOP_TAB) {
             // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 KRW 고정(HOME의 쇼핑 이동과 동일한
-            // 이유). StoreSelectionViewModel은 매장 목록 로딩뿐 아니라 confirmSelection()으로
-            // 실제 세션 생성까지 지원하지만, 아직 이 화면의 "확인"은 카메라 기반 실제 세션이
-            // 아니라 목업 실시간 쇼핑 플로우(SHOPPING_SESSION)로 이어진다 — 두 플로우를
-            // 합칠지는 별도 결정 필요.
+            // 이유).
             val viewModel: StoreSelectionViewModel = viewModel(
                 factory = StoreSelectionViewModel.Factory(
                     appContainer.storeRepository,
@@ -281,22 +282,24 @@ fun AppNavGraph(
             )
             val uiState by viewModel.uiState.collectAsState()
 
+            // 매장 선택 확인 -> 실제 세션 생성(confirmSelection) -> 세션이 만들어지면 그
+            // sessionId로 진짜 쇼핑 화면(Routes.SHOPPING)으로 이동. 목업 실시간 쇼핑
+            // 플로우(SHOPPING_SESSION)는 삭제 — 이제 여기서 바로 실제 세션으로 들어간다.
+            LaunchedEffect(uiState.sessionCreated) {
+                uiState.sessionCreated?.let { event ->
+                    navController.navigate(Routes.shopping(event.sessionId, event.currency))
+                    viewModel.consumeSessionCreatedEvent()
+                }
+            }
+
             ShoppingStoreSelectionScreen(
                 stores = uiState.stores.map { it.toLooketStore() },
                 selectedStoreId = uiState.selectedStoreId,
                 onStoreSelected = { viewModel.selectStore(it) },
-                onConfirmClick = { navController.navigate(Routes.SHOPPING_SESSION) },
+                onConfirmClick = { viewModel.confirmSelection() },
                 onBackClick = { navController.popBackStack() },
                 selectedTab = BottomNavTab.SHOP,
                 onTabSelected = onBottomTabSelected,
-            )
-        }
-
-        composable(Routes.SHOPPING_SESSION) {
-            ShoppingSessionNavHost(
-                selectedTab = BottomNavTab.SHOP,
-                onTabSelected = onBottomTabSelected,
-                onBackToStoreSelection = { navController.popBackStack() },
             )
         }
 
@@ -490,16 +493,55 @@ fun AppNavGraph(
                     appContainer.attentionCandidateProvider
                 )
             )
-            ShoppingScreen(
-                viewModel = viewModel,
-                sessionId = sessionId,
-                currency = currency,
-                onNavigateToReview = {
-                    navController.navigate(Routes.review(sessionId)) {
-                        popUpTo(Routes.HOME) { inclusive = false }
-                    }
+            val uiState by viewModel.uiState.collectAsState()
+            LaunchedEffect(sessionId) { viewModel.loadProducts(sessionId, currency) }
+
+            // 목업 LiveShoppingScreen UI를 실제 ShoppingViewModel 상태로 구동한다.
+            // - 제거(onRemoveItem)는 무력화: 백엔드에 세션에서 개별 상품을 빼는 API가 없다.
+            // - 재생/일시정지는 백엔드 의미가 없는 순수 로컬 UI 상태다 — 매장 선택 확인
+            //   시점에 세션이 이미 시작되어 카메라도 자동으로 켜져 있다.
+            var isSessionActive by remember { mutableStateOf(false) }
+
+            when (uiState) {
+                is UiState.Loading -> {
+                    // 로딩 중에는 재생 전 상태로 보여준다.
                 }
-            )
+                is UiState.Error -> {
+                    // TODO: 전용 에러 화면/재시도 UI. 우선 재생 전 상태로 방치하지 않기 위해
+                    // LiveShoppingScreen을 빈 목록으로라도 보여준다.
+                }
+                is UiState.Success -> {
+                    val data = (uiState as UiState.Success<ShoppingUiState>).data
+                    LaunchedEffect(data.isSessionActive) {
+                        if (!data.isSessionActive) {
+                            navController.navigate(Routes.review(sessionId)) {
+                                popUpTo(Routes.HOME) { inclusive = false }
+                            }
+                        }
+                    }
+                    LiveShoppingScreen(
+                        isSessionActive = isSessionActive,
+                        onPlayClick = { isSessionActive = true },
+                        onPauseClick = { isSessionActive = false },
+                        onFinishClick = { viewModel.endShopping(sessionId) },
+                        onBackClick = { navController.popBackStack() },
+                        totalPurchaseAmount = formatKrw(data.summary.totalRetailKrw),
+                        refundAmount = formatKrw(data.summary.totalEstimatedRefundKrw),
+                        items = data.products.map { sessionProduct ->
+                            LiveReceiptItem(
+                                id = sessionProduct.product.productId,
+                                name = sessionProduct.product.name,
+                                storeName = sessionProduct.product.brand,
+                                price = formatKrw(sessionProduct.pricing.retailPriceKrw),
+                                refundAmount = formatKrw(sessionProduct.pricing.estimatedRefundKrw),
+                            )
+                        },
+                        onRemoveItem = {},
+                        isExchangeRateOn = data.displayCurrency == DisplayCurrency.CONVERTED,
+                        onExchangeRateToggle = { viewModel.toggleCurrency() },
+                    )
+                }
+            }
         }
 
         composable(
@@ -510,13 +552,28 @@ fun AppNavGraph(
             val viewModel: ReviewViewModel = viewModel(
                 factory = ReviewViewModel.Factory(appContainer.shoppingRepository)
             )
-            ReviewScreen(
-                viewModel = viewModel,
-                sessionId = sessionId,
-                onNavigateToTravel = {
-                    navController.navigate(Routes.travel(sessionId))
+            val uiState by viewModel.uiState.collectAsState()
+            LaunchedEffect(sessionId) { viewModel.loadProducts(sessionId) }
+
+            when (uiState) {
+                is UiState.Loading, is UiState.Error -> {
+                    // TODO: 전용 로딩/에러 UI. 지금은 데이터가 준비될 때까지 빈 화면.
                 }
-            )
+                is UiState.Success -> {
+                    val data = (uiState as UiState.Success<ReviewUiState>).data
+                    ShoppingReviewScreen(
+                        products = data.products,
+                        purchasedIds = data.purchasedIds,
+                        interestedIds = data.interestedIds,
+                        onTogglePurchased = { viewModel.togglePurchased(it) },
+                        onToggleInterested = { viewModel.toggleInterested(it) },
+                        onConfirmClick = {
+                            viewModel.submitReview(sessionId)
+                            navController.navigate(Routes.travel(sessionId))
+                        },
+                    )
+                }
+            }
         }
 
         composable(
@@ -571,6 +628,11 @@ fun AppNavGraph(
 }
 
 private val flightDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+
+private fun formatKrw(amount: Long): String {
+    val formatter = java.text.NumberFormat.getNumberInstance(java.util.Locale.KOREA)
+    return "₩ ${formatter.format(amount)}"
+}
 
 /**
  * [FlightInfoConfirmScreen]의 "출발 시간" 필드("2026.08.21 10:00")에서 날짜만 뽑아낸다.

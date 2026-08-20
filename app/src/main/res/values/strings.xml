@@ -58,5 +58,12 @@
     <string name="common_done">완료</string>
     <string name="common_yes">예</string>
     <string name="common_no">아니오</string>
+    <string name="common_retry">다시 시도</string>
     <string name="mypage_logout_confirm_message">로그아웃하시겠습니까?</string>
+
+    <string name="shopping_review_title">쇼핑 리뷰</string>
+    <string name="shopping_review_guide">구매한 상품과 관심 있는 상품을\n선택해주세요</string>
+    <string name="shopping_review_purchase">구매</string>
+    <string name="shopping_review_interested">관심</string>
+    <string name="shopping_review_empty">인식된 상품이 없습니다.</string>
 </resources>
