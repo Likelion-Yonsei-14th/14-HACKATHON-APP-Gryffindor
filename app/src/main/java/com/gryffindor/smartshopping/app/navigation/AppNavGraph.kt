@@ -26,6 +26,8 @@ import com.gryffindor.smartshopping.feature.home.HomeScreen
 import com.gryffindor.smartshopping.feature.home.HomeViewModel
 import com.gryffindor.smartshopping.feature.login.LoginScreen
 import com.gryffindor.smartshopping.feature.mypage.MyPageNavHost
+import com.gryffindor.smartshopping.feature.mypage.MyPageWishlistScreen
+import com.gryffindor.smartshopping.feature.mypage.MyPageWishlistViewModel
 import com.gryffindor.smartshopping.feature.onboarding.FlightInfoConfirmScreen
 import com.gryffindor.smartshopping.feature.onboarding.FlightInfoField
 import com.gryffindor.smartshopping.feature.onboarding.FlightRegisterScreen
@@ -36,6 +38,9 @@ import com.gryffindor.smartshopping.feature.onboarding.PurchaseConfirmItem
 import com.gryffindor.smartshopping.feature.onboarding.UserInfoScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewModel
+import com.gryffindor.smartshopping.feature.reservation.ReservationListScreen
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationScreen
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel
 import com.gryffindor.smartshopping.feature.review.ReviewScreen
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
 import com.gryffindor.smartshopping.feature.shopping.ShoppingScreen
@@ -276,6 +281,22 @@ fun AppNavGraph(
                 selectedTab = BottomNavTab.MY_PAGE,
                 onTabSelected = onBottomTabSelected,
                 onNavigateToTripList = { navController.navigate(Routes.TRIP_LIST) },
+                onNavigateToWishlist = { navController.navigate(Routes.WISHLIST) },
+            )
+        }
+
+        composable(Routes.WISHLIST) {
+            val viewModel: MyPageWishlistViewModel = viewModel(
+                factory = MyPageWishlistViewModel.Factory(appContainer.personalizationRepository)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+            LaunchedEffect(Unit) { viewModel.loadWishlist() }
+            MyPageWishlistScreen(
+                uiState = uiState,
+                onRemoveClick = { productId -> viewModel.removeFromWishlist(productId) },
+                onBackClick = { navController.popBackStack() },
+                selectedTab = BottomNavTab.MY_PAGE,
+                onTabSelected = onBottomTabSelected,
             )
         }
 
@@ -329,6 +350,9 @@ fun AppNavGraph(
                         tripId = tripId,
                         onNavigateToFlightEdit = { flightId -> navController.navigate(Routes.flightEdit(tripId, flightId)) },
                         onNavigateToHotelEdit = { navController.navigate(Routes.hotelEdit(tripId)) },
+                        onNavigateToVisitReservation = { storeId, storeName ->
+                            navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
+                        },
                     )
                 }
             }
@@ -366,6 +390,61 @@ fun AppNavGraph(
                 viewModel = viewModel,
                 tripId = tripId,
                 onSaved = { navController.popBackStack() },
+            )
+        }
+
+        // --- 방문예약 플로우. 여행 상세의 매장에서 진입한다. ---
+
+        composable(
+            route = Routes.VISIT_RESERVATION,
+            arguments = listOf(
+                navArgument("tripId") { type = NavType.StringType },
+                navArgument("storeId") { type = NavType.StringType },
+                navArgument("storeName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
+            val storeName = backStackEntry.arguments?.getString("storeName")
+                ?.let { java.net.URLDecoder.decode(it, "UTF-8") } ?: return@composable
+            val viewModel: VisitReservationViewModel = viewModel(
+                factory = VisitReservationViewModel.Factory(appContainer.tripRepository, appContainer.storeRepository)
+            )
+            VisitReservationScreen(
+                viewModel = viewModel,
+                tripId = tripId,
+                storeId = storeId,
+                storeName = storeName,
+                onReservationCreated = {
+                    navController.navigate(Routes.reservationList(tripId)) {
+                        popUpTo(Routes.tripDetail(tripId)) { inclusive = false }
+                    }
+                },
+                onNavigateToReservationList = {
+                    navController.navigate(Routes.reservationList(tripId)) {
+                        popUpTo(Routes.tripDetail(tripId)) { inclusive = false }
+                    }
+                },
+            )
+        }
+
+        composable(
+            route = Routes.RESERVATION_LIST,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val viewModel: VisitReservationViewModel = viewModel(
+                factory = VisitReservationViewModel.Factory(appContainer.tripRepository, appContainer.storeRepository)
+            )
+            val state by viewModel.listState.collectAsState()
+            LaunchedEffect(tripId) { viewModel.loadReservations(tripId) }
+            ReservationListScreen(
+                reservations = state.reservations,
+                isLoading = state.isLoading,
+                error = state.error,
+                cancellingIds = state.cancellingIds,
+                onCancelReservation = { reservationId -> viewModel.cancelReservation(reservationId, tripId) },
+                onRetry = { viewModel.loadReservations(tripId) },
             )
         }
 

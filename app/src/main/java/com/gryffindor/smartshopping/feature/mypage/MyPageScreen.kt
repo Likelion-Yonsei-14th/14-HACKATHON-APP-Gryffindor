@@ -57,6 +57,7 @@ fun MyPageScreen(
     onCurrencySelected: (String) -> Unit,
     onTravelClick: () -> Unit,
     onReceiptClick: () -> Unit,
+    onWishlistClick: () -> Unit,
     onLogoutClick: () -> Unit,
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
@@ -96,6 +97,7 @@ fun MyPageScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(63.dp)) {
                     MyPageMenuRow(text = stringResource(R.string.mypage_travel), onClick = onTravelClick)
                     MyPageMenuRow(text = stringResource(R.string.mypage_receipt), onClick = onReceiptClick)
+                    MyPageMenuRow(text = stringResource(R.string.mypage_wishlist), onClick = onWishlistClick)
                     MyPageMenuRow(text = stringResource(R.string.mypage_logout), onClick = { showLogoutDialog = true })
                 }
             }
@@ -210,6 +212,7 @@ private fun MyPageScreenPreview() {
             onCurrencySelected = { currency = it },
             onTravelClick = {},
             onReceiptClick = {},
+            onWishlistClick = {},
             onLogoutClick = {},
             selectedTab = BottomNavTab.MY_PAGE,
             onTabSelected = {},

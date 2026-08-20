@@ -28,6 +28,7 @@ object Routes {
     const val SHOP_TAB = "shopTab"
     const val SHOPPING_SESSION = "shoppingSession"
     const val MY_PAGE = "myPage"
+    const val WISHLIST = "wishlist"
 
     // Trip flow
     const val TRIP_LIST = "trip_list"

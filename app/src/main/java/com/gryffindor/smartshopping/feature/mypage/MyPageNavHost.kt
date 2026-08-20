@@ -28,15 +28,17 @@ private object MyPageRoutes {
  * 마이페이지 탭 하위 화면 전환. 진짜 유저 데이터/Repository 연결 전까지는
  * 더미 값으로 채워두고, 실제 배선은 AppNavGraph에 이 컴포저블을 얹을 때 진행한다.
  *
- * TRAVEL 메뉴는 이 NavHost 내부가 아니라 [onNavigateToTripList]를 통해 최상위
- * AppNavGraph의 진짜 여행(Trip) 관리 플로우로 나간다 — 목업이었던 MyPageTravelScreen은
- * 실제 TripListScreen/TripDetailScreen 연결로 대체됨.
+ * TRAVEL/WISHLIST 메뉴는 이 NavHost 내부가 아니라 [onNavigateToTripList]/[onNavigateToWishlist]를
+ * 통해 최상위 AppNavGraph의 진짜 여행(Trip)/위시리스트 플로우로 나간다 — 둘 다 실제
+ * Repository(appContainer)가 필요한데 이 NavHost는 아직 그걸 모르기 때문. 목업이었던
+ * MyPageTravelScreen은 실제 TripListScreen/TripDetailScreen 연결로 대체됨.
  */
 @Composable
 fun MyPageNavHost(
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
     onNavigateToTripList: () -> Unit,
+    onNavigateToWishlist: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -54,6 +56,7 @@ fun MyPageNavHost(
                 onCurrencySelected = { selectedCurrency = it },
                 onTravelClick = onNavigateToTripList,
                 onReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT) },
+                onWishlistClick = onNavigateToWishlist,
                 onLogoutClick = {},
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
@@ -108,6 +111,11 @@ fun MyPageNavHost(
 private fun MyPageNavHostPreview() {
     var selectedTab by remember { mutableStateOf(BottomNavTab.MY_PAGE) }
     LooketTheme {
-        MyPageNavHost(selectedTab = selectedTab, onTabSelected = { selectedTab = it }, onNavigateToTripList = {})
+        MyPageNavHost(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            onNavigateToTripList = {},
+            onNavigateToWishlist = {},
+        )
     }
 }

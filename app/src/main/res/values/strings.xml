@@ -11,6 +11,8 @@
     <string name="mypage_currency_label">CURRENCY</string>
     <string name="mypage_travel">TRAVEL</string>
     <string name="mypage_receipt">RECEIPT</string>
+    <string name="mypage_wishlist">WISHLIST</string>
+    <string name="mypage_wishlist_empty">찜한 상품이 없습니다.</string>
     <string name="mypage_logout">LOGOUT</string>
 
     <string name="mypage_travel_departure_airport">출발지</string>
