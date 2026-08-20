@@ -1,5 +1,8 @@
 package com.gryffindor.smartshopping.feature.onboarding
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -26,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,16 +41,6 @@ import com.gryffindor.smartshopping.core.ui.component.PrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
 import com.gryffindor.smartshopping.core.ui.theme.Pretendard
 
-/**
- * User info screen — Figma node 376:5297 (온보딩_유저정보)
- *
- * Layout:
- * - Section guide: 136dp top, title "Welcome!\n사용자 정보를 입력해주세요."
- * - Nickname input (underline style): label "닉네임", input field with bottom border
- * - Language dropdown: label "언어", dropdown "LANGUAGE"
- * - Currency dropdown: label "사용 화폐", dropdown "CURRENCY"
- * - Button "다음" at bottom (disabled until nickname filled)
- */
 @Composable
 fun UserInfoScreen(
     onNext: () -> Unit
@@ -53,7 +48,7 @@ fun UserInfoScreen(
     val colors = LocalAppColors.current
     var nickname by remember { mutableStateOf("") }
     var selectedLanguage by remember { mutableStateOf("한국어") }
-    var selectedCurrency by remember { mutableStateOf("KRW") }
+    var selectedCurrency by remember { mutableStateOf("₩") }
 
     Column(
         modifier = Modifier
@@ -61,27 +56,23 @@ fun UserInfoScreen(
             .background(colors.backgroundSurface)
             .padding(horizontal = 16.dp)
     ) {
-        // Figma: 136dp top padding
         Spacer(modifier = Modifier.height(136.dp))
 
-        // Title — Figma: title-1 (24/Bold)
         Text(
             text = "Welcome!\n사용자 정보를 입력해주세요.",
             style = MaterialTheme.typography.headlineMedium,
             color = colors.textPrimary
         )
 
-        // Figma: 59dp gap between title and nickname
         Spacer(modifier = Modifier.height(59.dp))
 
-        // Nickname label — Figma: body-1 (16/SemiBold)
+        // 닉네임
         Text(
             text = "닉네임",
             style = MaterialTheme.typography.bodyLarge,
             color = colors.textPrimary
         )
 
-        // Nickname input — Figma: underline style (bottom border only)
         BasicTextField(
             value = nickname,
             onValueChange = { nickname = it },
@@ -91,9 +82,7 @@ fun UserInfoScreen(
                 fontSize = 16.sp,
                 color = colors.textPrimary
             ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 0.dp),
+            modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             decorationBox = { innerTextField ->
                 Column {
@@ -111,41 +100,39 @@ fun UserInfoScreen(
                         }
                         innerTextField()
                     }
-                    HorizontalDivider(
-                        color = colors.textPrimary,
-                        thickness = 1.dp
-                    )
+                    HorizontalDivider(color = colors.textPrimary, thickness = 1.dp)
                 }
             }
         )
 
-        // Figma: 24dp gap then language/currency section
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // Language — Figma: label "언어" + dropdown
+        // 언어
         Text(
             text = "언어",
             style = MaterialTheme.typography.bodyLarge,
             color = colors.textPrimary
         )
         Spacer(modifier = Modifier.height(16.dp))
-        DropdownSelector(
+        InlineDropdown(
             value = selectedLanguage,
-            onClick = { /* TODO: show language picker */ }
+            options = listOf("한국어", "English", "中文"),
+            onSelected = { selectedLanguage = it }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Currency — Figma: label "사용 화폐" + dropdown
+        // 사용 화폐
         Text(
             text = "사용 화폐",
             style = MaterialTheme.typography.bodyLarge,
             color = colors.textPrimary
         )
         Spacer(modifier = Modifier.height(16.dp))
-        DropdownSelector(
+        InlineDropdown(
             value = selectedCurrency,
-            onClick = { /* TODO: show currency picker */ }
+            options = listOf("₩", "$", "¥"),
+            onSelected = { selectedCurrency = it }
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -161,41 +148,88 @@ fun UserInfoScreen(
 }
 
 /**
- * Dropdown selector — Figma: dropdown-s component
- * 180dp wide, 12px 14px padding, border #D7D6E1, radius 10dp
+ * Inline dropdown — 선택 시 아래로 옵션 리스트가 펼쳐지는 방식.
+ * 화살표는 항상 아래 방향 고정.
+ * Figma: dropdown-s (180dp, border #D7D6E1, radius 10dp)
  */
 @Composable
-private fun DropdownSelector(
+private fun InlineDropdown(
     value: String,
-    onClick: () -> Unit
+    options: List<String>,
+    onSelected: (String) -> Unit
 ) {
     val colors = LocalAppColors.current
+    var expanded by remember { mutableStateOf(false) }
 
-    Row(
-        modifier = Modifier
-            .width(180.dp)
-            .border(
-                width = 1.dp,
-                color = colors.borderDefault,
-                shape = RoundedCornerShape(10.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.textPrimary
-        )
-        Icon(
-            painter = painterResource(R.drawable.ic_arrow_left),
-            contentDescription = null,
-            tint = colors.textSecondary,
+    Column(modifier = Modifier.width(180.dp)) {
+        // 선택된 값 표시 + 화살표 (아래 방향 고정)
+        Row(
             modifier = Modifier
-                .width(24.dp)
-                .height(24.dp)
-        )
+                .fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    color = colors.borderDefault,
+                    shape = RoundedCornerShape(
+                        topStart = 10.dp,
+                        topEnd = 10.dp,
+                        bottomStart = if (expanded) 0.dp else 10.dp,
+                        bottomEnd = if (expanded) 0.dp else 10.dp
+                    )
+                )
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.textPrimary
+            )
+            // 화살표 아래 방향 고정 (ic_arrow_left를 -90도 회전)
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_left),
+                contentDescription = null,
+                tint = colors.textSecondary,
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(-90f)
+            )
+        }
+
+        // 옵션 리스트 — 아래로 펼쳐짐 (애니메이션 포함)
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = colors.borderDefault,
+                        shape = RoundedCornerShape(
+                            bottomStart = 10.dp,
+                            bottomEnd = 10.dp
+                        )
+                    )
+            ) {
+                options.filter { it != value }.forEach { option ->
+                    Text(
+                        text = option,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textPrimary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelected(option)
+                                expanded = false
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                    )
+                }
+            }
+        }
     }
 }

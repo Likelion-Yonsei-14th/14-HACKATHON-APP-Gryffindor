@@ -1,7 +1,9 @@
 package com.gryffindor.smartshopping.feature.shell.tabs
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -25,7 +28,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -33,8 +40,9 @@ import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.app.AppContainer
 import com.gryffindor.smartshopping.app.navigation.ProductionRoutes
 import com.gryffindor.smartshopping.core.ui.component.PrimaryButton
+import com.gryffindor.smartshopping.core.ui.theme.GradientEnd
+import com.gryffindor.smartshopping.core.ui.theme.GradientStart
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
-import com.gryffindor.smartshopping.domain.model.CameraState
 import com.gryffindor.smartshopping.feature.trip.TripViewModel
 import com.gryffindor.smartshopping.feature.wishlist.WishlistViewModel
 
@@ -46,7 +54,6 @@ fun HomeTab(
 ) {
     val colors = LocalAppColors.current
 
-    // Trip ViewModel for current trip
     val tripViewModel: TripViewModel = viewModel(
         factory = TripViewModel.Factory(
             appContainer.tripRepository,
@@ -55,14 +62,10 @@ fun HomeTab(
     )
     val tripUiState by tripViewModel.listState.collectAsState()
 
-    // Wishlist ViewModel
     val wishlistViewModel: WishlistViewModel = viewModel(
         factory = WishlistViewModel.Factory(appContainer.personalizationRepository)
     )
     val wishlistIds by wishlistViewModel.wishlistIds.collectAsState()
-
-    // Device streaming state
-    val cameraState by appContainer.metaCameraSource.cameraState.collectAsState()
 
     LaunchedEffect(Unit) {
         tripViewModel.loadTrips()
@@ -75,10 +78,9 @@ fun HomeTab(
             .background(colors.backgroundSurface)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top nav — Figma: top_nav (319:2129), 68dp top padding
         Spacer(modifier = Modifier.height(68.dp))
 
-        // Logo row — Figma: favicon + notification icon
+        // Logo row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -86,17 +88,16 @@ fun HomeTab(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            androidx.compose.foundation.Image(
+            Image(
                 painter = painterResource(R.drawable.logo_looket),
                 contentDescription = "LOOKET",
                 modifier = Modifier
                     .width(80.dp)
                     .height(21.dp),
-                contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                contentScale = ContentScale.Fit
             )
-            // Notification bell icon
             Icon(
-                painter = painterResource(R.drawable.ic_nav_home), // TODO: bell icon
+                painter = painterResource(R.drawable.ic_nav_home),
                 contentDescription = "알림",
                 modifier = Modifier.size(24.dp),
                 tint = colors.textPrimary
@@ -122,45 +123,8 @@ fun HomeTab(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Device status card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = colors.backgroundEmphasized
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_nav_shop),
-                        contentDescription = "Device",
-                        modifier = Modifier.size(32.dp),
-                        tint = colors.brandPrimary
-                    )
-                    Column(modifier = Modifier.padding(start = 12.dp)) {
-                        Text(
-                            text = "Meta Ray-Ban Gen 2",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = colors.textPrimary
-                        )
-                        Text(
-                            text = if (cameraState is CameraState.Streaming) "연결됨" else "대기 중",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (cameraState is CameraState.Streaming) colors.brandPrimary else colors.textSecondary
-                        )
-                    }
-                }
-            }
-        }
+        // 환급 금액 카드 — Figma: 환급_금액 (324:1246)
+        RefundAmountCard()
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -182,7 +146,6 @@ fun HomeTab(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             } else {
-                // Show first/current trip
                 val currentTrip = trips.first()
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -222,7 +185,7 @@ fun HomeTab(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Wishlist / Personalized content section
+        // Wishlist section
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 text = "찜한 브랜드",
@@ -246,22 +209,115 @@ fun HomeTab(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
 
-        // Recommendation section placeholder
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+/**
+ * 환급 금액 카드 — Figma: 환급_금액 (324:1246)
+ *
+ * Gradient bg (#616AF3→#3B36CC), radius 8dp, padding 16dp
+ * - "OO님의 환급 금액" (title-2, white)
+ * - "총 구매 금액 ₩ 0 중" (body-2, white)
+ * - "₩ 0" (display: 28/ExtraBold, white)
+ * - Bottom: 완료 N건 (green) / 진행중 N건 (orange)
+ */
+@Composable
+private fun RefundAmountCard() {
+    val colors = LocalAppColors.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(GradientStart, GradientEnd)
+                )
+            )
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Title
             Text(
-                text = "당신만을 위한 오늘의 셀렉션",
+                text = "OO님의 환급 금액",
                 style = MaterialTheme.typography.titleMedium,
-                color = colors.textPrimary
+                color = colors.textInverse
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "쇼핑을 시작하면 맞춤 제품을 추천해드립니다.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.textSecondary
-            )
-        }
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 총 구매 금액
+            Text(
+                text = "총 구매 금액 ₩ 0 중",
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.textInverse
+            )
+
+            // 환급 금액
+            Text(
+                text = "₩ 0",
+                style = MaterialTheme.typography.displaySmall, // 28/ExtraBold
+                color = colors.textInverse,
+                fontWeight = FontWeight.ExtraBold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 완료/진행중 row
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 완료
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(colors.semanticGreen)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "완료 0건",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = colors.textInverse
+                        )
+                    }
+                    Text(
+                        text = "₩ 0",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = colors.textInverse
+                    )
+                }
+
+                // 진행중
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(colors.brandSecondary)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "진행중 0건",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = colors.textInverse
+                        )
+                    }
+                    Text(
+                        text = "₩ 0",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = colors.textInverse
+                    )
+                }
+            }
+        }
     }
 }

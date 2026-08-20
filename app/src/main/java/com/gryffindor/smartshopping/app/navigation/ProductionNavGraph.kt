@@ -86,7 +86,9 @@ fun ProductionNavGraph(
         composable(ProductionRoutes.ONBOARDING_TERMS) {
             TermsScreen(
                 onNext = {
-                    navController.navigate(ProductionRoutes.ONBOARDING_DEVICE_REGISTRATION)
+                    navController.navigate(ProductionRoutes.MAIN_SHELL) {
+                        popUpTo(ProductionRoutes.ONBOARDING_PERMISSION) { inclusive = true }
+                    }
                 }
             )
         }
