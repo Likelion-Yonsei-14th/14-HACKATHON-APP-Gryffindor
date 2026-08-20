@@ -37,6 +37,7 @@ object Routes {
     const val HOTEL_EDIT = "hotel_edit/{tripId}"
 
     // Visit reservation flow
+    const val VISIT_RESERVATION_STORE_SELECT = "visit_reservation_store/{tripId}"
     const val VISIT_RESERVATION = "visit_reservation/{tripId}/{storeId}/{storeName}"
     const val RESERVATION_LIST = "reservation_list/{tripId}"
 
@@ -51,6 +52,7 @@ object Routes {
     fun tripDetail(tripId: String) = "trip_detail/$tripId"
     fun flightEdit(tripId: String, flightId: String) = "flight_edit/$tripId/$flightId"
     fun hotelEdit(tripId: String) = "hotel_edit/$tripId"
+    fun visitReservationStoreSelect(tripId: String) = "visit_reservation_store/$tripId"
     fun visitReservation(tripId: String, storeId: String, storeName: String) =
         "visit_reservation/$tripId/$storeId/${java.net.URLEncoder.encode(storeName, "UTF-8")}"
     fun reservationList(tripId: String) = "reservation_list/$tripId"

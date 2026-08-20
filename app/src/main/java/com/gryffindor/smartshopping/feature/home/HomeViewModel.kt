@@ -33,6 +33,9 @@ data class HomeUiState(
     val purchasedProducts: List<PurchasedProduct> = emptyList(),
     val recommendations: List<FeedRecommendation> = emptyList(),
     val refundChecklist: RefundChecklist? = null,
+    // FOR YOU 추천에서 상품을 눌러 방문 예약으로 들어갈 때 필요 — 유저의 첫 번째 여행.
+    // 여러 여행 중 하나를 고르는 UI는 아직 없어서 첫 번째 여행으로 고정.
+    val currentTripId: String? = null,
     val isChecklistLoading: Boolean = false,
     val isHomeDataLoading: Boolean = false,
     val homeDataLoaded: Boolean = false,
@@ -125,6 +128,7 @@ class HomeViewModel(
                     purchasedProducts = purchasedProducts,
                     recommendations = recommendations,
                     refundChecklist = refundChecklist,
+                    currentTripId = tripId,
                     isChecklistLoading = false,
                     isHomeDataLoading = false,
                     homeDataLoaded = true,

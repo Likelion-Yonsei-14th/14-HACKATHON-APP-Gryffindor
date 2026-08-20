@@ -71,6 +71,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToShopping: (sessionId: String) -> Unit,
     onNavigateToChecklist: () -> Unit,
+    onNavigateToVisitReservation: () -> Unit,
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
 ) {
@@ -154,6 +155,7 @@ fun HomeScreen(
                             recommended = actualRecommended,
                             brands = HomeProductionData.brandFilters,
                             myLooket = HomeProductionData.looketProducts,
+                            onProductClick = { onNavigateToVisitReservation() },
                         )
                     }
                 }
@@ -404,6 +406,7 @@ private fun LooketTabContent(
     recommended: List<RecommendedProduct>,
     brands: List<BrandFilter>,
     myLooket: List<LooketProduct>,
+    onProductClick: () -> Unit,
 ) {
     var selectedBrandIds by remember { mutableStateOf(setOf<String>()) }
 
@@ -420,7 +423,9 @@ private fun LooketTabContent(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
             ) {
-                items(recommended, key = { it.id }) { product -> RecommendedProductCard(product) }
+                items(recommended, key = { it.id }) { product ->
+                    RecommendedProductCard(product, onClick = onProductClick)
+                }
             }
         }
 
@@ -468,13 +473,14 @@ private fun LooketTabContent(
 }
 
 @Composable
-private fun RecommendedProductCard(product: RecommendedProduct) {
+private fun RecommendedProductCard(product: RecommendedProduct, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(280.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(LooketColors.Surface)
-            .border(width = 1.dp, color = LooketColors.BorderDisabled, shape = RoundedCornerShape(8.dp)),
+            .border(width = 1.dp, color = LooketColors.BorderDisabled, shape = RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.padding(top = 10.dp, start = 16.dp, end = 16.dp),
@@ -694,6 +700,7 @@ private fun HomeScreenPreview() {
                         recommended = HomeProductionData.recommendedProducts,
                         brands = HomeProductionData.brandFilters,
                         myLooket = HomeProductionData.looketProducts,
+                        onProductClick = {},
                     )
                 }
             }

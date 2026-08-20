@@ -63,7 +63,9 @@ import com.gryffindor.smartshopping.feature.onboarding.UserInfoScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationScreen
 import com.gryffindor.smartshopping.feature.recommendation.RecommendationViewModel
 import com.gryffindor.smartshopping.feature.reservation.ReservationListScreen
-import com.gryffindor.smartshopping.feature.reservation.VisitReservationScreen
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationFormScreen
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationStoreSelectionScreen
+import com.gryffindor.smartshopping.feature.reservation.VisitReservationStoreSelectionViewModel
 import com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel
 import com.gryffindor.smartshopping.feature.review.ReviewUiState
 import com.gryffindor.smartshopping.feature.review.ReviewViewModel
@@ -310,6 +312,7 @@ fun AppNavGraph(
                 )
             )
             val uiState by viewModel.uiState.collectAsState()
+            val context = LocalContext.current
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToShopping = { sessionId ->
@@ -322,6 +325,16 @@ fun AppNavGraph(
                     // 가장 최근에 시작한 세션(lastSessionId)으로 체크리스트를 연다.
                     uiState.lastSessionId?.let { sessionId ->
                         navController.navigate(Routes.checklist(sessionId))
+                    }
+                },
+                onNavigateToVisitReservation = {
+                    // FOR YOU 추천 상품을 눌렀을 때 진입 — 방문 예약은 여행(Trip)에 묶이므로
+                    // 등록된 여행이 하나도 없으면 안내만 하고 진행하지 않는다.
+                    val tripId = uiState.currentTripId
+                    if (tripId != null) {
+                        navController.navigate(Routes.visitReservationStoreSelect(tripId))
+                    } else {
+                        Toast.makeText(context, "먼저 여행을 등록해주세요.", Toast.LENGTH_SHORT).show()
                     }
                 },
                 selectedTab = BottomNavTab.HOME,
@@ -494,7 +507,38 @@ fun AppNavGraph(
             )
         }
 
-        // --- 방문예약 플로우. 여행 상세의 매장에서 진입한다. ---
+        // --- 방문예약 플로우. 홈 FOR YOU 추천 상품을 눌러서 진입한다. ---
+
+        composable(
+            route = Routes.VISIT_RESERVATION_STORE_SELECT,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val context = LocalContext.current
+            val viewModel: VisitReservationStoreSelectionViewModel = viewModel(
+                factory = VisitReservationStoreSelectionViewModel.Factory(appContainer.storeRepository)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+            LaunchedEffect(Unit) { viewModel.loadStores() }
+            LaunchedEffect(uiState.error) {
+                uiState.error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+            }
+
+            VisitReservationStoreSelectionScreen(
+                stores = uiState.stores.map { it.toLooketStore() },
+                selectedStoreId = uiState.selectedStoreId,
+                onStoreSelected = { viewModel.selectStore(it) },
+                onConfirmClick = {
+                    uiState.selectedStoreId?.let { storeId ->
+                        val storeName = uiState.stores.find { it.id == storeId }?.name ?: ""
+                        navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
+                    }
+                },
+                onBackClick = { navController.popBackStack() },
+                selectedTab = BottomNavTab.HOME,
+                onTabSelected = onBottomTabSelected,
+            )
+        }
 
         composable(
             route = Routes.VISIT_RESERVATION,
@@ -506,24 +550,59 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
             val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
-            val storeName = backStackEntry.arguments?.getString("storeName")
-                ?.let { java.net.URLDecoder.decode(it, "UTF-8") } ?: return@composable
+            // storeName은 지금 폼 화면엔 안 보여주지만(Figma에 매장명 표시가 없음), 라우트
+            // 계약을 유지해 두면 나중에 필요할 때 바로 쓸 수 있어 인코딩/디코딩은 그대로 둔다.
+            backStackEntry.arguments?.getString("storeName")
+                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+
+            val context = LocalContext.current
             val viewModel: VisitReservationViewModel = viewModel(
                 factory = VisitReservationViewModel.Factory(appContainer.tripRepository, appContainer.storeRepository)
             )
-            VisitReservationScreen(
-                viewModel = viewModel,
-                tripId = tripId,
-                storeId = storeId,
-                storeName = storeName,
-                onReservationCreated = {
+            val createState by viewModel.createState.collectAsState()
+
+            var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+            var selectedTimeRange by remember { mutableStateOf<String?>(null) }
+            var selectedPurpose by remember { mutableStateOf<String?>(null) }
+            var visitorName by remember { mutableStateOf("") }
+            var note by remember { mutableStateOf("") }
+
+            LaunchedEffect(createState.createdReservation) {
+                if (createState.createdReservation != null) {
                     navController.navigate(Routes.reservationList(tripId)) {
-                        popUpTo(Routes.tripDetail(tripId)) { inclusive = false }
+                        popUpTo(Routes.HOME) { inclusive = false }
                     }
-                },
-                onNavigateToReservationList = {
-                    navController.navigate(Routes.reservationList(tripId)) {
-                        popUpTo(Routes.tripDetail(tripId)) { inclusive = false }
+                    viewModel.resetCreateState()
+                }
+            }
+            LaunchedEffect(createState.error) {
+                createState.error?.let {
+                    Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                    viewModel.clearError()
+                }
+            }
+
+            VisitReservationFormScreen(
+                date = selectedDate,
+                onPreviousDay = { selectedDate = selectedDate.minusDays(1) },
+                onNextDay = { selectedDate = selectedDate.plusDays(1) },
+                selectedTimeRange = selectedTimeRange,
+                onTimeRangeSelected = { selectedTimeRange = it },
+                selectedPurpose = selectedPurpose,
+                onPurposeSelected = { selectedPurpose = it },
+                visitorName = visitorName,
+                onVisitorNameChange = { visitorName = it },
+                note = note,
+                onNoteChange = { note = it },
+                onBackClick = { navController.popBackStack() },
+                onCompleteClick = {
+                    val timeRange = selectedTimeRange
+                    if (timeRange == null) {
+                        Toast.makeText(context, context.getString(R.string.reservation_time_required), Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.updateScheduledDate(selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                        viewModel.updateScheduledTime(timeRange.substringBefore("-"))
+                        viewModel.createReservation(tripId, storeId)
                     }
                 },
             )
