@@ -1,11 +1,18 @@
 package com.gryffindor.smartshopping.app.navigation
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -13,18 +20,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.app.AppContainer
 import com.gryffindor.smartshopping.core.common.UiState
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
+import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
+import com.gryffindor.smartshopping.core.ui.theme.LooketColors
+import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 import com.gryffindor.smartshopping.feature.checklist.ChecklistScreen
 import com.gryffindor.smartshopping.feature.checklist.ChecklistViewModel
 import com.gryffindor.smartshopping.feature.home.HomeScreen
@@ -277,6 +291,7 @@ fun AppNavGraph(
                 )
             )
             val uiState by viewModel.uiState.collectAsState()
+            val context = LocalContext.current
 
             // 매장 선택 확인 -> 실제 세션 생성(confirmSelection) -> 세션이 만들어지면 그
             // sessionId로 진짜 쇼핑 화면(Routes.SHOPPING)으로 이동. 목업 실시간 쇼핑
@@ -285,6 +300,15 @@ fun AppNavGraph(
                 uiState.sessionCreated?.let { event ->
                     navController.navigate(Routes.shopping(event.sessionId, event.currency))
                     viewModel.consumeSessionCreatedEvent()
+                }
+            }
+
+            // 매장 목록 로딩 실패나 세션 생성 실패는 화면에 아무 표시가 없어서 "버튼을 눌러도
+            // 반응이 없다"처럼 보였다 — 최소한 원인을 알 수 있게 Toast로라도 보여준다.
+            LaunchedEffect(uiState.errorMessage) {
+                uiState.errorMessage?.let { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    viewModel.clearError()
                 }
             }
 
@@ -500,11 +524,28 @@ fun AppNavGraph(
 
             when (uiState) {
                 is UiState.Loading -> {
-                    // 로딩 중에는 재생 전 상태로 보여준다.
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = LooketColors.BrandPrimary)
+                    }
                 }
                 is UiState.Error -> {
-                    // TODO: 전용 에러 화면/재시도 UI. 우선 재생 전 상태로 방치하지 않기 위해
-                    // LiveShoppingScreen을 빈 목록으로라도 보여준다.
+                    val message = (uiState as UiState.Error).message
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = message,
+                                style = LooketTextStyles.bodyTwo,
+                                color = LooketColors.TextSecondary,
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            LooketPrimaryButton(
+                                text = stringResource(R.string.common_retry),
+                                onClick = { viewModel.retry() },
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            )
+                        }
+                    }
                 }
                 is UiState.Success -> {
                     val data = (uiState as UiState.Success<ShoppingUiState>).data
@@ -590,8 +631,29 @@ fun AppNavGraph(
             LaunchedEffect(sessionId) { viewModel.loadProducts(sessionId) }
 
             when (uiState) {
-                is UiState.Loading, is UiState.Error -> {
-                    // TODO: 전용 로딩/에러 UI. 지금은 데이터가 준비될 때까지 빈 화면.
+                is UiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = LooketColors.BrandPrimary)
+                    }
+                }
+                is UiState.Error -> {
+                    val message = (uiState as UiState.Error).message
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = message,
+                                style = LooketTextStyles.bodyTwo,
+                                color = LooketColors.TextSecondary,
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            LooketPrimaryButton(
+                                text = stringResource(R.string.common_retry),
+                                onClick = { viewModel.retry() },
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            )
+                        }
+                    }
                 }
                 is UiState.Success -> {
                     val data = (uiState as UiState.Success<ReviewUiState>).data
