@@ -1,5 +1,8 @@
 package com.gryffindor.smartshopping.app.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -7,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -14,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.app.AppContainer
+import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.feature.checklist.ChecklistScreen
 import com.gryffindor.smartshopping.feature.checklist.ChecklistViewModel
@@ -40,6 +45,12 @@ import com.gryffindor.smartshopping.feature.shopping.ShoppingViewModel
 import com.gryffindor.smartshopping.feature.splash.SplashScreen
 import com.gryffindor.smartshopping.feature.travel.TravelScreen
 import com.gryffindor.smartshopping.feature.travel.TravelViewModel
+import com.gryffindor.smartshopping.feature.trip.FlightEditScreen
+import com.gryffindor.smartshopping.feature.trip.HotelEditScreen
+import com.gryffindor.smartshopping.feature.trip.TripCreateScreen
+import com.gryffindor.smartshopping.feature.trip.TripDetailScreen
+import com.gryffindor.smartshopping.feature.trip.TripListScreen
+import com.gryffindor.smartshopping.feature.trip.TripViewModel
 import com.gryffindor.smartshopping.domain.model.TripDates
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -264,6 +275,97 @@ fun AppNavGraph(
             MyPageNavHost(
                 selectedTab = BottomNavTab.MY_PAGE,
                 onTabSelected = onBottomTabSelected,
+                onNavigateToTripList = { navController.navigate(Routes.TRIP_LIST) },
+            )
+        }
+
+        // --- 여행(Trip) 관리 플로우. 마이페이지의 TRAVEL 메뉴에서 진입한다. ---
+
+        composable(Routes.TRIP_LIST) {
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
+            )
+            Scaffold(
+                bottomBar = { BottomNavBar(selectedTab = BottomNavTab.MY_PAGE, onTabSelected = onBottomTabSelected) },
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    TripListScreen(
+                        viewModel = viewModel,
+                        onNavigateToCreate = { navController.navigate(Routes.TRIP_CREATE) },
+                        onNavigateToDetail = { tripId -> navController.navigate(Routes.tripDetail(tripId)) },
+                    )
+                }
+            }
+        }
+
+        composable(Routes.TRIP_CREATE) {
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
+            )
+            TripCreateScreen(
+                viewModel = viewModel,
+                onTripCreated = { tripId ->
+                    navController.navigate(Routes.tripDetail(tripId)) {
+                        popUpTo(Routes.TRIP_LIST) { inclusive = false }
+                    }
+                },
+            )
+        }
+
+        composable(
+            route = Routes.TRIP_DETAIL,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
+            )
+            Scaffold(
+                bottomBar = { BottomNavBar(selectedTab = BottomNavTab.MY_PAGE, onTabSelected = onBottomTabSelected) },
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    TripDetailScreen(
+                        viewModel = viewModel,
+                        tripId = tripId,
+                        onNavigateToFlightEdit = { flightId -> navController.navigate(Routes.flightEdit(tripId, flightId)) },
+                        onNavigateToHotelEdit = { navController.navigate(Routes.hotelEdit(tripId)) },
+                    )
+                }
+            }
+        }
+
+        composable(
+            route = Routes.FLIGHT_EDIT,
+            arguments = listOf(
+                navArgument("tripId") { type = NavType.StringType },
+                navArgument("flightId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val flightId = backStackEntry.arguments?.getString("flightId") ?: return@composable
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
+            )
+            FlightEditScreen(
+                viewModel = viewModel,
+                flightId = flightId,
+                tripId = tripId,
+                onSaved = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = Routes.HOTEL_EDIT,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: return@composable
+            val viewModel: TripViewModel = viewModel(
+                factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
+            )
+            HotelEditScreen(
+                viewModel = viewModel,
+                tripId = tripId,
+                onSaved = { navController.popBackStack() },
             )
         }
 

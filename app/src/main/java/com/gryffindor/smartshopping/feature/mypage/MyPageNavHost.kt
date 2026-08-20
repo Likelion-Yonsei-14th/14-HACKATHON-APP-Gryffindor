@@ -17,7 +17,6 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 private object MyPageRoutes {
     const val HOME = "mypage/home"
-    const val TRAVEL = "mypage/travel"
     const val RECEIPT = "mypage/receipt"
     const val RECEIPT_REGISTER = "mypage/receipt/register"
     const val RECEIPT_STORE = "mypage/receipt/{storeId}"
@@ -28,11 +27,16 @@ private object MyPageRoutes {
 /**
  * 마이페이지 탭 하위 화면 전환. 진짜 유저 데이터/Repository 연결 전까지는
  * 더미 값으로 채워두고, 실제 배선은 AppNavGraph에 이 컴포저블을 얹을 때 진행한다.
+ *
+ * TRAVEL 메뉴는 이 NavHost 내부가 아니라 [onNavigateToTripList]를 통해 최상위
+ * AppNavGraph의 진짜 여행(Trip) 관리 플로우로 나간다 — 목업이었던 MyPageTravelScreen은
+ * 실제 TripListScreen/TripDetailScreen 연결로 대체됨.
  */
 @Composable
 fun MyPageNavHost(
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
+    onNavigateToTripList: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -48,23 +52,9 @@ fun MyPageNavHost(
                 selectedCurrency = selectedCurrency,
                 onLanguageSelected = { selectedLanguage = it },
                 onCurrencySelected = { selectedCurrency = it },
-                onTravelClick = { navController.navigate(MyPageRoutes.TRAVEL) },
+                onTravelClick = onNavigateToTripList,
                 onReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT) },
                 onLogoutClick = {},
-                selectedTab = selectedTab,
-                onTabSelected = onTabSelected,
-            )
-        }
-
-        composable(MyPageRoutes.TRAVEL) {
-            MyPageTravelScreen(
-                departureAirport = "BEJ",
-                arrivalAirport = "ICN",
-                terminal = "인천공항 T2",
-                departureTime = "2026.08.21 10:00",
-                arrivalTime = "2026.08.25 19:00",
-                airportArrivalEstimate = "2026.08.25 15:00",
-                onBackClick = { navController.popBackStack() },
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected,
             )
@@ -118,6 +108,6 @@ fun MyPageNavHost(
 private fun MyPageNavHostPreview() {
     var selectedTab by remember { mutableStateOf(BottomNavTab.MY_PAGE) }
     LooketTheme {
-        MyPageNavHost(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
+        MyPageNavHost(selectedTab = selectedTab, onTabSelected = { selectedTab = it }, onNavigateToTripList = {})
     }
 }
