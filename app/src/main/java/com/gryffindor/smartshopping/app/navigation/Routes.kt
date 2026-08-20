@@ -6,7 +6,6 @@ object Routes {
 
     // 온보딩 화면들
     const val ONBOARDING_PERMISSION = "onboarding/permission"
-    const val ONBOARDING_TERMS = "onboarding/terms"
     const val ONBOARDING_USER_INFO = "onboarding/userInfo"
     const val ONBOARDING_FLIGHT_REGISTER = "onboarding/flightRegister"
     const val ONBOARDING_FLIGHT_CONFIRM = "onboarding/flightConfirm"

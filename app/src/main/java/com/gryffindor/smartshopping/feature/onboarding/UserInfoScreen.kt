@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -207,72 +208,103 @@ private fun DropdownField(
     }
 }
 
+private enum class TermsId(val label: String, val fullText: String) {
+    PRIVACY_POLICY("개인정보 처리방침", PRIVACY_POLICY_TEXT),
+    TERMS_OF_SERVICE("이용약관", TERMS_OF_SERVICE_TEXT),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TermsBottomSheet(onDismiss: () -> Unit, onStart: () -> Unit)  {
-    val sheetState = rememberModalBottomSheetState()
-    var checkedTerms by remember { mutableStateOf(setOf("terms1")) }
-    val allTerms = listOf("terms1", "terms2", "terms3", "terms4")
-    val allChecked = allTerms.all { it in checkedTerms }
+private fun TermsBottomSheet(onDismiss: () -> Unit, onStart: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var checkedTerms by remember { mutableStateOf(setOf<TermsId>()) }
+    var detailTerm by remember { mutableStateOf<TermsId?>(null) }
+    val allChecked = TermsId.entries.all { it in checkedTerms }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                "앱 사용을 위해\n정보수집에 동의해주세요.",
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                color = TextPrimary,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 31.sp,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
+        val shownDetail = detailTerm
+        if (shownDetail != null) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                allTerms.forEach { termId ->
-                    // TODO: 실제 약관명/링크로 교체 (지금은 전부 "이용약관" placeholder)
-                    TermsRow(
-                        label = "이용약관",
-                        checked = termId in checkedTerms,
-                        onToggle = {
-                            checkedTerms = if (termId in checkedTerms) checkedTerms - termId else checkedTerms + termId
-                        },
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (allChecked) BrandPrimary else BorderDisabled)
-                    .clickable(enabled = allChecked, onClick = onStart),
-                contentAlignment = Alignment.Center,
+                    .heightIn(max = 600.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .verticalScroll(rememberScrollState()),
             ) {
-                Text("시작하기", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { detailTerm = null }.padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("‹", color = TextPrimary, fontSize = 22.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(shownDetail.label, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                TermsBody(text = shownDetail.fullText, textColor = TextPrimary)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    "앱 사용을 위해\n정보수집에 동의해주세요.",
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = TextPrimary,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 31.sp,
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    TermsId.entries.forEach { term ->
+                        TermsRow(
+                            label = term.label,
+                            checked = term in checkedTerms,
+                            onToggle = {
+                                checkedTerms = if (term in checkedTerms) checkedTerms - term else checkedTerms + term
+                            },
+                            onDetailClick = { detailTerm = term },
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (allChecked) BrandPrimary else BorderDisabled)
+                        .clickable(enabled = allChecked, onClick = onStart),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("시작하기", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TermsRow(label: String, checked: Boolean, onToggle: () -> Unit) {
+private fun TermsRow(label: String, checked: Boolean, onToggle: () -> Unit, onDetailClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.weight(1f).clickable(onClick = onToggle),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Image(
                 painter = painterResource(id = if (checked) R.drawable.check_active else R.drawable.check_inactive),
                 contentDescription = if (checked) "체크됨" else "체크 안 됨",
@@ -282,7 +314,12 @@ private fun TermsRow(label: String, checked: Boolean, onToggle: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Text(label, color = TextPrimary, fontSize = 14.sp)
         }
-        Text("›", color = TextPrimary, fontSize = 18.sp)
+        Text(
+            "›",
+            color = TextPrimary,
+            fontSize = 18.sp,
+            modifier = Modifier.clickable(onClick = onDetailClick).padding(8.dp),
+        )
     }
 }
 
