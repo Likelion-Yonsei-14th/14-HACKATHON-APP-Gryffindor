@@ -1,5 +1,8 @@
 package com.gryffindor.smartshopping.app.navigation
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -11,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -48,6 +52,8 @@ import com.gryffindor.smartshopping.feature.review.ReviewViewModel
 import com.gryffindor.smartshopping.feature.shopping.DisplayCurrency
 import com.gryffindor.smartshopping.feature.shopping.LiveReceiptItem
 import com.gryffindor.smartshopping.feature.shopping.LiveShoppingScreen
+import com.gryffindor.smartshopping.feature.shopping.ShoppingReceiptViewModel
+import com.gryffindor.smartshopping.feature.shopping.ShoppingResultReceiptScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingReviewScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingStoreSelectionScreen
 import com.gryffindor.smartshopping.feature.shopping.ShoppingUiState
@@ -514,7 +520,7 @@ fun AppNavGraph(
                     val data = (uiState as UiState.Success<ShoppingUiState>).data
                     LaunchedEffect(data.isSessionActive) {
                         if (!data.isSessionActive) {
-                            navController.navigate(Routes.review(sessionId)) {
+                            navController.navigate(Routes.shoppingReceipt(sessionId)) {
                                 popUpTo(Routes.HOME) { inclusive = false }
                             }
                         }
@@ -542,6 +548,44 @@ fun AppNavGraph(
                     )
                 }
             }
+        }
+
+        composable(
+            route = Routes.SHOPPING_RECEIPT,
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+            val context = LocalContext.current
+            val viewModel: ShoppingReceiptViewModel = viewModel(
+                factory = ShoppingReceiptViewModel.Factory(appContainer.personalizationRepository)
+            )
+            // 세션은 특정 여행(Trip)에 묶여 있지 않아 tripId 없이 analyzeReceipt를 호출한다
+            // (PersonalizationRepository.analyzeReceipt의 tripId는 선택값). OCR 완료를
+            // 기다리지 않고 바로 리뷰로 넘어간다 — ReviewViewModel.submitReview()와 동일하게
+            // 이 앱 전반에서 쓰는 "제출은 비동기로 흘려보내고 화면은 바로 다음으로" 패턴.
+            val receiptPickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.PickVisualMedia()
+            ) { uri ->
+                uri?.let {
+                    val bytes = context.contentResolver.openInputStream(it)?.use { stream -> stream.readBytes() }
+                    if (bytes != null) {
+                        viewModel.analyzeReceipt(bytes)
+                    }
+                    navController.navigate(Routes.review(sessionId)) {
+                        popUpTo(Routes.HOME) { inclusive = false }
+                    }
+                }
+            }
+            ShoppingResultReceiptScreen(
+                onBackClick = { navController.popBackStack() },
+                onRegisterClick = {
+                    receiptPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                selectedTab = BottomNavTab.SHOP,
+                onTabSelected = onBottomTabSelected,
+            )
         }
 
         composable(
