@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp"
+    android:height="44dp"
+    android:viewportWidth="30"
+    android:viewportHeight="30">
+
+    <!-- Bell icon from Figma icon/bell component #127:44 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#1B1A22"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M13,21.2C13,22.4 13.9,23.3 15,23.3C16.1,23.3 17,22.4 17,21.2M15,6C12.4,6 10.3,8.1 10.3,10.7C10.3,16.5 8,18.5 8,18.5H22C22,18.5 19.7,16.5 19.7,10.7C19.7,8.1 17.6,6 15,6Z" />
+</vector>

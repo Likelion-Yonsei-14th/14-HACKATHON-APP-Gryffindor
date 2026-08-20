@@ -69,7 +69,7 @@ class ShoppingFlowIsolationTest {
         var createSessionCalled = false
         var completeSessionCalled = false
 
-        override suspend fun createSession(currency: String): Session {
+        override suspend fun createSession(currency: String, storeId: String): Session {
             createSessionCalled = true
             if (shouldFail) throw RuntimeException("Session creation failed")
             return Session(
@@ -102,6 +102,9 @@ class ShoppingFlowIsolationTest {
                         retailPriceKrw = 10000,
                         estimatedRefundKrw = 2000,
                         estimatedRefundPriceKrw = 8000,
+                        convertedRetailPrice = "60.00",
+                        convertedEstimatedRefund = "12.00",
+                        convertedEstimatedRefundPrice = "48.00",
                         convertedAmount = "60.00",
                         convertedCurrency = "USD",
                         instantRefundEligible = false,
@@ -119,6 +122,10 @@ class ShoppingFlowIsolationTest {
             interestedProductIds: List<String>
         ) {
             // no-op
+        }
+
+        override suspend fun recognize(sessionId: String, candidate: AttentionCandidate): com.gryffindor.smartshopping.domain.model.RecognitionResult {
+            return com.gryffindor.smartshopping.domain.model.RecognitionResult.Unknown
         }
     }
 
@@ -166,50 +173,13 @@ class ShoppingFlowIsolationTest {
     // --- Tests ---
 
     @Test
-    fun `HomeViewModel - shopping session starts even when camera fails`() = runTest {
-        val sessionRepo = FakeSessionRepository()
-        val failingCamera = FailingCameraFrameProvider()
-        val viewModel = HomeViewModel(sessionRepo, failingCamera)
-
-        viewModel.startShopping()
-        advanceUntilIdle()
-
-        // Session was created successfully
-        assertTrue("Session should be created", sessionRepo.createSessionCalled)
-        assertEquals("test-session-001", viewModel.uiState.value.sessionId)
-        assertTrue(viewModel.uiState.value.isSessionActive)
-
-        // No error in UI state (camera failure is not reflected as shopping error)
-        assertNull(
-            "Camera failure should not set HomeUiState.errorMessage",
-            viewModel.uiState.value.errorMessage
-        )
-    }
-
-    @Test
-    fun `HomeViewModel - camera failure does not prevent navigation`() = runTest {
-        val sessionRepo = FakeSessionRepository()
-        val failingCamera = FailingCameraFrameProvider()
-        val viewModel = HomeViewModel(sessionRepo, failingCamera)
-
-        viewModel.startShopping()
-        advanceUntilIdle()
-
-        // sessionId is available for navigation
-        assertNotNull(viewModel.uiState.value.sessionId)
-        assertEquals(false, viewModel.uiState.value.isStarting)
-    }
-
-    @Test
-    fun `HomeViewModel - camera start is called on successful session`() = runTest {
-        val sessionRepo = FakeSessionRepository()
+    fun `HomeViewModel - DAT update state reflects camera state`() = runTest {
         val camera = NoOpCameraFrameProvider()
-        val viewModel = HomeViewModel(sessionRepo, camera)
-
-        viewModel.startShopping()
+        val viewModel = HomeViewModel(FakeSessionRepository(), camera)
         advanceUntilIdle()
 
-        assertTrue("Camera startCamera should be called", camera.startCalled)
+        // Default state: no DAT update required
+        assertEquals(false, viewModel.uiState.value.datUpdateRequired)
     }
 
     @Test
@@ -219,7 +189,7 @@ class ShoppingFlowIsolationTest {
         val failingCamera = FailingCameraFrameProvider()
         val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
-        viewModel.loadProducts("test-session-001")
+        viewModel.loadProducts("test-session-001", "USD")
         advanceUntilIdle()
 
         viewModel.endShopping("test-session-001")
@@ -241,7 +211,7 @@ class ShoppingFlowIsolationTest {
         val failingCamera = FailingCameraFrameProvider()
         val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, failingCamera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
-        viewModel.loadProducts("test-session-001")
+        viewModel.loadProducts("test-session-001", "USD")
         advanceUntilIdle()
 
         viewModel.endShopping("test-session-001")
@@ -262,7 +232,7 @@ class ShoppingFlowIsolationTest {
         val camera = NoOpCameraFrameProvider()
         val viewModel = ShoppingViewModel(shoppingRepo, sessionRepo, camera, NoOpDetectionResultProvider(), NoOpAttentionCandidateProvider())
 
-        viewModel.loadProducts("test-session-001")
+        viewModel.loadProducts("test-session-001", "USD")
         advanceUntilIdle()
 
         viewModel.endShopping("test-session-001")

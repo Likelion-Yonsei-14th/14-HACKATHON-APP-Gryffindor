@@ -220,7 +220,9 @@ fun AppNavGraph(
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToShopping = { sessionId ->
-                    navController.navigate(Routes.shopping(sessionId))
+                    // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 KRW 고정. 백엔드 통화
+                    // 선택 로직(SupportedCountry 등) 연결 시 실제 선택값으로 교체 필요.
+                    navController.navigate(Routes.shopping(sessionId, "KRW"))
                 },
                 onNavigateToChecklist = {
                     // sessionId는 쇼핑 화면 이동 즉시 null로 리셋되므로, 홈에 머무는 동안엔
@@ -267,9 +269,13 @@ fun AppNavGraph(
 
         composable(
             route = Routes.SHOPPING,
-            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("sessionId") { type = NavType.StringType },
+                navArgument("currency") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+            val currency = backStackEntry.arguments?.getString("currency") ?: "KRW"
             val viewModel: ShoppingViewModel = viewModel(
                 factory = ShoppingViewModel.Factory(
                     appContainer.shoppingRepository,
@@ -282,6 +288,7 @@ fun AppNavGraph(
             ShoppingScreen(
                 viewModel = viewModel,
                 sessionId = sessionId,
+                currency = currency,
                 onNavigateToReview = {
                     navController.navigate(Routes.review(sessionId)) {
                         popUpTo(Routes.HOME) { inclusive = false }

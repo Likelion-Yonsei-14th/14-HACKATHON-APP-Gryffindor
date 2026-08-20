@@ -6,6 +6,7 @@ import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.util.Log
+import com.gryffindor.smartshopping.data.image.PackedI420Converter
 import com.gryffindor.smartshopping.domain.model.CameraFrame
 import java.io.ByteArrayOutputStream
 
@@ -16,10 +17,9 @@ import java.io.ByteArrayOutputStream
  *   width=504, height=896, data.size=677376, bytesPerPixel=1.5, isCompressed=false
  *   → YUV420 family (uncompressed)
  *
- * YUV420 sub-format (NV21 vs NV12 vs I420)은 아직 확정되지 않았으므로,
- * 첫 프레임에서 최소 probe를 수행하여 UV plane 배치를 추론한다.
+ * Meta DAT의 uncompressed VideoFrame은 packed I420으로 전달된다.
  *
- * Probe 전략:
+ * Packed layout reference:
  *   NV21: Y plane [W*H] + interleaved VU [W*H/2], V first
  *   NV12: Y plane [W*H] + interleaved UV [W*H/2], U first
  *   I420: Y plane [W*H] + U plane [W*H/4] + V plane [W*H/4]
@@ -28,7 +28,7 @@ import java.io.ByteArrayOutputStream
  *   - NV21 → YuvImage 직접 사용
  *   - NV12 → UV swap → NV21 → YuvImage
  *   - I420 → planar to NV21 interleave → YuvImage
- *   - UNKNOWN → NV21 시도 (green tint 등이 보이면 사용자가 보고)
+ *   - malformed/unknown → conversion 실패로 처리해 색상 artifact를 만들지 않음
  *
  * All operations run off Main thread.
  */
@@ -62,7 +62,7 @@ internal class FrameConverter {
         NV21,       // V-U interleaved (Android standard)
         NV12,       // U-V interleaved (iOS/some cameras)
         I420,       // Planar Y + U + V
-        UNKNOWN     // Could not determine — attempt NV21
+        UNKNOWN     // Invalid or unsupported buffer
     }
 
     /**
@@ -84,7 +84,7 @@ internal class FrameConverter {
     }
 
     /**
-     * Probe the YUV layout on the first frame and log the result.
+     * Confirm the packed layout emitted by Meta DAT's uncompressed VideoFrame.
      * Subsequent calls return the cached layout.
      */
     fun probeLayoutIfNeeded(frame: CameraFrame): YuvLayout {
@@ -108,26 +108,6 @@ internal class FrameConverter {
         return layout
     }
 
-    /**
-     * Probe the UV plane arrangement.
-     *
-     * Heuristic: In NV21 the chroma plane starts at offset W*H and is interleaved V,U,V,U,...
-     * In NV12 it's U,V,U,V,...
-     * In I420, U and V planes are separate (each W*H/4).
-     *
-     * We check byte patterns at the chroma plane start:
-     *   - For a real image, U and V values cluster around 128 (neutral).
-     *   - NV21 vs NV12: check if byte pairs show V-first or U-first by examining
-     *     the alternating pattern against a statistical heuristic.
-     *
-     * Since we cannot reliably distinguish NV21/NV12 from byte values alone without
-     * a known color reference, we use a practical approach:
-     *   1. Try NV21 decode → if it produces a reasonable image (no green tint), use NV21
-     *   2. If NV21 fails or we detect clear interleave inversion, switch to NV12
-     *
-     * For Gen2 hackathon: default to NV21 (most common Android format) and let the
-     * live visual check confirm. Log enough info for quick diagnosis if wrong.
-     */
     private fun probeYuvLayout(frame: CameraFrame): YuvLayout {
         val w = frame.width
         val h = frame.height
@@ -138,78 +118,8 @@ internal class FrameConverter {
             return YuvLayout.UNKNOWN
         }
 
-        val yPlaneSize = w * h
-        val chromaSize = frame.data.size - yPlaneSize  // Should be W*H/2
-
-        // Check if chroma is interleaved (NV21/NV12) or planar (I420)
-        // Interleaved: chroma bytes come in pairs covering 2x2 pixel blocks
-        // Planar: U plane (W*H/4) then V plane (W*H/4)
-        //
-        // Heuristic for planar detection:
-        // In I420, the midpoint of chroma should be a boundary between U and V planes.
-        // Both U and V planes individually should have relatively consistent values for
-        // uniform regions. Interleaved formats would show alternation even in uniform regions.
-        //
-        // Simple check: sample stride pattern in chroma area
-        val chromaStart = yPlaneSize
-        val halfChroma = chromaSize / 2
-
-        // Sample first 16 bytes of chroma in pairs and check for interleave signature
-        val sampleSize = minOf(32, chromaSize)
-        if (sampleSize < 4) return YuvLayout.UNKNOWN
-
-        // Check if consecutive bytes alternate significantly (interleaved hint)
-        // vs remain similar (planar hint for uniform regions)
-        var interleaveScore = 0
-        var planarScore = 0
-
-        for (i in 0 until sampleSize - 2 step 2) {
-            val b0 = frame.data[chromaStart + i].toInt() and 0xFF
-            val b1 = frame.data[chromaStart + i + 1].toInt() and 0xFF
-            val b2 = frame.data[chromaStart + i + 2].toInt() and 0xFF
-
-            // In interleaved, b0 and b2 are same channel → likely similar
-            // b0 and b1 are different channels → might differ
-            val sameChannelDiff = kotlin.math.abs(b0 - b2)
-            val crossChannelDiff = kotlin.math.abs(b0 - b1)
-
-            if (sameChannelDiff < crossChannelDiff) {
-                interleaveScore++
-            } else {
-                planarScore++
-            }
-        }
-
-        // Also check: does the second half of chroma differ from first half?
-        // In I420, first half is all U, second half is all V (or vice versa)
-        val firstHalfAvg = averageBytes(frame.data, chromaStart, chromaStart + halfChroma / 4)
-        val secondHalfAvg = averageBytes(frame.data, chromaStart + halfChroma, chromaStart + halfChroma + halfChroma / 4)
-        val halfDiff = kotlin.math.abs(firstHalfAvg - secondHalfAvg)
-
-        // Strong divergence between halves suggests planar
-        if (halfDiff > 20 && planarScore > interleaveScore) {
-            Log.d(TAG, "Probe: planar signature detected (halfDiff=$halfDiff, planar=$planarScore, interleave=$interleaveScore)")
-            return YuvLayout.I420
-        }
-
-        // Default to NV21 for interleaved (most common on Android)
-        // NV12 vs NV21 cannot be reliably distinguished without a color reference.
-        // Log both scores so user can confirm visually.
-        Log.d(TAG, "Probe: interleaved signature (interleave=$interleaveScore, planar=$planarScore, halfDiff=$halfDiff)")
-        Log.d(TAG, "Probe: defaulting to NV21 (most common Android YUV420). " +
-            "If colors appear wrong (blue/red swap), switch to NV12.")
-
-        return YuvLayout.NV21
-    }
-
-    private fun averageBytes(data: ByteArray, from: Int, to: Int): Int {
-        if (to <= from || from >= data.size) return 128
-        val end = minOf(to, data.size)
-        var sum = 0L
-        for (i in from until end) {
-            sum += (data[i].toInt() and 0xFF)
-        }
-        return (sum / (end - from)).toInt()
+        Log.d(TAG, "Gen2 uncompressed frame is packed I420 (${w}x${h}, ${frame.data.size} bytes)")
+        return YuvLayout.I420
     }
 
     // --- Conversion paths ---
@@ -223,9 +133,8 @@ internal class FrameConverter {
             YuvLayout.NV12 -> swapNv12ToNv21(frame.data, frame.width, frame.height)
             YuvLayout.I420 -> convertI420ToNv21(frame.data, frame.width, frame.height)
             YuvLayout.UNKNOWN -> {
-                // Attempt NV21 interpretation — may produce artifacts
-                Log.w(TAG, "Unknown layout — attempting NV21 interpretation")
-                frame.data
+                Log.e(TAG, "Unknown YUV layout — refusing conversion to avoid color artifacts")
+                return null
             }
         }
 
@@ -286,24 +195,15 @@ internal class FrameConverter {
      * Convert I420 (planar Y + U + V) to NV21 (semi-planar Y + interleaved VU).
      */
     private fun convertI420ToNv21(data: ByteArray, width: Int, height: Int): ByteArray {
-        val yPlaneSize = width * height
-        val uvPlaneSize = yPlaneSize / 4
-        val totalSize = (width * height * 3) / 2
+        val totalSize = PackedI420Converter.expectedSize(width, height)
+            ?: throw IllegalArgumentException("Invalid I420 dimensions: ${width}x${height}")
 
         val buffer = getOrAllocateBuffer(totalSize)
-        // Copy Y plane
-        System.arraycopy(data, 0, buffer, 0, yPlaneSize)
-
-        // Interleave V and U (NV21 = V first)
-        val uPlaneOffset = yPlaneSize
-        val vPlaneOffset = yPlaneSize + uvPlaneSize
-
-        var destIdx = yPlaneSize
-        for (j in 0 until uvPlaneSize) {
-            buffer[destIdx++] = data[vPlaneOffset + j]  // V
-            buffer[destIdx++] = data[uPlaneOffset + j]  // U
+        if (!PackedI420Converter.copyToNv21(data, width, height, buffer)) {
+            throw IllegalArgumentException(
+                "Invalid packed I420 data: actual=${data.size}, expected=$totalSize"
+            )
         }
-
         return buffer
     }
 

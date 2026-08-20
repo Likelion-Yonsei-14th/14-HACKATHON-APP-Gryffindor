@@ -16,7 +16,7 @@ android {
         versionCode = 1
         versionName = "0.2.0-a1"
 
-        buildConfigField("String", "BACKEND_BASE_URL", "\"http://192.168.219.101:8000/api/v1/\"")
+        buildConfigField("String", "BACKEND_BASE_URL", "\"http://1.201.116.58:8000/api/v1/\"")
 
         // Meta Wearables DAT manifest placeholders (Developer Mode: use "0" per official docs)
         manifestPlaceholders["mwdat_application_id"] = "0"
@@ -98,10 +98,17 @@ dependencies {
     // Core
     implementation("androidx.core:core-ktx:1.16.0")
 
+    // Location (one-shot for Feed)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     // Meta Wearables DAT — coordinates from validated Stage 0 CameraAccess project
     implementation("com.meta.wearable:mwdat-core:0.9.0")
     implementation("com.meta.wearable:mwdat-camera:0.9.0")
     debugImplementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
+
+    // Image loading (Coil for Compose — used for Store/Product imageUrl display)
+    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
 
     // TensorFlow Lite — Object Detection (confined to data/detection/)
     implementation("org.tensorflow:tensorflow-lite:2.16.1")

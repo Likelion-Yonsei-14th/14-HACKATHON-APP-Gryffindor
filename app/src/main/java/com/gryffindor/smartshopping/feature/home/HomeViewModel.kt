@@ -62,11 +62,11 @@ class HomeViewModel(
         }
     }
 
-    fun startShopping() {
+    fun startShopping(storeId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isStarting = true, errorMessage = null) }
             try {
-                val session = sessionRepository.createSession("KRW")
+                val session = sessionRepository.createSession("KRW", storeId)
                 _uiState.update {
                     it.copy(
                         sessionId = session.sessionId,

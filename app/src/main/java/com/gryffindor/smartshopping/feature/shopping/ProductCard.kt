@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,10 @@ import java.util.Locale
 @Composable
 fun ProductCard(
     sessionProduct: SessionProduct,
+    displayCurrency: DisplayCurrency = DisplayCurrency.KRW,
+    sessionCurrency: String = "KRW",
+    isWishlisted: Boolean = false,
+    onWishlistToggle: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val product = sessionProduct.product
@@ -61,11 +66,29 @@ fun ProductCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = product.brand,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = product.brand,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (onWishlistToggle != null) {
+                        IconButton(
+                            onClick = { onWishlistToggle(product.productId) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Text(
+                                text = if (isWishlisted) "\u2665" else "\u2661",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (isWishlisted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
 
                 Text(
                     text = product.name,
@@ -74,69 +97,99 @@ fun ProductCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "정가",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = formatKrw(pricing.retailPriceKrw),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "환급 적용가",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = formatKrw(pricing.estimatedRefundPriceKrw),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                when (displayCurrency) {
+                    DisplayCurrency.KRW -> KrwPricing(pricing)
+                    DisplayCurrency.CONVERTED -> ConvertedPricing(pricing, sessionCurrency)
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Converted currency amount
-                    val convertedText = if (pricing.convertedAmount != null && pricing.convertedCurrency != null) {
-                        "${pricing.convertedAmount} ${pricing.convertedCurrency}"
-                    } else {
-                        "-"
-                    }
-                    Text(
-                        text = convertedText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Instant refund eligibility
-                    Text(
-                        text = if (pricing.instantRefundEligible) "즉시환급 가능" else "즉시환급 불가",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (pricing.instantRefundEligible)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                // Instant refund eligibility
+                Text(
+                    text = if (pricing.instantRefundEligible) "즉시환급 가능" else "즉시환급 불가",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (pricing.instantRefundEligible)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun KrwPricing(pricing: com.gryffindor.smartshopping.domain.model.Pricing) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Text(
+                text = "정가",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = formatKrw(pricing.retailPriceKrw),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "예상 환급액",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = formatKrw(pricing.estimatedRefundKrw),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConvertedPricing(
+    pricing: com.gryffindor.smartshopping.domain.model.Pricing,
+    sessionCurrency: String
+) {
+    val symbol = currencySymbol(sessionCurrency)
+    val retailText = pricing.convertedRetailPrice?.let { "$symbol$it" } ?: "-"
+    val refundText = pricing.convertedEstimatedRefund?.let { "$symbol$it" } ?: "-"
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Text(
+                text = "정가",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = retailText,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "예상 환급액",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = refundText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
 
 private fun formatKrw(amount: Long): String {
     val formatter = NumberFormat.getNumberInstance(Locale.KOREA)
-    return "₩${formatter.format(amount)}"
+    return "\u20A9${formatter.format(amount)}"
 }

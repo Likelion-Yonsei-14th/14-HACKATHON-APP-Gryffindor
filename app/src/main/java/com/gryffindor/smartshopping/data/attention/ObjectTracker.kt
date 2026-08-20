@@ -1,5 +1,6 @@
 package com.gryffindor.smartshopping.data.attention
 
+import android.util.Log
 import com.gryffindor.smartshopping.core.config.AppConfig
 import com.gryffindor.smartshopping.domain.attention.TrackedObject
 import com.gryffindor.smartshopping.domain.model.DetectionResult
@@ -18,6 +19,10 @@ class ObjectTracker(
     private val maxCenterDistance: Float = AppConfig.TRACKING_MAX_CENTER_DISTANCE,
     private val gracePeriodMs: Long = AppConfig.TRACKING_GRACE_PERIOD_MS
 ) {
+    companion object {
+        private const val TAG = "AttentionTiming"
+    }
+
     private val activeTracks = mutableListOf<InternalTrack>()
 
     /**
@@ -33,7 +38,9 @@ class ObjectTracker(
         var left: Float,
         var top: Float,
         var right: Float,
-        var bottom: Float
+        var bottom: Float,
+        /** Frame timestamp when this track was first created. For timing logs only. */
+        val firstSeenTimestampUs: Long = lastSeenTimestampUs
     )
 
     /**
@@ -126,10 +133,15 @@ class ObjectTracker(
                 left = det.left,
                 top = det.top,
                 right = det.right,
-                bottom = det.bottom
+                bottom = det.bottom,
+                firstSeenTimestampUs = frameTimestampUs
             )
             activeTracks.add(newTrack)
             result.add(newTrack.toTrackedObject())
+
+            Log.i(TAG, "[Tracker] NEW trackingId=${newTrack.trackingId} " +
+                "firstSeenUs=$frameTimestampUs label=${det.label} " +
+                "center=(${("%.3f".format(cx))}, ${("%.3f".format(cy))}) area=${"%.4f".format(area)}")
         }
 
         return result
@@ -146,6 +158,11 @@ class ObjectTracker(
     /** Current number of active tracks (for testing/diagnostics). */
     @Synchronized
     fun trackCount(): Int = activeTracks.size
+
+    /** Returns the frame timestamp (μs) when this trackingId was first created, or null. */
+    @Synchronized
+    fun getFirstSeenTimestampUs(trackingId: String): Long? =
+        activeTracks.find { it.trackingId == trackingId }?.firstSeenTimestampUs
 
     private fun InternalTrack.toTrackedObject() = TrackedObject(
         trackingId = trackingId,

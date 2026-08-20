@@ -2,6 +2,7 @@ package com.gryffindor.smartshopping.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -38,9 +39,14 @@ class MainActivity : ComponentActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        val allGranted = results.entries.all { it.value }
-        if (allGranted) {
+        // Wearables SDK requires BLUETOOTH_CONNECT; POST_NOTIFICATIONS is optional.
+        val bluetoothGranted = results[Manifest.permission.BLUETOOTH_CONNECT] ?: true
+        if (bluetoothGranted) {
             setupWearables()
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val notifGranted = results[Manifest.permission.POST_NOTIFICATIONS] ?: true
+            Log.i(TAG, "POST_NOTIFICATIONS granted=$notifGranted")
         }
     }
 
@@ -107,18 +113,29 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Request BLUETOOTH_CONNECT once during Activity creation.
-        // Only proceed with Wearables setup after permission is granted.
-        if (isBluetoothConnectGranted()) {
+        // Request runtime permissions once during Activity creation.
+        // BLUETOOTH_CONNECT is required for Wearables SDK; POST_NOTIFICATIONS for Android 13+.
+        val permissionsToRequest = buildList {
+            if (!isPermissionGranted(Manifest.permission.BLUETOOTH_CONNECT)) {
+                add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                !isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS)
+            ) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        if (permissionsToRequest.isEmpty()) {
             setupWearables()
         } else {
-            permissionLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+            permissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
 
-    private fun isBluetoothConnectGranted(): Boolean {
+    private fun isPermissionGranted(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(
-            this, Manifest.permission.BLUETOOTH_CONNECT
+            this, permission
         ) == PackageManager.PERMISSION_GRANTED
     }
 
