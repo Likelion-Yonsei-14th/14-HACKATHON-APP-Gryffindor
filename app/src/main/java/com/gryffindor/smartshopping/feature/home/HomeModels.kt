@@ -51,6 +51,8 @@ data class RecommendedProduct(
     val productName: String,
     val location: String,
     val imageUrl: String? = null,
+    val storeId: String? = null,
+    val storeName: String? = null,
 )
 
 /**

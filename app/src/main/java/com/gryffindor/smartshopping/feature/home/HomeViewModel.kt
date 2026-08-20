@@ -102,6 +102,15 @@ class HomeViewModel(
                 Log.w(TAG, "Failed to load MyPage data", e)
             }
 
+            // Fallback: if MyPage didn't return trips, try fetching trips directly
+            if (tripId == null) {
+                try {
+                    tripId = tripRepository.getTrips().firstOrNull()?.id
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to load trips as fallback", e)
+                }
+            }
+
             // Fetch trip feed recommendations if we have a tripId
             var recommendations: List<FeedRecommendation> = emptyList()
             if (tripId != null) {

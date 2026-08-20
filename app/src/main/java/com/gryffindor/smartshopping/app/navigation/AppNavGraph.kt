@@ -327,12 +327,11 @@ fun AppNavGraph(
                         navController.navigate(Routes.checklist(sessionId))
                     }
                 },
-                onNavigateToVisitReservation = {
-                    // FOR YOU 추천 상품을 눌렀을 때 진입 — 방문 예약은 여행(Trip)에 묶이므로
-                    // 등록된 여행이 하나도 없으면 안내만 하고 진행하지 않는다.
+                onNavigateToVisitReservation = { storeId, storeName ->
+                    // FOR YOU 추천 상품을 눌렀을 때 진입 — 매장 선택을 건너뛰고 바로 예약 폼으로.
                     val tripId = uiState.currentTripId
                     if (tripId != null) {
-                        navController.navigate(Routes.visitReservationStoreSelect(tripId))
+                        navController.navigate(Routes.visitReservation(tripId, storeId, storeName))
                     } else {
                         Toast.makeText(context, "먼저 여행을 등록해주세요.", Toast.LENGTH_SHORT).show()
                     }

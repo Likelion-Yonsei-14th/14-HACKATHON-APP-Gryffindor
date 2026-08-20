@@ -73,7 +73,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToShopping: (sessionId: String) -> Unit,
     onNavigateToChecklist: () -> Unit,
-    onNavigateToVisitReservation: () -> Unit,
+    onNavigateToVisitReservation: (storeId: String, storeName: String) -> Unit,
     selectedTab: BottomNavTab,
     onTabSelected: (BottomNavTab) -> Unit,
 ) {
@@ -157,7 +157,7 @@ fun HomeScreen(
                             recommended = actualRecommended,
                             brands = HomeProductionData.brandFilters,
                             myLooket = HomeProductionData.looketProducts,
-                            onProductClick = { onNavigateToVisitReservation() },
+                            onProductClick = { storeId, storeName -> onNavigateToVisitReservation(storeId, storeName) },
                         )
                     }
                 }
@@ -434,7 +434,7 @@ private fun LooketTabContent(
     recommended: List<RecommendedProduct>,
     brands: List<BrandFilter>,
     myLooket: List<LooketProduct>,
-    onProductClick: () -> Unit,
+    onProductClick: (storeId: String, storeName: String) -> Unit,
 ) {
     var selectedBrandIds by remember { mutableStateOf(setOf<String>()) }
 
@@ -452,7 +452,11 @@ private fun LooketTabContent(
                 contentPadding = PaddingValues(horizontal = 16.dp),
             ) {
                 items(recommended, key = { it.id }) { product ->
-                    RecommendedProductCard(product, onClick = onProductClick)
+                    RecommendedProductCard(product, onClick = {
+                        val storeId = product.storeId ?: ""
+                        val storeName = product.storeName ?: ""
+                        onProductClick(storeId, storeName)
+                    })
                 }
             }
         }
@@ -664,18 +668,23 @@ private fun PurchasedProduct.toPurchasedItem(): PurchasedItem = PurchasedItem(
 /**
  * Maps a Backend FeedRecommendation to the Home UI's RecommendedProduct model.
  */
-private fun FeedRecommendation.toRecommendedProduct(): RecommendedProduct = RecommendedProduct(
-    id = product.productId,
-    brandName = product.brand,
-    title = "당신만을 위한 오늘의 셀렉션",
-    productName = product.name,
-    location = stores.firstOrNull()?.let { store ->
-        val terminal = store.terminal ?: ""
-        val name = store.name
-        if (terminal.isNotEmpty()) "$terminal · $name" else name
-    } ?: "",
-    imageUrl = product.imageUrl,
-)
+private fun FeedRecommendation.toRecommendedProduct(): RecommendedProduct {
+    val firstStore = stores.firstOrNull()
+    return RecommendedProduct(
+        id = product.productId,
+        brandName = product.brand,
+        title = "당신만을 위한 오늘의 셀렉션",
+        productName = product.name,
+        location = firstStore?.let { store ->
+            val terminal = store.terminal ?: ""
+            val name = store.name
+            if (terminal.isNotEmpty()) "$terminal · $name" else name
+        } ?: "",
+        imageUrl = product.imageUrl,
+        storeId = firstStore?.storeId,
+        storeName = firstStore?.name,
+    )
+}
 
 /**
  * Computes a summary for the refund card from actual purchased products.
@@ -751,7 +760,7 @@ private fun HomeScreenPreview() {
                         recommended = HomeProductionData.recommendedProducts,
                         brands = HomeProductionData.brandFilters,
                         myLooket = HomeProductionData.looketProducts,
-                        onProductClick = {},
+                        onProductClick = { _, _ -> },
                     )
                 }
             }
