@@ -49,7 +49,7 @@ fun TripDetailScreen(
     tripId: String,
     onNavigateToFlightEdit: (flightId: String) -> Unit,
     onNavigateToHotelEdit: () -> Unit,
-    onNavigateToVisitReservation: (storeId: String, storeName: String) -> Unit = { _, _ -> }
+    onNavigateToVisitReservation: () -> Unit = {}
 ) {
     val state by viewModel.detailState.collectAsState()
     val context = LocalContext.current
@@ -258,6 +258,15 @@ fun TripDetailScreen(
                         viewModel.cancelReservation(reservationId, tripId)
                     }
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onNavigateToVisitReservation,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("방문 예약하기")
+                }
 
                 // ===== B7: Purchases / Receipt Section =====
                 Spacer(modifier = Modifier.height(24.dp))

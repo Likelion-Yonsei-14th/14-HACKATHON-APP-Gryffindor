@@ -66,4 +66,11 @@
     <string name="shopping_review_purchase">구매</string>
     <string name="shopping_review_interested">관심</string>
     <string name="shopping_review_empty">인식된 상품이 없습니다.</string>
+
+    <string name="reservation_title">방문 예약</string>
+    <string name="reservation_visit_time">방문 시간</string>
+    <string name="reservation_visit_purpose">방문 목적</string>
+    <string name="reservation_visitor_name">예약자 성함</string>
+    <string name="reservation_note">기타 요청사항</string>
+    <string name="reservation_time_required">방문 시간을 선택해주세요.</string>
 </resources>
