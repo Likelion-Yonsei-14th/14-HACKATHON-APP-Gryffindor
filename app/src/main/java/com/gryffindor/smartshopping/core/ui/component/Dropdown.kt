@@ -35,10 +35,10 @@ import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
 
 /**
- * 접힌 상태엔 [label]을 고정 표시하고(선택된 값이 아님), 펼치면 [options] 목록에서
- * [selectedOption]에 해당하는 항목만 강조 표시한다 — Figma "dropdown-s" 컴포넌트 동작 그대로.
- * 펼친 목록은 [Popup]으로 띄워서 레이아웃 흐름에 영향을 주지 않고(아래 콘텐츠를 밀어내지 않고)
- * 그 위에 겹쳐서 표시된다.
+ * 접힌 상태엔 [selectedOption]이 있으면 그 값을, 없으면 [label]을 표시한다. 펼치면 [options]
+ * 목록에서 [selectedOption]에 해당하는 항목만 강조 표시한다 — Figma "dropdown-s" 컴포넌트 동작
+ * 그대로. 펼친 목록은 [Popup]으로 띄워서 레이아웃 흐름에 영향을 주지 않고(아래 콘텐츠를 밀어내지
+ * 않고) 그 위에 겹쳐서 표시된다.
  */
 @Composable
 fun LooketDropdown(
@@ -70,7 +70,7 @@ fun LooketDropdown(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = label, style = LooketTextStyles.bodyTwo, color = LooketColors.TextPrimary)
+            Text(text = selectedOption ?: label, style = LooketTextStyles.bodyTwo, color = LooketColors.TextPrimary)
             Icon(
                 painter = painterResource(R.drawable.ic_chevron_down),
                 contentDescription = null,

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,6 +38,7 @@ import com.gryffindor.smartshopping.app.AppContainer
 import com.gryffindor.smartshopping.core.common.UiState
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
+import com.gryffindor.smartshopping.core.ui.component.LooketIconButton
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
@@ -93,8 +96,11 @@ fun AppNavGraph(
     navController: NavHostController,
     appContainer: AppContainer
 ) {
-    // 하단 네비게이션 바(HOME/SHOP/MY PAGE) 공용 탭 전환 핸들러. 각 탭의 시작 목적지로
-    // 이동하되, 뒤로가기 스택이 계속 쌓이지 않도록 popUpTo/launchSingleTop/restoreState를 쓴다.
+    // 하단 네비게이션 바(HOME/SHOP/MY PAGE) 공용 탭 전환 핸들러. 탭을 누르면 그 탭의 시작
+    // 목적지로 무조건 이동한다 — saveState/restoreState를 쓰지 않는 이유: 예를 들어 MY PAGE ->
+    // TRAVEL(최상위 Trip 플로우로 나감) -> 다시 MY PAGE 탭을 누르는 상황에서, 저장된 상태를
+    // 복원하려다 마이페이지 메인이 아닌 다른 화면으로 가는 문제가 있었다. 매번 깨끗하게
+    // 시작 화면으로 리셋하는 대신 스크롤 위치 등은 유지되지 않는다.
     val onBottomTabSelected: (BottomNavTab) -> Unit = { tab ->
         val route = when (tab) {
             BottomNavTab.HOME -> Routes.HOME
@@ -102,9 +108,8 @@ fun AppNavGraph(
             BottomNavTab.MY_PAGE -> Routes.MY_PAGE
         }
         navController.navigate(route) {
-            popUpTo(Routes.HOME) { saveState = true }
+            popUpTo(Routes.HOME) { inclusive = false }
             launchSingleTop = true
-            restoreState = true
         }
     }
 
@@ -354,6 +359,7 @@ fun AppNavGraph(
                 factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
             )
             Scaffold(
+                topBar = { TripBackBar(onBackClick = { navController.popBackStack() }) },
                 bottomBar = { BottomNavBar(selectedTab = BottomNavTab.MY_PAGE, onTabSelected = onBottomTabSelected) },
             ) { innerPadding ->
                 Box(modifier = Modifier.padding(innerPadding)) {
@@ -389,6 +395,7 @@ fun AppNavGraph(
                 factory = TripViewModel.Factory(appContainer.tripRepository, appContainer.personalizationRepository)
             )
             Scaffold(
+                topBar = { TripBackBar(onBackClick = { navController.popBackStack() }) },
                 bottomBar = { BottomNavBar(selectedTab = BottomNavTab.MY_PAGE, onTabSelected = onBottomTabSelected) },
             ) { innerPadding ->
                 Box(modifier = Modifier.padding(innerPadding)) {
@@ -718,6 +725,21 @@ fun AppNavGraph(
             RecommendationScreen(
                 viewModel = viewModel,
                 sessionId = sessionId
+            )
+        }
+    }
+}
+
+/** 백엔드가 만든 Trip 화면들(TripListScreen/TripDetailScreen)은 자체 뒤로가기 버튼이 없어서
+ * 여기서 최소한의 뒤로가기 바를 얹어준다. */
+@Composable
+private fun TripBackBar(onBackClick: () -> Unit) {
+    Box(modifier = Modifier.padding(top = 68.dp, start = 16.dp, bottom = 12.dp)) {
+        LooketIconButton(onClick = onBackClick) {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_left),
+                contentDescription = null,
+                tint = LooketColors.TextPrimary,
             )
         }
     }
