@@ -21,6 +21,12 @@ enum class BottomNavDestination(val label: String, val iconRes: Int) {
     MY_PAGE("MY PAGE", R.drawable.ic_nav_mypage)
 }
 
+/**
+ * Bottom navigation bar — Figma: nav bar component (171:456)
+ *
+ * Specs: padding 8px 16px 24px, height 80dp, surface bg,
+ * top border 1px #EEEDF1, 3 items (HOME/SHOP/MY PAGE)
+ */
 @Composable
 fun BottomNavBar(
     currentDestination: BottomNavDestination,

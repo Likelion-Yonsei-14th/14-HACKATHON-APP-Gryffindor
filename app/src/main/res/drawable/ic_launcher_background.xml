@@ -2,12 +2,11 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="200"
-    android:viewportHeight="200">
+    android:viewportWidth="280"
+    android:viewportHeight="280">
 
-    <!-- Brand gradient background from Figma SVG/indigo — linear gradient #616AF3 → #3B36CC -->
-    <!-- Android vector drawable doesn't support gradient fills, using solid brand primary -->
+    <!-- Brand gradient background — solid primary (vector doesn't support gradient) -->
     <path
         android:fillColor="#616AF3"
-        android:pathData="M0,0h200v200H0z" />
+        android:pathData="M0,0h280v280H0z" />
 </vector>

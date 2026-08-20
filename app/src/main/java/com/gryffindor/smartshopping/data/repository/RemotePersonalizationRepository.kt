@@ -76,7 +76,13 @@ class RemotePersonalizationRepository(
             imageBytes.toRequestBody("image/jpeg".toMediaType())
         )
         val tripIdPart = tripId?.toRequestBody("text/plain".toMediaType())
-        return apiService.analyzeFlight(imagePart, tripIdPart).toDomain()
+        try {
+            return apiService.analyzeFlight(imagePart, tripIdPart).toDomain()
+        } catch (e: retrofit2.HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            Log.e(TAG, "analyzeFlight failed: HTTP ${e.code()} body=$errorBody", e)
+            throw e
+        }
     }
 
     override suspend fun updateFlight(

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -74,23 +75,35 @@ fun HomeTab(
             .background(colors.backgroundSurface)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top bar with logo and notification
+        // Top nav — Figma: top_nav (319:2129), 68dp top padding
+        Spacer(modifier = Modifier.height(68.dp))
+
+        // Logo row — Figma: favicon + notification icon
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "LOOKET",
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.textBrand
+            androidx.compose.foundation.Image(
+                painter = painterResource(R.drawable.logo_looket),
+                contentDescription = "LOOKET",
+                modifier = Modifier
+                    .width(80.dp)
+                    .height(21.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit
             )
-            // TODO: Notification icon when backend supports
+            // Notification bell icon
+            Icon(
+                painter = painterResource(R.drawable.ic_nav_home), // TODO: bell icon
+                contentDescription = "알림",
+                modifier = Modifier.size(24.dp),
+                tint = colors.textPrimary
+            )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Greeting
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {

@@ -2,6 +2,8 @@ package com.gryffindor.smartshopping.core.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,6 +19,12 @@ import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
 
+/**
+ * App top bar — Figma: top bar component (189:755)
+ *
+ * Specs: 68dp top padding (status bar area), then center-aligned title
+ * with left (back) and right (optional) icon areas (36x36 each)
+ */
 @Composable
 fun AppTopBar(
     title: String,
@@ -27,34 +35,40 @@ fun AppTopBar(
 ) {
     val colors = LocalAppColors.current
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 16.dp)
-    ) {
-        if (showBackButton) {
-            Icon(
-                painter = painterResource(R.drawable.ic_arrow_left),
-                contentDescription = "Back",
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(24.dp)
-                    .clickable { onBackClick() },
-                tint = colors.textPrimary
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Status bar padding — Figma: 68dp top
+        Spacer(modifier = Modifier.height(52.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 16.dp)
+        ) {
+            if (showBackButton) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_arrow_left),
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(36.dp)
+                        .clickable { onBackClick() }
+                        .padding(6.dp),
+                    tint = colors.textPrimary
+                )
+            }
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium, // title-2: 18/SemiBold
+                color = colors.textPrimary,
+                modifier = Modifier.align(Alignment.Center)
             )
-        }
 
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = colors.textPrimary,
-            modifier = Modifier.align(Alignment.Center)
-        )
-
-        if (trailingContent != null) {
-            Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                trailingContent()
+            if (trailingContent != null) {
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    trailingContent()
+                }
             }
         }
     }

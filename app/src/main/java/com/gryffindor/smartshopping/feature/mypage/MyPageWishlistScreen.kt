@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,11 +24,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.gryffindor.smartshopping.core.ui.component.AppTopBar
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
 import com.gryffindor.smartshopping.feature.wishlist.WishlistViewModel
 
 /**
- * MyPage Wishlist screen — shows all wishlisted products.
+ * MyPage Wishlist screen — Figma node 54:796 (위시리스트)
+ *
+ * Shows all wishlisted products with remove action.
  * Uses WishlistViewModel backed by real PersonalizationRepository.
  */
 @Composable
@@ -51,27 +53,12 @@ fun MyPageWishlistScreen(
             .fillMaxSize()
             .background(colors.backgroundSurface)
     ) {
-        // Top bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = onNavigateBack) {
-                Text(
-                    text = "←",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = colors.textPrimary
-                )
-            }
-            Text(
-                text = "위시리스트",
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.textPrimary,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
+        // Top bar — Figma: top bar with back button
+        AppTopBar(
+            title = "위시리스트",
+            showBackButton = true,
+            onBackClick = onNavigateBack
+        )
 
         when {
             isLoading -> {

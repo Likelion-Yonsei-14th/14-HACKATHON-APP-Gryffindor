@@ -19,6 +19,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
 
+/**
+ * Confirm dialog — Figma: logout modal (54:1005)
+ *
+ * Centered dialog over muted overlay background.
+ * Two buttons: dismiss (subtle bg) + confirm (brand primary).
+ */
 @Composable
 fun ConfirmDialog(
     title: String,
@@ -43,17 +49,17 @@ fun ConfirmDialog(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleMedium, // title-2: 18/SemiBold
                     color = colors.textPrimary
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(25.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // Dismiss button
+                    // Dismiss button — Figma: subtle/secondary bg
                     Surface(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(8.dp),
@@ -61,7 +67,7 @@ fun ConfirmDialog(
                     ) {
                         Text(
                             text = dismissText,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = colors.textSecondary,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                         )
@@ -69,15 +75,15 @@ fun ConfirmDialog(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Confirm button
+                    // Confirm button — Figma: brand primary
                     Surface(
                         onClick = onConfirm,
                         shape = RoundedCornerShape(8.dp),
-                        color = colors.brandSecondary
+                        color = colors.brandPrimary
                     ) {
                         Text(
                             text = confirmText,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = colors.textInverse,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                         )

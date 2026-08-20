@@ -19,11 +19,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.theme.LocalAppColors
 
+/**
+ * Login screen — Figma node 376:5161 (로그인)
+ *
+ * Layout:
+ * - Top bar area (68dp top padding, placeholder back/forward arrows — not functional)
+ * - Center: slogan "look. pocket. repeat." + favicon logo
+ * - Bottom: Kakao login (#FBE300) + Guest login (#E0E8FF)
+ * - 256dp gap between top bar and center content (Figma: gap=256px between groups)
+ */
 @Composable
 fun LoginScreen(
     onKakaoLogin: () -> Unit,
@@ -40,33 +53,37 @@ fun LoginScreen(
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Logo area
+        // Logo area — Figma: slogan text above favicon
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text(
+                text = "look. pocket. repeat.",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Normal,
+                fontFamily = FontFamily.SansSerif, // Clash Grotesk fallback
+                color = colors.brandPrimary
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            // Favicon — Figma: 100x26
             Image(
                 painter = painterResource(R.drawable.logo_looket),
                 contentDescription = "LOOKET",
                 modifier = Modifier
-                    .width(200.dp)
-                    .height(60.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "look. pocket. repeat.",
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.brandPrimary
+                    .width(100.dp)
+                    .height(26.dp),
+                contentScale = ContentScale.Fit
             )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Login buttons
+        // Login buttons — Figma: gap=16dp, each 380 wide x 56 tall, radius 6dp
         Column(
             modifier = Modifier.padding(bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Kakao Login
+            // Kakao Login — Figma: bg #FBE300, text #3B1E1E, body-1
             Button(
                 onClick = onKakaoLogin,
                 modifier = Modifier
@@ -84,7 +101,7 @@ fun LoginScreen(
                 )
             }
 
-            // Guest Login
+            // Guest Login — Figma: bg BrandPrimarySubtle (#E0E8FF), text TextBrand (#616AF3), body-1
             Button(
                 onClick = onGuestLogin,
                 modifier = Modifier
