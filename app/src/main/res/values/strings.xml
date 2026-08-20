@@ -26,6 +26,11 @@
     <string name="mypage_receipt_register_guide">여행 중 받은\n구매 영수증을 등록해주세요.</string>
     <string name="mypage_receipt_retake_photo">사진 다시찍기</string>
 
+    <string name="common_skip">건너뛰기</string>
+    <string name="onboarding_receipt_register_cta">등록하기</string>
+    <string name="onboarding_receipt_retake_cta">다시찍기</string>
+    <string name="onboarding_purchase_confirm_guide">구매 물품 목록이 영수증과 일치하는지\n확인해주세요.</string>
+
     <string name="store_selection_section_title">매장 선택하기</string>
     <string name="shopping_store_selection_title">SHOP</string>
 

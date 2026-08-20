@@ -14,6 +14,7 @@ import com.gryffindor.smartshopping.data.repository.RemoteShoppingRepository
 import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
+import com.gryffindor.smartshopping.domain.model.TripDates
 import com.gryffindor.smartshopping.domain.repository.ChecklistRepository
 import com.gryffindor.smartshopping.domain.repository.RecommendationRepository
 import com.gryffindor.smartshopping.domain.repository.SessionRepository
@@ -60,4 +61,8 @@ class AppContainer(private val applicationContext: Context) {
         )
     }
     val attentionCandidateProvider: AttentionCandidateProvider get() = attentionPipeline
+
+    // 온보딩에서 확인한 여행 날짜 — 체크리스트 화면 날짜 네비게이터 초기값으로 쓴다.
+    // TODO: 실제 세션/서버에 여행 정보가 영속화되면 이 임시 필드는 제거한다.
+    var tripDates: TripDates = TripDates()
 }
