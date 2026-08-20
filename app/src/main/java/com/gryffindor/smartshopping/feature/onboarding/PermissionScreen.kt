@@ -131,7 +131,10 @@ fun PermissionScreen(onNext: () -> Unit) {
                     onNext()
                 }
             },
-            enabled = allGranted,
+            // 버튼 자체가 권한 요청을 "트리거"하는 역할이라, 여기를 allGranted로 막아버리면
+            // 사용자가 권한을 요청할 방법이 아예 없어져서 영원히 막힌다(실제 버그였음).
+            // 항상 눌리게 두고, 눌렀을 때 상태에 따라 요청/다음 중 하나로 분기한다.
+            enabled = true,
         )
 
         Spacer(modifier = Modifier.height(24.dp))
