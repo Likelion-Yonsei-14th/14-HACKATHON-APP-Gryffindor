@@ -312,6 +312,7 @@ fun AppNavGraph(
                 )
             )
             val uiState by viewModel.uiState.collectAsState()
+            val context = LocalContext.current
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToShopping = { sessionId ->
@@ -324,6 +325,16 @@ fun AppNavGraph(
                     // 가장 최근에 시작한 세션(lastSessionId)으로 체크리스트를 연다.
                     uiState.lastSessionId?.let { sessionId ->
                         navController.navigate(Routes.checklist(sessionId))
+                    }
+                },
+                onNavigateToVisitReservation = {
+                    // FOR YOU 추천 상품을 눌렀을 때 진입 — 방문 예약은 여행(Trip)에 묶이므로
+                    // 등록된 여행이 하나도 없으면 안내만 하고 진행하지 않는다.
+                    val tripId = uiState.currentTripId
+                    if (tripId != null) {
+                        navController.navigate(Routes.visitReservationStoreSelect(tripId))
+                    } else {
+                        Toast.makeText(context, "먼저 여행을 등록해주세요.", Toast.LENGTH_SHORT).show()
                     }
                 },
                 selectedTab = BottomNavTab.HOME,
@@ -496,7 +507,7 @@ fun AppNavGraph(
             )
         }
 
-        // --- 방문예약 플로우. 여행 상세의 "방문 예약하기" 버튼에서 진입한다. ---
+        // --- 방문예약 플로우. 홈 FOR YOU 추천 상품을 눌러서 진입한다. ---
 
         composable(
             route = Routes.VISIT_RESERVATION_STORE_SELECT,
@@ -524,7 +535,7 @@ fun AppNavGraph(
                     }
                 },
                 onBackClick = { navController.popBackStack() },
-                selectedTab = BottomNavTab.MY_PAGE,
+                selectedTab = BottomNavTab.HOME,
                 onTabSelected = onBottomTabSelected,
             )
         }
@@ -559,7 +570,7 @@ fun AppNavGraph(
             LaunchedEffect(createState.createdReservation) {
                 if (createState.createdReservation != null) {
                     navController.navigate(Routes.reservationList(tripId)) {
-                        popUpTo(Routes.tripDetail(tripId)) { inclusive = false }
+                        popUpTo(Routes.HOME) { inclusive = false }
                     }
                     viewModel.resetCreateState()
                 }
