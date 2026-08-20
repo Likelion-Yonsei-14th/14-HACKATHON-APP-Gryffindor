@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.core.common.UiState
+import com.gryffindor.smartshopping.data.recording.GlassesVideoRecorder
 import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.detection.DetectionResultProvider
@@ -52,7 +53,8 @@ class ShoppingViewModel(
     private val sessionRepository: SessionRepository,
     private val cameraFrameProvider: CameraFrameProvider,
     private val detectionResultProvider: DetectionResultProvider,
-    private val attentionCandidateProvider: AttentionCandidateProvider
+    private val attentionCandidateProvider: AttentionCandidateProvider,
+    private val glassesVideoRecorder: GlassesVideoRecorder? = null
 ) : ViewModel() {
 
     companion object {
@@ -113,6 +115,15 @@ class ShoppingViewModel(
             currentCurrency = currency
             sessionActive = true
         }
+
+        // Start glasses POV recording (non-blocking, failure-safe)
+        try {
+            glassesVideoRecorder?.startRecording(sessionId)
+            glassesVideoRecorder?.launchEncoderLoop()
+        } catch (e: Exception) {
+            Log.w(TAG, "Glasses recording start failed (shopping unaffected)", e)
+        }
+
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
@@ -202,6 +213,13 @@ class ShoppingViewModel(
         jobsToCancel.forEach(Job::cancel)
         if (jobsToCancel.isNotEmpty()) {
             Log.i(TAG, "[A4] recognitions cancelled: session completed count=${jobsToCancel.size}")
+        }
+
+        // Stop glasses POV recording before camera shutdown (non-blocking, failure-safe).
+        try {
+            glassesVideoRecorder?.stopRecording()
+        } catch (e: Exception) {
+            Log.w(TAG, "Glasses recording stop failed (session completion unaffected)", e)
         }
 
         viewModelScope.launch {
@@ -451,7 +469,8 @@ class ShoppingViewModel(
         private val sessionRepository: SessionRepository,
         private val cameraFrameProvider: CameraFrameProvider,
         private val detectionResultProvider: DetectionResultProvider,
-        private val attentionCandidateProvider: AttentionCandidateProvider
+        private val attentionCandidateProvider: AttentionCandidateProvider,
+        private val glassesVideoRecorder: GlassesVideoRecorder? = null
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -460,7 +479,8 @@ class ShoppingViewModel(
                 sessionRepository,
                 cameraFrameProvider,
                 detectionResultProvider,
-                attentionCandidateProvider
+                attentionCandidateProvider,
+                glassesVideoRecorder
             ) as T
         }
     }

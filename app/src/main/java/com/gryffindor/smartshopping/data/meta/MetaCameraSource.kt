@@ -1,6 +1,7 @@
 package com.gryffindor.smartshopping.data.meta
 
 import android.util.Log
+import com.gryffindor.smartshopping.data.recording.GlassesVideoRecorder
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.gryffindor.smartshopping.domain.model.CameraFrame
@@ -71,6 +72,12 @@ class MetaCameraSource(
      * flow when the glasses DAT app is outdated.
      */
     var updateRequester: WearableUpdateRequester? = null
+
+    /**
+     * Optional video recorder. When set and recording, each frame is also enqueued
+     * to the recorder via a non-blocking tryEnqueueFrame. Never blocks the detection pipeline.
+     */
+    var videoRecorder: GlassesVideoRecorder? = null
 
     // --- SDK-independent public state ---
 
@@ -381,6 +388,11 @@ class MetaCameraSource(
             stream.videoStream.collect { videoFrame: VideoFrame ->
                 val frame = transferFrameOwnership(videoFrame)
                 _frames.tryEmit(frame)
+
+                // Non-blocking: enqueue to video recorder if active.
+                // Uses the same app-owned CameraFrame — no extra copy needed.
+                videoRecorder?.tryEnqueueFrame(frame)
+
                 frameCount++
                 if (frameCount == 1L) {
                     Log.i(TAG, "VideoFrame received (first frame: ${frame.width}x${frame.height})")

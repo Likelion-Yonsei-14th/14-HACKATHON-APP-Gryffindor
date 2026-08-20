@@ -137,7 +137,8 @@ fun AppNavGraph(
                     appContainer.sessionRepository,
                     appContainer.cameraFrameProvider,
                     appContainer.detectionResultProvider,
-                    appContainer.attentionCandidateProvider
+                    appContainer.attentionCandidateProvider,
+                    appContainer.glassesVideoRecorder
                 )
             )
             val wishlistViewModel: WishlistViewModel = viewModel(
