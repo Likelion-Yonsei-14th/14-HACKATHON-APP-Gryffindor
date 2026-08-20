@@ -106,6 +106,10 @@ dependencies {
     implementation("com.meta.wearable:mwdat-camera:0.9.0")
     debugImplementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
 
+    // Image loading (Coil for Compose — used for Store/Product imageUrl display)
+    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+
     // TensorFlow Lite — Object Detection (confined to data/detection/)
     implementation("org.tensorflow:tensorflow-lite:2.16.1")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.4")

@@ -13,5 +13,12 @@ fun StoreDto.toDomain(): Store = Store(
     country = country,
     city = city,
     type = type,
-    airportCode = airportCode
+    airportCode = airportCode,
+    address = address,
+    latitude = latitude,
+    longitude = longitude,
+    terminal = terminal,
+    openingHours = openingHours,
+    imageUrl = imageUrl,
+    isActive = isActive
 )

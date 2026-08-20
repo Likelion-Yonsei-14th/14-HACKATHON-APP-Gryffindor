@@ -592,7 +592,8 @@ fun ProductionNavGraph(
             val reservationViewModel: com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel =
                 viewModel(
                     factory = com.gryffindor.smartshopping.feature.reservation.VisitReservationViewModel.Factory(
-                        appContainer.tripRepository
+                        appContainer.tripRepository,
+                        appContainer.storeRepository
                     )
                 )
             com.gryffindor.smartshopping.feature.reservation.VisitReservationScreen(

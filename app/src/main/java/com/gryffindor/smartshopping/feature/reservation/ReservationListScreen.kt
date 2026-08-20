@@ -75,12 +75,33 @@ fun ReservationListScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (reservations.isEmpty()) {
-                    Text(
-                        text = "등록된 방문 예약이 없습니다.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "등록된 방문 예약이 없습니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 } else {
+                    // Summary
+                    val reservedCount = reservations.count {
+                        it.status == com.gryffindor.smartshopping.domain.model.ReservationStatus.RESERVED
+                    }
+                    if (reservedCount > 0) {
+                        Text(
+                            text = "예약 ${reservedCount}건",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
                     ReservationListSection(
                         reservations = reservations,
                         cancellingIds = cancellingIds,

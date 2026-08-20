@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.gryffindor.smartshopping.domain.model.Store
 import com.gryffindor.smartshopping.domain.model.StoreWishlistProduct
 import com.gryffindor.smartshopping.domain.model.VisitReservation
+import com.gryffindor.smartshopping.domain.repository.StoreRepository
 import com.gryffindor.smartshopping.domain.repository.TripRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 // --- UI States ---
 
 data class ReservationCreateUiState(
+    val store: Store? = null,
     val isLoadingProducts: Boolean = false,
     val storeWishlistProducts: List<StoreWishlistProduct> = emptyList(),
     val selectedProductIds: Set<String> = emptySet(),
@@ -36,7 +39,8 @@ data class ReservationListUiState(
 // --- ViewModel ---
 
 class VisitReservationViewModel(
-    private val tripRepository: TripRepository
+    private val tripRepository: TripRepository,
+    private val storeRepository: StoreRepository? = null
 ) : ViewModel() {
 
     companion object {
@@ -48,6 +52,21 @@ class VisitReservationViewModel(
 
     private val _listState = MutableStateFlow(ReservationListUiState())
     val listState: StateFlow<ReservationListUiState> = _listState.asStateFlow()
+
+    // ========== Store Lookup ==========
+
+    fun loadStore(storeId: String) {
+        if (storeRepository == null) return
+        viewModelScope.launch {
+            try {
+                val stores = storeRepository.getStores()
+                val store = stores.find { it.id == storeId }
+                _createState.update { it.copy(store = store) }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load store info for $storeId", e)
+            }
+        }
+    }
 
     // ========== Create Flow ==========
 
@@ -210,11 +229,12 @@ class VisitReservationViewModel(
     }
 
     class Factory(
-        private val tripRepository: TripRepository
+        private val tripRepository: TripRepository,
+        private val storeRepository: StoreRepository? = null
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return VisitReservationViewModel(tripRepository) as T
+            return VisitReservationViewModel(tripRepository, storeRepository) as T
         }
     }
 }
