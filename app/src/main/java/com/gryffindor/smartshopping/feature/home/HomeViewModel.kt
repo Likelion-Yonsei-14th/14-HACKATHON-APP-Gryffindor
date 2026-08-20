@@ -66,7 +66,8 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isStarting = true, errorMessage = null) }
             try {
-                val session = sessionRepository.createSession("KRW", storeId)
+                // TODO: Backend는 USD/CNY만 허용. 통화 선택 UI 연결 시 교체 필요.
+                val session = sessionRepository.createSession("USD", storeId)
                 _uiState.update {
                     it.copy(
                         sessionId = session.sessionId,

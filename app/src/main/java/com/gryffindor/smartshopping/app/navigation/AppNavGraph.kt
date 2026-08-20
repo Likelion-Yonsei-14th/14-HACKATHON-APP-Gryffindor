@@ -262,9 +262,9 @@ fun AppNavGraph(
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToShopping = { sessionId ->
-                    // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 KRW 고정. 백엔드 통화
+                    // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 USD 고정. 백엔드 통화
                     // 선택 로직(SupportedCountry 등) 연결 시 실제 선택값으로 교체 필요.
-                    navController.navigate(Routes.shopping(sessionId, "KRW"))
+                    navController.navigate(Routes.shopping(sessionId, "USD"))
                 },
                 onNavigateToChecklist = {
                     // sessionId는 쇼핑 화면 이동 즉시 null로 리셋되므로, 홈에 머무는 동안엔
@@ -281,13 +281,13 @@ fun AppNavGraph(
         // --- 하단 네비게이션 SHOP/MY PAGE 탭 ---
 
         composable(Routes.SHOP_TAB) {
-            // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 KRW 고정(HOME의 쇼핑 이동과 동일한
-            // 이유).
+            // TODO: 화면에 아직 통화 선택 UI가 없어서 임시로 USD 고정(HOME의 쇼핑 이동과 동일한
+            // 이유). Backend는 USD/CNY만 허용한다.
             val viewModel: StoreSelectionViewModel = viewModel(
                 factory = StoreSelectionViewModel.Factory(
                     appContainer.storeRepository,
                     appContainer.sessionRepository,
-                    "KRW",
+                    "USD",
                 )
             )
             val uiState by viewModel.uiState.collectAsState()
@@ -503,7 +503,7 @@ fun AppNavGraph(
             )
         ) { backStackEntry ->
             val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
-            val currency = backStackEntry.arguments?.getString("currency") ?: "KRW"
+            val currency = backStackEntry.arguments?.getString("currency") ?: "USD"
             val viewModel: ShoppingViewModel = viewModel(
                 factory = ShoppingViewModel.Factory(
                     appContainer.shoppingRepository,
@@ -520,7 +520,7 @@ fun AppNavGraph(
             // - 제거(onRemoveItem)는 무력화: 백엔드에 세션에서 개별 상품을 빼는 API가 없다.
             // - 재생/일시정지는 백엔드 의미가 없는 순수 로컬 UI 상태다 — 매장 선택 확인
             //   시점에 세션이 이미 시작되어 카메라도 자동으로 켜져 있다.
-            var isSessionActive by remember { mutableStateOf(false) }
+            var isSessionActive by remember { mutableStateOf(true) }
 
             when (uiState) {
                 is UiState.Loading -> {
