@@ -1,18 +1,12 @@
 package com.gryffindor.smartshopping.feature.shopping
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.component.LooketStore
 import com.gryffindor.smartshopping.core.ui.component.LooketStoreSelectionScreen
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.Store
 
 /**
@@ -55,24 +49,3 @@ fun Store.toLooketStore(): LooketStore = LooketStore(
     address = address ?: listOfNotNull(city, country).joinToString(", "),
     imageUrl = imageUrl,
 )
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun ShoppingStoreSelectionScreenPreview() {
-    var selectedStoreId by remember { mutableStateOf<String?>(null) }
-    val previewStores = listOf(
-        LooketStore(id = "1", name = "MCM 신세계백화점 본점", address = "서울특별시 중구 퇴계로 77 9F 신세계면세점 본점"),
-        LooketStore(id = "2", name = "MCM HAUS", address = "서울 강남구 압구정로 412 MCM HAUS"),
-    )
-    LooketTheme {
-        ShoppingStoreSelectionScreen(
-            stores = previewStores,
-            selectedStoreId = selectedStoreId,
-            onStoreSelected = { selectedStoreId = it },
-            onConfirmClick = {},
-            onBackClick = {},
-            selectedTab = BottomNavTab.SHOP,
-            onTabSelected = {},
-        )
-    }
-}

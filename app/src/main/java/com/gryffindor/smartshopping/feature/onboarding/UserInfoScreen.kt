@@ -1,8 +1,6 @@
 package com.gryffindor.smartshopping.feature.onboarding
 
 import androidx.compose.foundation.Image
-import androidx.compose.ui.tooling.preview.Preview
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -320,13 +318,5 @@ private fun TermsRow(label: String, checked: Boolean, onToggle: () -> Unit, onDe
             fontSize = 18.sp,
             modifier = Modifier.clickable(onClick = onDetailClick).padding(8.dp),
         )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun UserInfoScreenPreview() {
-    LooketTheme {
-        UserInfoScreen(onComplete = {})
     }
 }

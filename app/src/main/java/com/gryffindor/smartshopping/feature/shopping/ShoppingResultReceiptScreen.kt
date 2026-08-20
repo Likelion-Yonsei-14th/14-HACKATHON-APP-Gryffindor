@@ -4,14 +4,12 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.component.LooketReceiptPhotoScreen
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
 import kotlinx.coroutines.launch
 
@@ -72,18 +70,5 @@ class ShoppingReceiptViewModel(
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return ShoppingReceiptViewModel(personalizationRepository) as T
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun ShoppingResultReceiptScreenPreview() {
-    LooketTheme {
-        ShoppingResultReceiptScreen(
-            onBackClick = {},
-            onRegisterClick = {},
-            selectedTab = BottomNavTab.SHOP,
-            onTabSelected = {},
-        )
     }
 }

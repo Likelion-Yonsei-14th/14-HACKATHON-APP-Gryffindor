@@ -37,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gryffindor.smartshopping.R
@@ -45,7 +44,6 @@ import com.gryffindor.smartshopping.core.common.UiState
 import com.gryffindor.smartshopping.core.ui.component.LooketIconButton
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -249,56 +247,5 @@ private fun ChecklistRow(
         ) {
             Text("✓", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
-    }
-}
-
-// ---------- Preview용 목데이터 ----------
-
-private val previewItems = listOf(
-    ChecklistItem(id = "1", title = "세관 신고하기", description = "시간: ~15:00 / 장소: T1 3층", required = true),
-    ChecklistItem(id = "2", title = "미환급 물품 환급받기", description = "시간: ~17:30 / 장소: 면세구역 내 환급 카운터", required = true),
-)
-
-private val previewDate = LocalDate.of(2026, 8, 21)
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun ChecklistSuccessPreview() {
-    LooketTheme {
-        ChecklistContent(
-            uiState = UiState.Success(ChecklistUiState(items = previewItems, checkedIds = setOf("1"))),
-            initialDate = previewDate,
-            onToggle = {},
-            onRetry = {},
-            onNavigateToRecommendation = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun ChecklistLoadingPreview() {
-    LooketTheme {
-        ChecklistContent(
-            uiState = UiState.Loading,
-            initialDate = previewDate,
-            onToggle = {},
-            onRetry = {},
-            onNavigateToRecommendation = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun ChecklistErrorPreview() {
-    LooketTheme {
-        ChecklistContent(
-            uiState = UiState.Error("체크리스트를 불러올 수 없습니다."),
-            initialDate = previewDate,
-            onToggle = {},
-            onRetry = {},
-            onNavigateToRecommendation = {},
-        )
     }
 }

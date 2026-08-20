@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.gryffindor.smartshopping.R
@@ -47,7 +46,6 @@ import com.gryffindor.smartshopping.core.ui.component.LooketDropdown
 import com.gryffindor.smartshopping.core.ui.component.LooketTopBar
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.PurchasedProduct
 
 private val languageOptions = listOf("ENGLISH", "한국어", "中國語")
@@ -269,29 +267,5 @@ private fun PurchasedProductRow(item: PurchasedProduct) {
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun MyPageScreenPreview() {
-    var language by remember { mutableStateOf<String?>(null) }
-    var currency by remember { mutableStateOf<String?>(null) }
-
-    LooketTheme {
-        MyPageScreen(
-            nickname = "gryffindor0825",
-            purchasedProducts = emptyList(),
-            selectedLanguage = language,
-            selectedCurrency = currency,
-            onLanguageSelected = { language = it },
-            onCurrencySelected = { currency = it },
-            onTravelClick = {},
-            onReceiptClick = {},
-            onWishlistClick = {},
-            onLogoutClick = {},
-            selectedTab = BottomNavTab.MY_PAGE,
-            onTabSelected = {},
-        )
     }
 }

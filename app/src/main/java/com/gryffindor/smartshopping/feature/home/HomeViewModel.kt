@@ -8,6 +8,7 @@ import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
 import com.gryffindor.smartshopping.domain.camera.GlassesUpdateResult
 import com.gryffindor.smartshopping.domain.model.CameraState
 import com.gryffindor.smartshopping.domain.model.FeedRecommendation
+import com.gryffindor.smartshopping.domain.model.Product
 import com.gryffindor.smartshopping.domain.model.PurchasedProduct
 import com.gryffindor.smartshopping.domain.model.RefundChecklist
 import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
@@ -32,6 +33,7 @@ data class HomeUiState(
     // Backend-driven home data
     val purchasedProducts: List<PurchasedProduct> = emptyList(),
     val recommendations: List<FeedRecommendation> = emptyList(),
+    val wishlistProducts: List<Product> = emptyList(),
     val refundChecklist: RefundChecklist? = null,
     // FOR YOU 추천에서 상품을 눌러 방문 예약으로 들어갈 때 필요 — 유저의 첫 번째 여행.
     // 여러 여행 중 하나를 고르는 UI는 아직 없어서 첫 번째 여행으로 고정.
@@ -132,16 +134,41 @@ class HomeViewModel(
                 }
             }
 
+            // Fetch wishlist for the MY LOOKET "관심" section
+            val wishlistProducts = try {
+                personalizationRepository.getWishlist()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load wishlist", e)
+                emptyList()
+            }
+
             _uiState.update {
                 it.copy(
                     purchasedProducts = purchasedProducts,
                     recommendations = recommendations,
+                    wishlistProducts = wishlistProducts,
                     refundChecklist = refundChecklist,
                     currentTripId = tripId,
                     isChecklistLoading = false,
                     isHomeDataLoading = false,
                     homeDataLoaded = true,
                 )
+            }
+        }
+    }
+
+    /**
+     * MY LOOKET "관심" 카드의 제거 버튼에서 호출. 낙관적으로 로컬 상태에서 먼저 지우고,
+     * 실패하면 다음 loadHomeData() 새로고침 때 다시 나타난다.
+     */
+    fun removeFromWishlist(productId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(wishlistProducts = it.wishlistProducts.filterNot { p -> p.productId == productId }) }
+            try {
+                personalizationRepository.deleteWishlist(productId)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to remove $productId from wishlist", e)
+                loadHomeData()
             }
         }
     }

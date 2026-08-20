@@ -31,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
@@ -50,7 +48,6 @@ import com.gryffindor.smartshopping.core.ui.component.LooketIconButton
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 data class LiveReceiptItem(
     val id: String,
@@ -445,34 +442,3 @@ private fun LiveReceiptRow(item: LiveReceiptItem, isExchangeRateOn: Boolean, onR
         )
     }
 }
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun LiveShoppingScreenPreview() {
-    var isSessionActive by remember { mutableStateOf(false) }
-    var previewItems by remember { mutableStateOf(dummyLiveReceiptItems) }
-    var isExchangeRateOn by remember { mutableStateOf(false) }
-
-    LooketTheme {
-        LiveShoppingScreen(
-            isSessionActive = isSessionActive,
-            onPlayClick = { isSessionActive = true },
-            onPauseClick = { isSessionActive = false },
-            onFinishClick = { isSessionActive = false },
-            onBackClick = {},
-            totalPurchaseAmount = "₩ 3,400,000",
-            refundAmount = "₩ 230,000",
-            items = previewItems,
-            onRemoveItem = { id -> previewItems = previewItems.filterNot { it.id == id } },
-            isExchangeRateOn = isExchangeRateOn,
-            onExchangeRateToggle = { isExchangeRateOn = !isExchangeRateOn },
-        )
-    }
-}
-
-internal val dummyLiveReceiptItems = listOf(
-    LiveReceiptItem("1", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
-    LiveReceiptItem("2", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
-    LiveReceiptItem("3", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
-    LiveReceiptItem("4", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "₩ 76,000"),
-)

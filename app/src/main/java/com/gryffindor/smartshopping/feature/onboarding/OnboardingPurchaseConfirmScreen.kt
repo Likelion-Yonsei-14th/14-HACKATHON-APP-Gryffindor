@@ -19,14 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.component.LooketSectionHeader
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
  * 목록에 표시할 구매 물품 한 건. 실제 인식/영수증 데이터 연동 전까지는
@@ -125,25 +123,5 @@ private fun PurchaseConfirmRow(item: PurchaseConfirmItem) {
             }
             Spacer(Modifier.height(41.dp).width(28.dp))
         }
-    }
-}
-
-private val previewItems = listOf(
-    PurchaseConfirmItem("1", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "환급액: ₩ 76,000"),
-    PurchaseConfirmItem("2", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "환급액: ₩ 76,000"),
-    PurchaseConfirmItem("3", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "환급액: ₩ 76,000"),
-    PurchaseConfirmItem("4", "Aren 비세토스 E/W 숄더백", "신세계면세점 본점", "₩ 1,090,000", "환급액: ₩ 76,000"),
-)
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 1200)
-@Composable
-private fun OnboardingPurchaseConfirmScreenPreview() {
-    LooketTheme {
-        OnboardingPurchaseConfirmScreen(
-            items = previewItems,
-            onBackClick = {},
-            onRemoveItem = {},
-            onConfirmClick = {},
-        )
     }
 }

@@ -19,12 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 enum class HomeTopBarTab(val label: String) {
     REFUND("REFUND"),
@@ -104,29 +102,5 @@ private fun HomeTopBarTabItem(
             Spacer(modifier = Modifier.height(8.dp))
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LooketColors.BrandPrimary))
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeTopBarPreview() {
-    LooketTheme {
-        HomeTopBar(selectedTab = HomeTopBarTab.REFUND, onTabSelected = {})
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeTopBarRefundPreview() {
-    LooketTheme {
-        HomeTopBar(selectedTab = HomeTopBarTab.REFUND, onTabSelected = {})
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeTopBarLooketPreview() {
-    LooketTheme {
-        HomeTopBar(selectedTab = HomeTopBarTab.LOOKET, onTabSelected = {})
     }
 }

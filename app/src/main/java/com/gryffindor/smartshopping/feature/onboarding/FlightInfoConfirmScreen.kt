@@ -33,13 +33,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gryffindor.smartshopping.core.ui.component.BottomNavBar
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 // 수정할 수 있도록 value를 변경 가능한 상태로 관리하기 위해 수정
 data class FlightInfoField(
@@ -196,22 +194,5 @@ private fun FlightInfoFieldRow(
         }
 
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LooketColors.TextPrimary))
-    }
-}
-
-private val previewFields = listOf(
-    FlightInfoField("1", "출발지", "BEJ"),
-    FlightInfoField("2", "도착지", "ICN"),
-    FlightInfoField("3", "터미널", "인천공항 T2"),
-    FlightInfoField("4", "출발 시간", "2026.08.21 10:00"),
-    FlightInfoField("5", "도착 시간", "2026.08.25 19:00"),
-    FlightInfoField("6", "공항 도착 예정시간", "2026.08.25 15:00"),
-)
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun FlightInfoConfirmScreenPreview() {
-    LooketTheme {
-        FlightInfoConfirmScreen(fields = previewFields, onBackClick = {}, onConfirmClick = {})
     }
 }

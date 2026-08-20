@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,8 +15,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
+import com.gryffindor.smartshopping.domain.model.Store
 import com.gryffindor.smartshopping.domain.repository.PersonalizationRepository
+import com.gryffindor.smartshopping.domain.repository.StoreRepository
+import com.gryffindor.smartshopping.feature.shopping.toLooketStore
 
 private object MyPageRoutes {
     const val HOME = "mypage/home"
@@ -29,8 +30,7 @@ private object MyPageRoutes {
 }
 
 /**
- * 마이페이지 탭 하위 화면 전환. 진짜 유저 데이터/Repository 연결 전까지는
- * 더미 값으로 채워두고, 실제 배선은 AppNavGraph에 이 컴포저블을 얹을 때 진행한다.
+ * 마이페이지 탭 하위 화면 전환.
  *
  * TRAVEL/WISHLIST 메뉴는 이 NavHost 내부가 아니라 [onNavigateToTripList]/[onNavigateToWishlist]를
  * 통해 최상위 AppNavGraph의 진짜 여행(Trip)/위시리스트 플로우로 나간다 — 둘 다 실제
@@ -45,8 +45,18 @@ fun MyPageNavHost(
     onNavigateToWishlist: () -> Unit,
     modifier: Modifier = Modifier,
     personalizationRepository: PersonalizationRepository? = null,
+    storeRepository: StoreRepository? = null,
 ) {
     val navController = rememberNavController()
+
+    var stores by remember { mutableStateOf<List<Store>>(emptyList()) }
+    LaunchedEffect(storeRepository) {
+        stores = try {
+            storeRepository?.getStores() ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
     NavHost(navController = navController, startDestination = MyPageRoutes.HOME, modifier = modifier) {
         composable(MyPageRoutes.HOME) {
@@ -82,6 +92,7 @@ fun MyPageNavHost(
             var selectedStoreId by remember { mutableStateOf<String?>(null) }
 
             MyPageReceiptScreen(
+                stores = stores.map { it.toLooketStore() },
                 selectedStoreId = selectedStoreId,
                 onStoreSelected = { selectedStoreId = it },
                 onAddReceiptClick = { navController.navigate(MyPageRoutes.RECEIPT_REGISTER) },
@@ -108,7 +119,7 @@ fun MyPageNavHost(
             arguments = listOf(navArgument("storeId") { type = NavType.StringType }),
         ) { backStackEntry ->
             val storeId = backStackEntry.arguments?.getString("storeId") ?: return@composable
-            val storeName = dummyStores.find { it.id == storeId }?.name ?: storeId
+            val storeName = stores.find { it.id == storeId }?.name ?: storeId
 
             MyPageReceiptViewScreen(
                 storeName = storeName,
@@ -118,19 +129,5 @@ fun MyPageNavHost(
                 onTabSelected = onTabSelected,
             )
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun MyPageNavHostPreview() {
-    var selectedTab by remember { mutableStateOf(BottomNavTab.MY_PAGE) }
-    LooketTheme {
-        MyPageNavHost(
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it },
-            onNavigateToTripList = {},
-            onNavigateToWishlist = {},
-        )
     }
 }

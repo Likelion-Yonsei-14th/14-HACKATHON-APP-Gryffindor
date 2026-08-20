@@ -1,6 +1,5 @@
 package com.gryffindor.smartshopping.feature.home
 
-import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
 
 data class RefundSummary(
@@ -28,18 +27,13 @@ data class PurchasedItem(
     val refundAmountUsd: String? = null,
 )
 
-data class BrandFilter(
-    val id: String,
-    val name: String,
-    val iconRes: Int,
-)
-
 data class LooketProduct(
     val id: String,
     val name: String,
-    val store: String,
-    val priceKrw: Long,
-    val brandId: String,
+    // 구매 상품은 실제 매장/가격이 있지만, 위시리스트 상품은 Backend Product 모델에
+    // 가격·매장 정보가 없어 null일 수 있다.
+    val store: String? = null,
+    val priceKrw: Long? = null,
     val statusLabel: String, // "구매" 또는 "관심"
     val imageUrl: String? = null,
 )
@@ -133,18 +127,12 @@ object HomeProductionData {
         ),
     )
 
-    val brandFilters = listOf(
-        BrandFilter("mcm", "MCM", R.drawable.logo_mcm),
-        BrandFilter("mcm2", "MCM2", R.drawable.logo_mcm2),
-    )
-
     val looketProducts = listOf(
         LooketProduct(
             id = "mcm_aren_ew_shoulder_s_001",
             name = "Aren 비세토스 E/W 숄더백 S",
             store = "MCM 롯데면세점 명동본점",
             priceKrw = 1_090_000,
-            brandId = "mcm",
             statusLabel = "구매",
             imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWSGSTA02CO001_01?\$w1000\$&fmt=auto&qlt=default",
         ),
@@ -153,7 +141,6 @@ object HomeProductionData {
             name = "Aren E/W 숄더백 Lotus Pink S",
             store = "MCM 현대면세점 인천공항 T1",
             priceKrw = 1_490_000,
-            brandId = "mcm",
             statusLabel = "구매",
             imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWSGSTA01QA001_01?\$w1000\$&fmt=auto&qlt=default",
         ),
@@ -162,7 +149,6 @@ object HomeProductionData {
             name = "Mighty Bear 오 드 퍼퓸 100ml",
             store = "MCM 롯데면세점 명동본점",
             priceKrw = 210_000,
-            brandId = "mcm2",
             statusLabel = "관심",
             imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MPFFSMM04CO001_01?\$w1000\$&fmt=auto&qlt=default",
         ),
@@ -171,7 +157,6 @@ object HomeProductionData {
             name = "Diamond 비세토스 레더 믹스 숄더백 Mini",
             store = "MCM 현대면세점 인천공항 T1",
             priceKrw = 930_000,
-            brandId = "mcm2",
             statusLabel = "관심",
             imageUrl = "https://images.mcmworldwide.com/i/mcmworldwide/MWRGAAK01BK001_01?\$w1000\$&fmt=auto&qlt=default",
         ),

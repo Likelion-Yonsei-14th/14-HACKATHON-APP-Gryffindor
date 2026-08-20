@@ -9,13 +9,13 @@ import com.gryffindor.smartshopping.data.meta.MetaCameraSource
 import com.gryffindor.smartshopping.data.recording.GlassesVideoRecorder
 import com.gryffindor.smartshopping.data.remote.api.PersonalizationApiService
 import com.gryffindor.smartshopping.data.remote.api.ShoppingApiService
-import com.gryffindor.smartshopping.data.repository.FakeChecklistRepository
-import com.gryffindor.smartshopping.data.repository.FakeRecommendationRepository
-import com.gryffindor.smartshopping.data.repository.FakeTravelRepository
+import com.gryffindor.smartshopping.data.repository.RemoteChecklistRepository
 import com.gryffindor.smartshopping.data.repository.RemotePersonalizationRepository
+import com.gryffindor.smartshopping.data.repository.RemoteRecommendationRepository
 import com.gryffindor.smartshopping.data.repository.RemoteSessionRepository
 import com.gryffindor.smartshopping.data.repository.RemoteShoppingRepository
 import com.gryffindor.smartshopping.data.repository.RemoteStoreRepository
+import com.gryffindor.smartshopping.data.repository.RemoteTravelRepository
 import com.gryffindor.smartshopping.data.repository.RemoteTripRepository
 import com.gryffindor.smartshopping.domain.attention.AttentionCandidateProvider
 import com.gryffindor.smartshopping.domain.camera.CameraFrameProvider
@@ -45,13 +45,13 @@ class AppContainer(private val applicationContext: Context) {
         retrofit.create(PersonalizationApiService::class.java)
     }
 
-    // Repositories — SessionRepository, ShoppingRepository, and StoreRepository use real Backend.
+    // Repositories — all backed by the real Backend API.
     val sessionRepository: SessionRepository by lazy { RemoteSessionRepository(apiService) }
     val shoppingRepository: ShoppingRepository by lazy { RemoteShoppingRepository(apiService) }
     val storeRepository: StoreRepository by lazy { RemoteStoreRepository(apiService) }
-    val checklistRepository: ChecklistRepository = FakeChecklistRepository()
-    val recommendationRepository: RecommendationRepository = FakeRecommendationRepository()
-    val travelRepository: TravelRepository = FakeTravelRepository()
+    val checklistRepository: ChecklistRepository by lazy { RemoteChecklistRepository(apiService) }
+    val recommendationRepository: RecommendationRepository by lazy { RemoteRecommendationRepository(apiService) }
+    val travelRepository: TravelRepository by lazy { RemoteTravelRepository(apiService) }
 
     // B5/B6: Personalization & Trip repositories using real Backend.
     val personalizationRepository: PersonalizationRepository by lazy {

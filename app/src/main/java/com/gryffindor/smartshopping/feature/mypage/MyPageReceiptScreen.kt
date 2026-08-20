@@ -1,37 +1,12 @@
 package com.gryffindor.smartshopping.feature.mypage
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.component.LooketStore
 import com.gryffindor.smartshopping.core.ui.component.LooketStoreSelectionScreen
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
-
-// 실제 매장 검색 API 연결 전까지의 더미 목록. MyPageNavHost에서 storeId로 매장을 찾을 때도 재사용한다.
-internal val dummyStores = listOf(
-    LooketStore(
-        id = "1",
-        name = "MCM 신세계백화점 본점",
-        address = "서울특별시 중구 퇴계로 77 9F 신세계면세점 본점",
-    ),
-    LooketStore(
-        id = "2",
-        name = "MCM HAUS",
-        address = "서울 강남구 압구정로 412 MCM HAUS",
-    ),
-    LooketStore(
-        id = "3",
-        name = "MCM 여의도 더현대점",
-        address = "서울 영등포구 여의대로 108 더현대서울 4F",
-    ),
-)
 
 /**
  * 마이페이지 > RECEIPT — 등록된 영수증(매장) 목록에서 하나를 선택한다.
@@ -42,6 +17,7 @@ internal val dummyStores = listOf(
  */
 @Composable
 fun MyPageReceiptScreen(
+    stores: List<LooketStore>,
     selectedStoreId: String?,
     onStoreSelected: (String) -> Unit,
     onAddReceiptClick: () -> Unit,
@@ -53,7 +29,7 @@ fun MyPageReceiptScreen(
 ) {
     LooketStoreSelectionScreen(
         title = stringResource(R.string.mypage_receipt),
-        stores = dummyStores,
+        stores = stores,
         selectedStoreId = selectedStoreId,
         onStoreSelected = onStoreSelected,
         onConfirmClick = onConfirmClick,
@@ -63,21 +39,4 @@ fun MyPageReceiptScreen(
         modifier = modifier,
         onAddClick = onAddReceiptClick,
     )
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun MyPageReceiptScreenPreview() {
-    var selectedStoreId by remember { mutableStateOf<String?>(null) }
-    LooketTheme {
-        MyPageReceiptScreen(
-            selectedStoreId = selectedStoreId,
-            onStoreSelected = { selectedStoreId = it },
-            onAddReceiptClick = {},
-            onConfirmClick = {},
-            onBackClick = {},
-            selectedTab = BottomNavTab.MY_PAGE,
-            onTabSelected = {},
-        )
-    }
 }

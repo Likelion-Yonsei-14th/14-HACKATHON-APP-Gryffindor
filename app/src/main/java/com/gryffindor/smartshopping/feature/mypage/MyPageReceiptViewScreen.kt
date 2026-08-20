@@ -3,11 +3,9 @@ package com.gryffindor.smartshopping.feature.mypage
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.component.LooketReceiptPhotoScreen
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
  * 마이페이지 > RECEIPT > 매장 카드 확인 — 그 매장에서 등록한 영수증 사진을 보여준다.
@@ -32,18 +30,4 @@ fun MyPageReceiptViewScreen(
         onTabSelected = onTabSelected,
         modifier = modifier,
     )
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun MyPageReceiptViewScreenPreview() {
-    LooketTheme {
-        MyPageReceiptViewScreen(
-            storeName = "MCM 신세계백화점 본점",
-            onBackClick = {},
-            onRetakePhotoClick = {},
-            selectedTab = BottomNavTab.MY_PAGE,
-            onTabSelected = {},
-        )
-    }
 }

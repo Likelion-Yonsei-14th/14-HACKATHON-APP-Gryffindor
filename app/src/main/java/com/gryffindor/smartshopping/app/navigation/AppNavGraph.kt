@@ -393,6 +393,7 @@ fun AppNavGraph(
                 onNavigateToTripList = { navController.navigate(Routes.TRIP_LIST) },
                 onNavigateToWishlist = { navController.navigate(Routes.WISHLIST) },
                 personalizationRepository = appContainer.personalizationRepository,
+                storeRepository = appContainer.storeRepository,
             )
         }
 

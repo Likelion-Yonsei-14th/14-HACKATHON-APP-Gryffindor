@@ -44,12 +44,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -57,9 +57,9 @@ import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.HomeTopBar
 import com.gryffindor.smartshopping.core.ui.component.HomeTopBarTab
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import com.gryffindor.smartshopping.domain.model.ChecklistItem
 import com.gryffindor.smartshopping.domain.model.FeedRecommendation
+import com.gryffindor.smartshopping.domain.model.Product
 import com.gryffindor.smartshopping.domain.model.PurchasedProduct
 import com.gryffindor.smartshopping.domain.model.RefundChecklist
 
@@ -146,18 +146,18 @@ fun HomeScreen(
                         }
                     }
                     HomeTopBarTab.LOOKET -> {
-                        // Use actual recommendations from Backend; fallback to static data
-                        val actualRecommended = if (uiState.recommendations.isNotEmpty()) {
-                            uiState.recommendations.map { it.toRecommendedProduct() }
-                        } else {
-                            HomeProductionData.recommendedProducts
-                        }
+                        // Use actual recommendations from Backend — no fake data
+                        val actualRecommended = uiState.recommendations.map { it.toRecommendedProduct() }
+
+                        // MY LOOKET = 실제 구매 상품(가격/매장 있음) + 실제 위시리스트(가격/매장 없음)
+                        val actualLooketProducts = uiState.purchasedProducts.map { it.toLooketProduct() } +
+                            uiState.wishlistProducts.map { it.toLooketProduct() }
 
                         LooketTabContent(
                             recommended = actualRecommended,
-                            brands = HomeProductionData.brandFilters,
-                            myLooket = HomeProductionData.looketProducts,
+                            myLooket = actualLooketProducts,
                             onProductClick = { storeId, storeName -> onNavigateToVisitReservation(storeId, storeName) },
+                            onRemoveFromWishlist = { productId -> viewModel.removeFromWishlist(productId) },
                         )
                     }
                 }
@@ -432,12 +432,10 @@ private fun ChecklistPreviewRow(item: ChecklistItem) {
 @Composable
 private fun LooketTabContent(
     recommended: List<RecommendedProduct>,
-    brands: List<BrandFilter>,
     myLooket: List<LooketProduct>,
     onProductClick: (storeId: String, storeName: String) -> Unit,
+    onRemoveFromWishlist: (productId: String) -> Unit,
 ) {
-    var selectedBrandIds by remember { mutableStateOf(setOf<String>()) }
-
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
@@ -447,16 +445,25 @@ private fun LooketTabContent(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-            ) {
-                items(recommended, key = { it.id }) { product ->
-                    RecommendedProductCard(product, onClick = {
-                        val storeId = product.storeId ?: ""
-                        val storeName = product.storeName ?: ""
-                        onProductClick(storeId, storeName)
-                    })
+            if (recommended.isEmpty()) {
+                Text(
+                    stringResource(R.string.home_for_you_empty),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = LooketColors.TextSecondary,
+                    fontSize = 14.sp,
+                )
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                ) {
+                    items(recommended, key = { it.id }) { product ->
+                        RecommendedProductCard(product, onClick = {
+                            val storeId = product.storeId ?: ""
+                            val storeName = product.storeName ?: ""
+                            onProductClick(storeId, storeName)
+                        })
+                    }
                 }
             }
         }
@@ -467,39 +474,28 @@ private fun LooketTabContent(
         ) {
             Text("MY LOOKET", color = LooketColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
 
-            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                brands.forEach { brand ->
-                    val isSelected = selectedBrandIds.contains(brand.id)
-                    BrandFilterChip(
-                        brand = brand,
-                        selected = isSelected,
-                        onClick = {
-                            selectedBrandIds = if (isSelected) {
-                                selectedBrandIds - brand.id
-                            } else {
-                                selectedBrandIds + brand.id
-                            }
-                        },
-                    )
-                }
-            }
-
-            val filteredProducts = if (selectedBrandIds.isEmpty()) {
-                myLooket
+            if (myLooket.isEmpty()) {
+                Text(
+                    stringResource(R.string.home_my_looket_empty),
+                    color = LooketColors.TextSecondary,
+                    fontSize = 14.sp,
+                )
             } else {
-                myLooket.filter { selectedBrandIds.contains(it.brandId) }
-            }
-
-            filteredProducts.chunked(2).forEach { rowItems ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.height(IntrinsicSize.Min),
-                ) {
-                    rowItems.forEach { product ->
-                        LooketProductCard(product, modifier = Modifier.weight(1f).fillMaxHeight())
-                    }
-                    if (rowItems.size < 2) {
-                        Spacer(modifier = Modifier.weight(1f))
+                myLooket.chunked(2).forEach { rowItems ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        modifier = Modifier.height(IntrinsicSize.Min),
+                    ) {
+                        rowItems.forEach { product ->
+                            LooketProductCard(
+                                product,
+                                onRemoveClick = { onRemoveFromWishlist(product.id) },
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                            )
+                        }
+                        if (rowItems.size < 2) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -570,29 +566,7 @@ private fun RecommendedProductCard(product: RecommendedProduct, onClick: () -> U
 }
 
 @Composable
-private fun BrandFilterChip(brand: BrandFilter, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(CircleShape)
-            .background(LooketColors.Surface)
-            .then(
-                if (selected) Modifier.border(width = 1.dp, color = LooketColors.BrandPrimary, shape = CircleShape) else Modifier,
-            )
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            painter = painterResource(id = brand.iconRes),
-            contentDescription = brand.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.size(48.dp).clip(CircleShape),
-        )
-    }
-}
-
-@Composable
-private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modifier) {
+private fun LooketProductCard(product: LooketProduct, onRemoveClick: () -> Unit, modifier: Modifier = Modifier) {
     val statusColor = if (product.statusLabel == "구매") {
         LooketColors.BrandPrimary
     } else {
@@ -620,13 +594,20 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
             }
             Column(modifier = Modifier.fillMaxWidth().background(LooketColors.Surface).padding(10.dp)) {
                 Text(product.name, fontSize = 14.sp, color = Color.Black)
-                Text(product.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
+                // 위시리스트 상품은 매장 정보가 없을 수 있다 (Backend Product 모델에 store 없음).
+                if (product.store != null) {
+                    Text(product.store, fontSize = 12.sp, color = LooketColors.TextPrimary)
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("₩${formatKrw(product.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                    if (product.priceKrw != null) {
+                        Text("₩${formatKrw(product.priceKrw)}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(statusColor))
                         Text(product.statusLabel, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = LooketColors.TextPrimary)
@@ -634,14 +615,17 @@ private fun LooketProductCard(product: LooketProduct, modifier: Modifier = Modif
                 }
             }
         }
-        Button(
-            onClick = { /* TODO: 관심리스트에서 제거 로직 연결 */ },
-            colors = ButtonDefaults.buttonColors(containerColor = LooketColors.BrandPrimary),
-            shape = RoundedCornerShape(8.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-        ) {
-            Text("관심리스트에서 제거", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        // 구매 완료 상품은 위시리스트에서 뺄 대상이 아니므로 "관심" 상품에만 제거 버튼을 보여준다.
+        if (product.statusLabel == "관심") {
+            Button(
+                onClick = onRemoveClick,
+                colors = ButtonDefaults.buttonColors(containerColor = LooketColors.BrandPrimary),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+            ) {
+                Text("관심리스트에서 제거", color = LooketColors.TextInverse, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
@@ -663,6 +647,29 @@ private fun PurchasedProduct.toPurchasedItem(): PurchasedItem = PurchasedItem(
     imageUrl = product?.imageUrl,
     priceUsd = convertedPrice,
     refundAmountUsd = convertedEstimatedRefund,
+)
+
+/**
+ * Maps a Backend PurchasedProduct to the Home UI's "구매" LooketProduct card.
+ */
+private fun PurchasedProduct.toLooketProduct(): LooketProduct = LooketProduct(
+    id = purchaseItemId,
+    name = product?.name ?: fallbackProductName ?: "상품",
+    store = storeName,
+    priceKrw = price?.toLong(),
+    statusLabel = "구매",
+    imageUrl = product?.imageUrl,
+)
+
+/**
+ * Maps a Backend wishlist Product to the Home UI's "관심" LooketProduct card.
+ * Product 모델엔 가격/매장 정보가 없어 두 필드 모두 null로 남는다.
+ */
+private fun Product.toLooketProduct(): LooketProduct = LooketProduct(
+    id = productId,
+    name = name,
+    statusLabel = "관심",
+    imageUrl = imageUrl,
 )
 
 /**
@@ -717,53 +724,4 @@ private fun computeRefundSummary(products: List<PurchasedProduct>): RefundSummar
 private fun sumDecimalStrings(values: List<String>): String {
     val total = values.sumOf { it.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO }
     return total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun HomeScreenPreview() {
-    var selectedTab by remember { mutableStateOf(HomeTopBarTab.REFUND) }
-    var selectedBottomTab by remember { mutableStateOf(BottomNavTab.HOME) }
-
-    LooketTheme {
-        Scaffold(
-            topBar = { HomeTopBar(selectedTab = selectedTab, onTabSelected = { selectedTab = it }) },
-            bottomBar = {
-                BottomNavBar(
-                    selectedTab = selectedBottomTab,
-                    onTabSelected = { selectedBottomTab = it },
-                )
-            },
-            containerColor = LooketColors.Surface,
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(bottom = 32.dp),
-            ) {
-                Spacer(modifier = Modifier.height(32.dp))
-                when (selectedTab) {
-                    HomeTopBarTab.REFUND -> RefundTabContent(
-                        summary = HomeProductionData.refundSummary,
-                        purchasedItems = HomeProductionData.purchasedItems,
-                        refundChecklist = RefundChecklist(
-                            tripId = "preview",
-                            status = com.gryffindor.smartshopping.domain.model.RefundChecklistStatus.ACTION_REQUIRED,
-                            items = HomeProductionData.checklistItems,
-                            notice = null,
-                        ),
-                        isChecklistLoading = false,
-                        onChecklistClick = {},
-                    )
-                    HomeTopBarTab.LOOKET -> LooketTabContent(
-                        recommended = HomeProductionData.recommendedProducts,
-                        brands = HomeProductionData.brandFilters,
-                        myLooket = HomeProductionData.looketProducts,
-                        onProductClick = { _, _ -> },
-                    )
-                }
-            }
-        }
-    }
 }

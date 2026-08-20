@@ -1,8 +1,6 @@
 package com.gryffindor.smartshopping.feature.login
 
 import androidx.compose.foundation.Image
-import androidx.compose.ui.tooling.preview.Preview
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -114,13 +112,5 @@ private fun GuestLoginButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text("게스트로 로그인", color = BrandPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun LoginScreenPreview() {
-    LooketTheme {
-        LoginScreen(onKakaoLogin = {}, onGuestLogin = {})
     }
 }

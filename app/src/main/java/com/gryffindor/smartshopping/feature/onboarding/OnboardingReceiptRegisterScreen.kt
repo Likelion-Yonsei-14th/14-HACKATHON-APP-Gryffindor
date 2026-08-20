@@ -13,13 +13,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.component.LooketSectionHeader
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
  * 온보딩 마지막 단계 — 여행 중 받은 구매 영수증 사진을 등록한다.
@@ -69,21 +67,5 @@ fun OnboardingReceiptRegisterScreen(
             )
         }
         Spacer(Modifier.height(32.dp))
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun OnboardingReceiptRegisterScreenPreview() {
-    LooketTheme {
-        OnboardingReceiptRegisterScreen(hasPhoto = false, onBackClick = {}, onCaptureClick = {}, onSkipClick = {})
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun OnboardingReceiptRetakeScreenPreview() {
-    LooketTheme {
-        OnboardingReceiptRegisterScreen(hasPhoto = true, onBackClick = {}, onCaptureClick = {}, onSkipClick = {})
     }
 }

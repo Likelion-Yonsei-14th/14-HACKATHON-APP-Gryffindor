@@ -13,12 +13,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.component.LooketSectionHeader
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 @Composable
 fun FlightRegisterScreen(
@@ -60,21 +58,5 @@ fun FlightRegisterScreen(
             )
         }
         Spacer(Modifier.height(32.dp))
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun FlightRegisterScreenPreview() {
-    LooketTheme {
-        FlightRegisterScreen(hasPhoto = false, onBackClick = {}, onCaptureClick = {}, onSkipClick = {})
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun FlightRetakeScreenPreview() {
-    LooketTheme {
-        FlightRegisterScreen(hasPhoto = true, onBackClick = {}, onCaptureClick = {}, onSkipClick = {})
     }
 }

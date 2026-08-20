@@ -26,14 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
  * 온보딩_접근권한(Figma 376:5288). feat/production-ui의 실제 런타임 권한 요청 로직을
@@ -167,13 +165,5 @@ private fun checkNotificationPermission(context: android.content.Context): Boole
         ) == PackageManager.PERMISSION_GRANTED
     } else {
         true
-    }
-}
-
-@Preview(showBackground = true, widthDp = 412, heightDp = 917)
-@Composable
-private fun PermissionScreenPreview() {
-    LooketTheme {
-        PermissionScreen(onNext = {})
     }
 }

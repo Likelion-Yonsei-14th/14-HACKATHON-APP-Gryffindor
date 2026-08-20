@@ -30,7 +30,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.LooketDropdown
@@ -39,7 +38,6 @@ import com.gryffindor.smartshopping.core.ui.component.LooketPrimaryButton
 import com.gryffindor.smartshopping.core.ui.component.LooketTopBar
 import com.gryffindor.smartshopping.core.ui.theme.LooketColors
 import com.gryffindor.smartshopping.core.ui.theme.LooketTextStyles
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -230,34 +228,6 @@ private fun EditableFieldRow(label: String, value: String, onValueChange: (Strin
                 .fillMaxWidth()
                 .height(1.dp)
                 .background(LooketColors.BorderDefault),
-        )
-    }
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun VisitReservationFormScreenPreview() {
-    var date by remember { mutableStateOf(LocalDate.now()) }
-    var timeRange by remember { mutableStateOf<String?>(null) }
-    var purpose by remember { mutableStateOf<String?>(null) }
-    var visitorName by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-
-    LooketTheme {
-        VisitReservationFormScreen(
-            date = date,
-            onPreviousDay = { date = date.minusDays(1) },
-            onNextDay = { date = date.plusDays(1) },
-            selectedTimeRange = timeRange,
-            onTimeRangeSelected = { timeRange = it },
-            selectedPurpose = purpose,
-            onPurposeSelected = { purpose = it },
-            visitorName = visitorName,
-            onVisitorNameChange = { visitorName = it },
-            note = note,
-            onNoteChange = { note = it },
-            onBackClick = {},
-            onCompleteClick = {},
         )
     }
 }

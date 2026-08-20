@@ -3,11 +3,9 @@ package com.gryffindor.smartshopping.feature.mypage
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.gryffindor.smartshopping.R
 import com.gryffindor.smartshopping.core.ui.component.BottomNavTab
 import com.gryffindor.smartshopping.core.ui.component.LooketReceiptPhotoScreen
-import com.gryffindor.smartshopping.core.ui.theme.LooketTheme
 
 /**
  * 마이페이지 > RECEIPT > "+" — 영수증 사진을 찍어 매장 정보를 등록한다.
@@ -31,17 +29,4 @@ fun MyPageReceiptRegisterScreen(
         onTabSelected = onTabSelected,
         modifier = modifier,
     )
-}
-
-@Preview(showBackground = true, heightDp = 917, widthDp = 412)
-@Composable
-private fun MyPageReceiptRegisterScreenPreview() {
-    LooketTheme {
-        MyPageReceiptRegisterScreen(
-            onBackClick = {},
-            onRetakePhotoClick = {},
-            selectedTab = BottomNavTab.MY_PAGE,
-            onTabSelected = {},
-        )
-    }
 }

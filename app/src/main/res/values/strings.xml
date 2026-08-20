@@ -73,4 +73,7 @@
     <string name="reservation_visitor_name">예약자 성함</string>
     <string name="reservation_note">기타 요청사항</string>
     <string name="reservation_time_required">방문 시간을 선택해주세요.</string>
+
+    <string name="home_for_you_empty">아직 추천 상품이 없습니다.</string>
+    <string name="home_my_looket_empty">구매하거나 찜한 상품이 없습니다.</string>
 </resources>
